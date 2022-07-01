@@ -4,9 +4,10 @@ import { StatusCodes } from "http-status-codes";
 import morganProd from "morgan";
 import morganDev from "morgan-body";
 import path from "path";
-import config from "./config";
+import { ENVIRONMENT, SESSION_SECRET } from "./utils/secrets";
 import globalErrorHandler from './controllers/error/error.controller';
 import AppError from "./utils/appError";
+import authRoute from "./routes/auth.route";
 
 const app = express();
 
@@ -27,14 +28,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 var xss = require('xss-clean');
 app.use(xss());
 
-if (config.NODE_ENV === 'production' || config.NODE_ENV === 'test')
+if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test')
   app.use(morganProd('common'));
 else morganDev(app);
 
 
-app.use('/', (req, res) => {
-  res.send('Sketter')
-})
+// App Route
+app.use('/api/v1/auth', authRoute);
+
+
+
 /* -------------ERROR HANDLERS MIDDLEWARE---------------*/
 // If not handle by other router, implement 404 Router
 app.all('*', (req, res, next) => {

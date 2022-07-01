@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import config from '../../config';
+import { ENVIRONMENT } from '../../utils/secrets';
 import AppError from '../../utils/appError';
 
 /**
@@ -152,11 +152,11 @@ export default (
     // If is not defined, take a default value
     error.statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
     error.status = error.status || 'error';
-    if (config.NODE_ENV === 'development') {
+    if (ENVIRONMENT === 'development') {
         sendErrorDev(error, res);
     }
     // Only send error handlers in production env, that we already customed the message
-    else if (config.NODE_ENV === 'production' || config.NODE_ENV === 'test') {
+    else if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test') {
         if (error.name === 'CastError') error = handleCastErrorDB(error);
         else if (error.code === 11000) error = handleDuplicateFieldsDB(error);
         else if (error.name === 'ValidationError')

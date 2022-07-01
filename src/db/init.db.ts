@@ -1,12 +1,15 @@
-import { Sequelize } from 'sequelize';
-import config from '../config';
+import sequelizeConnection from './config.db'
+import { ENVIRONMENT } from '../utils/secrets'
 
 /**
  * DB Connection related actions
  */
+
+const isDev = ENVIRONMENT === 'development'
+
 export default {
     connect(): Promise<void> {
-        return new Sequelize(config.DB_URL).authenticate()
+        return sequelizeConnection.sync({ alter: isDev })
             .then(() => {
                 console.info('DB connection successful');
             })

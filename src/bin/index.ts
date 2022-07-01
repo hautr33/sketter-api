@@ -4,13 +4,13 @@
 import http from 'http';
 import https from 'https';
 import app from '../app';
-import config from '../config';
-import db from '../db/postgre.db';
+import { PORT, ENVIRONMENT } from '../utils/secrets';
+import db from '../db/init.db';
 
 /**
  * Get port from environment and store in Express.
  */
-const port = normalizePort(config.PORT);
+const port = normalizePort(PORT);
 
 app.set('port', port);
 
@@ -85,5 +85,5 @@ function onListening() {
     const bind =
         typeof addr === 'string' ? `pipe ${addr}` : `port ${addr?.port}`;
 
-    console.info(`⚡️ Listening on ${bind} as ${config.NODE_ENV}`);
+    console.info(`⚡️ Listening on ${bind} as ${ENVIRONMENT}`);
 }
