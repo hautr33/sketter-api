@@ -1,121 +1,183 @@
-import { Request, Response } from "express";
-import * as jwt from "jsonwebtoken";
-import { validate } from "class-validator";
-import { User } from "../../models/user.model";
-import { JWT_SECRET } from "../../utils/secrets";
-import { ROLE } from '../../config/constant'
-import { result } from "lodash";
+// import crypto from 'crypto';
+import { NextFunction, Response } from 'express';
+
+import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
+import _ from 'lodash';
+import { JWT_SECRET, JWT_EXPIRES_IN, JWT_COOKIES_EXPIRES_IN, ENVIRONMENT } from '../../config/default';
+import { User } from '../../models/user.model';
+// import { sendEmail } from '../../services/mail.service';
+import AppError from '../../utils/app_error.util';
+import catchAsync from '../../utils/catch_async.util';
+import RESDocument from '../factory/RESDocument';
+import { ROLE } from '../../utils/constant.util'
+
+/**
+ * This function is for signing a token or generate a JWT
+ *  token with provided JWT_SECRET, JWT_EXPIRES_IN as a
+ *  .env variables.
+ * @param {*} id - payload of the JWT, in this situation
+ *  we include as an id of user
+ */
+const signToken = (id: string) =>
+    jwt.sign({ id }, JWT_SECRET as string, {
+        expiresIn: JWT_EXPIRES_IN
+    });
+
+/**
+* This function Create & Send the JWT Token to the user end.
+*  By using the function "signToken", it generates a JWT Token
+*  with specific expires time. Furthermore, this method filters
+*  some sensitive key fields such as "password" and also leverage
+*  cookies when sending.
+* @param {*} user - Instance of User Model from MongoDB
+* @param {*} statusCode - HTTP StatusCode to be sent
+* @param {*} res - Instance of Response in ExpressJS
+*/
+const createSendToken = (
+    user: User,
+    statusCode: number,
+    res: Response,
+    next: NextFunction
+) => {
+    // Generate the JWT Token with user id
+    const token = signToken(user.id);
+
+    const excludedFields: string[] = ['password', 'passwordResetToken', 'passwordResetExpires', 'passwordUpdatedAt'];
+
+    const excludedObj = _.omit(user.toJSON(), excludedFields);
+
+    // CookieOptions for sending
+    const cookieOptions = {
+        expires: new Date(
+            // Now + Day * 24 Hours * 60 Minutes * 60 Seconds * 1000 milliseconds
+            Date.now() +
+            parseInt(JWT_COOKIES_EXPIRES_IN as string, 10) *
+            24 *
+            60 *
+            60 *
+            1000
+        ),
+        // Only work in HTTP or HTTPS Protocol
+        httpOnly: true,
+        secure: false
+    };
+
+    /* In HTTPS connection, Cookies will be encrypted and stay secure
+      We only want this feature in production environment. Not in 
+      development environment.
+   */
+    if (ENVIRONMENT === 'production') cookieOptions.secure = true;
+
+    // Send the JWT Token as cookie
+    res.cookie('jwt', token, cookieOptions);
+
+    res.resDocument = new RESDocument(statusCode, 'success', excludedObj);
+
+    next();
+};
+
 
 class AuthController {
-    static signup = async (req: Request, res: Response) => {
-        //Get parameters from the body
-        let { email, password, confirmPassword, roleID } = req.body;
+    static signup = catchAsync(async (req, res, next) => {
+        // Get parameters from body
+        const { email, password, confirmPassword, roleID } = req.body;
+
+        if (password === '' || password === null) {
+            return next(
+                new AppError('Please enter Password', StatusCodes.BAD_REQUEST)
+            );
+        }
+        if (password !== confirmPassword) {
+            return next(
+                new AppError(
+                    'Incorrect Confirm Password',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
+        }
+
         let user = new User();
         user.email = email;
+        user.name = email.split('@')[0];
+        user.password = password;
 
-        if (password == confirmPassword) {
-            user.password = password;
-        } else {
-            res.status(400).send("incorrect confirm password");
-            return;
-        }
+        // Get Role if Supplier, default Traveler
         if (roleID == ROLE.SUPPLIER) {
             user.roleID = roleID;
         }
-        //Validade if the parameters are ok
-        const errors = await validate(user);
-        if (errors.length > 0) {
-            res.status(400).send(errors);
-            return;
+
+        const userExsit = await User.findOne({ where: { email: email } });
+        if (userExsit) {
+            return next(new AppError('Email is exsit', StatusCodes.BAD_REQUEST));
         }
 
-        //Try to save. If fails, the username is already in use
-        try {
-            await user.save();
+        const newUser = await user.save();
 
+        // Send result back to Client
+        createSendToken(newUser, StatusCodes.CREATED, res, next);
+    });
+    static login = catchAsync(async (req, res, next) => {
+        const { email, password, role } = req.body;
 
-            //If all ok, send 201 response
-            res.status(201).send("sign up successfully");
-        } catch (e) {
-            res.status(409).send(e.errors[0].message);
-            return;
+        // 1) Check if email and password exist
+        if (!(email || password)) {
+            return next(
+                new AppError(
+                    'Cannot find account or password!',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
         }
-    };
 
-    static signupp = async (req: Request, res: Response) => {
-        res.status(200).send({ "ahihi": "ahihi" });
-    }
+        // 2) Check if user exists && password is correct
 
+        /* Because we exclude the password field by default, now we manually added 
+        in order to double-check with the provided password. We should use .select('+field').
+        To seperate and double-check role, we have to check role of user before 
+        allow they login into resource. 	
+        */
+        const user = await User.findOne({ where: { email: email, roleID: role } });
 
-    static login = async (req: Request, res: Response) => {
-        // //Check if username and password are set
-        // let { email, password } = req.body;
-        // if (!(email && password)) {
-        //     res.status(400).send();
-        // }
+        // Leverage the Mongo Methods has been written in User model. Check the correctness
+        if (!user || !(await user.checkCorrectness(password as string))) {
+            return next(
+                new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+            );
+        }
 
-        // //Get user from database
-        // let user: User;
-        // try {
-        //     user = await User.findOneOrFail({ where: { email: email } });
-        // } catch (error) {
-        //     res.status(401).send();
-        // }
+        // 3) If everything ok, send token to client
+        createSendToken(user, StatusCodes.OK, res, next);
+    });
 
-        // //Check if encrypted password match
-        // if (!user.checkIfUnencryptedPasswordIsValid(password)) {
-        //     res.status(401).send();
-        //     return;
-        // }
+    // static login = async (req: Request, res: Response, next: NextFunction) => {
+    //     // Get parameters from body
+    //     const { email, password } = req.body;
+    //     User.findOne({ where: { email: email } })
+    //         .then((user: User) => {
+    //             if (!user) {
+    //                 return res.status(StatusCodes.NOT_FOUND).send("Invalid email")
+    //             }
 
-        // //Sing JWT, valid for 1 hour
-        // const token = jwt.sign(
-        //     { userId: user.id, username: user.username },
-        //     config.jwtSecret,
-        //     { expiresIn: "1h" }
-        // );
+    //             if (!user.isActive) {
+    //                 return res.send("Unverified account");
+    //             }
 
-        // //Send the jwt in the response
-        // res.send(token);
-    };
+    //             user.comparePassword(password, (err: Error, isMatch: boolean) => {
+    //                 if (err) { return res.send(err); }
+    //                 if (isMatch) {
+    //                     return res.send("ahii")
+    //                 }
+    //                 res.status(StatusCodes.CONFLICT).send("qqqqqqqq")
+    //             })
+    //         })
+    //         .catch((e) => {
+    //             res.status(StatusCodes.BAD_REQUEST).send(e)
+    //         })
+    // };
 
-    static changePassword = async (req: Request, res: Response) => {
-        // //Get ID from JWT
-        // const id = res.locals.jwtPayload.userId;
+    // static changePassword = async (req: Request, res: Response) => {
 
-        // //Get parameters from the body
-        // const { oldPassword, newPassword } = req.body;
-        // if (!(oldPassword && newPassword)) {
-        //     res.status(400).send();
-        // }
-
-        // //Get user from the database
-        // const userRepository = getRepository(User);
-        // let user: User;
-        // try {
-        //     user = await userRepository.findOneOrFail(id);
-        // } catch (id) {
-        //     res.status(401).send();
-        // }
-
-        // //Check if old password matchs
-        // if (!user.checkIfUnencryptedPasswordIsValid(oldPassword)) {
-        //     res.status(401).send();
-        //     return;
-        // }
-
-        // //Validate de model (password lenght)
-        // user.password = newPassword;
-        // const errors = await validate(user);
-        // if (errors.length > 0) {
-        //     res.status(400).send(errors);
-        //     return;
-        // }
-        // //Hash the new password and save
-        // user.hashPassword();
-        // userRepository.save(user);
-
-        // res.status(204).send();
-    };
+    // };
 }
 export default AuthController;

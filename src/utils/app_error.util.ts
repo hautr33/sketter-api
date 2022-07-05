@@ -2,9 +2,13 @@ import { StatusCodes } from 'http-status-codes';
 
 class AppError extends Error {
     public message;
+
     public statusCode;
+
     public status;
+
     public isOperational;
+
     public code = -1;
 
     /**

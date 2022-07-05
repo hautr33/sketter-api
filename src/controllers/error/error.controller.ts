@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { ENVIRONMENT } from '../../utils/secrets';
-import AppError from '../../utils/appError';
+import { ENVIRONMENT } from '../../config/default';
+import AppError from '../../utils/app_error.util';
 
 /**
  * Token Invalid Error - JWT (prod)
@@ -14,10 +14,10 @@ import AppError from '../../utils/appError';
  * @param {*} err - Instance of AppError
  */
 const handleJWTError = () =>
-    new AppError(
-        'Cannot authenticate! Please resend it again',
-        StatusCodes.UNAUTHORIZED
-    );
+	new AppError(
+		'Cannot authenticate! Please resend it again',
+		StatusCodes.UNAUTHORIZED
+	);
 
 /**
  * Token Expired Error - JWT (prod)
@@ -30,7 +30,7 @@ const handleJWTError = () =>
  * @param {*} err - Instance of AppError
  */
 const handleJWTExpiredError = () =>
-    new AppError('Session time out!', StatusCodes.UNAUTHORIZED);
+	new AppError('Session time out!', StatusCodes.UNAUTHORIZED);
 
 /**
  * Cast to Object Error - DB (prod)
@@ -46,8 +46,8 @@ const handleJWTExpiredError = () =>
  * @param {*} err - Instance of AppError
  */
 const handleCastErrorDB = (err: any) => {
-    const message = `Wrong ${err.path}: ${err.value}`;
-    return new AppError(message, StatusCodes.BAD_REQUEST);
+	const message = `Wrong ${err.path}: ${err.value}`;
+	return new AppError(message, StatusCodes.BAD_REQUEST);
 };
 
 /**
@@ -63,9 +63,9 @@ const handleCastErrorDB = (err: any) => {
  * @param {*} err - Instance of AppError
  */
 const handleDuplicateFieldsDB = (err: any) => {
-    const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-    const message = `Data existed: ${value}. Please fill another data`;
-    return new AppError(message, StatusCodes.CONFLICT);
+	const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+	const message = `Data existed: ${value}. Please fill another data`;
+	return new AppError(message, StatusCodes.CONFLICT);
 };
 
 /**
@@ -82,10 +82,10 @@ const handleDuplicateFieldsDB = (err: any) => {
  * @param {*} err - Instance of AppError
  */
 const handleValidationErrorDB = (err: any) => {
-    const errors = Object.values(err.errors).map((el: any) => el.message);
+	const errors = Object.values(err.errors).map((el: any) => el.message);
 
-    const message = `Wrong format: ${errors}`;
-    return new AppError(message, StatusCodes.BAD_REQUEST);
+	const message = `Wrong format: ${errors}`;
+	return new AppError(message, StatusCodes.BAD_REQUEST);
 };
 
 /**
@@ -97,12 +97,12 @@ const handleValidationErrorDB = (err: any) => {
  * @param {*} res Instance of Response of ExpressJS
  */
 const sendErrorDev = (err: AppError, res: Response) => {
-    res.status(err.statusCode).json({
-        status: err.status,
-        message: err.message,
-        error: err,
-        stack: err.stack
-    });
+	res.status(err.statusCode).json({
+		status: err.status,
+		message: err.message,
+		error: err,
+		stack: err.stack
+	});
 };
 
 /**
@@ -116,23 +116,23 @@ const sendErrorDev = (err: AppError, res: Response) => {
  * @param {*} res Instance of Response of ExpressJS
  */
 const sendErrorProd = (err: AppError, res: Response) => {
-    // Operational, trusted error: send message to client
-    if (err.isOperational) {
-        res.status(err.statusCode).json({
-            status: err.status,
-            message: err.message
-        });
+	// Operational, trusted error: send message to client
+	if (err.isOperational) {
+		res.status(err.statusCode).json({
+			status: err.status,
+			message: err.message
+		});
 
-        // Programming or other unknown error
-    } else {
-        // Log to the console, but not to the client
-        console.error('*****ERROR*****\n', err);
+		// Programming or other unknown error
+	} else {
+		// Log to the console, but not to the client
+		console.error('*****ERROR*****\n', err);
 
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-            status: 'error',
-            message: 'Error happen!'
-        });
-    }
+		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+			status: 'error',
+			message: 'Error happen!'
+		});
+	}
 };
 
 /**
@@ -144,30 +144,30 @@ const sendErrorProd = (err: AppError, res: Response) => {
  *  Please consider to use Error Controllers as provided to prepare for this.
  */
 export default (
-    error: AppError,
-    _req: Request,
-    res: Response,
-    next: NextFunction
+	error: AppError,
+	_req: Request,
+	res: Response,
+	next: NextFunction
 ): void => {
-    // If is not defined, take a default value
-    error.statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
-    error.status = error.status || 'error';
-    if (ENVIRONMENT === 'development') {
-        sendErrorDev(error, res);
-    }
-    // Only send error handlers in production env, that we already customed the message
-    else if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test') {
-        if (error.name === 'CastError') error = handleCastErrorDB(error);
-        else if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-        else if (error.name === 'ValidationError')
-            error = handleValidationErrorDB(error);
-        else if (error.name === 'JsonWebTokenError') error = handleJWTError();
-        else if (error.name === 'TokenExpiredError')
-            error = handleJWTExpiredError();
+	// If is not defined, take a default value
+	error.statusCode = error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+	error.status = error.status || 'error';
+	if (ENVIRONMENT === 'development') {
+		sendErrorDev(error, res);
+	}
+	// Only send error handlers in production env, that we already customed the message
+	else if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test') {
+		if (error.name === 'CastError') error = handleCastErrorDB(error);
+		else if (error.code === 11000) error = handleDuplicateFieldsDB(error);
+		else if (error.name === 'ValidationError')
+			error = handleValidationErrorDB(error);
+		else if (error.name === 'JsonWebTokenError') error = handleJWTError();
+		else if (error.name === 'TokenExpiredError')
+			error = handleJWTExpiredError();
 
-        // Send back production error when all is handled
-        sendErrorProd(error, res);
-    }
+		// Send back production error when all is handled
+		sendErrorProd(error, res);
+	}
 
-    next();
+	next();
 };

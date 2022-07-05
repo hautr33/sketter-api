@@ -1,0 +1,45 @@
+import dotenv from 'dotenv';
+import fs from "fs";
+import logger from '../utils/logger.util';
+
+if (fs.existsSync(".env")) {
+	logger.debug("Using .env file to supply config environment variables");
+	dotenv.config({ path: ".env" });
+} else {
+	logger.debug("Using .env.example file to supply config environment variables");
+	dotenv.config({ path: ".env.example" });  // you can delete this after you create your own .env file!
+}
+
+export const ENVIRONMENT = process.env.NODE_ENV ?? 'development' as string;
+const prod = ENVIRONMENT === "production"; // Anything else is treated as 'dev'
+let POSTGRES_URI = prod ? process.env["POSTGRES_URI"] : process.env["POSTGRES_URI_LOCAL"];
+if (!POSTGRES_URI) {
+	if (prod) {
+		logger.error("No postgres connection string. Set POSTGRES_URI environment variable.");
+	} else {
+		logger.error("No postgres connection string. Set POSTGRES_URI_LOCAL environment variable.");
+	}
+	process.exit(1);
+}
+
+export const PORT = process.env.PORT ?? '3001';
+export const DB_URL = POSTGRES_URI as string;
+export const JWT_COOKIES = '' as string;
+export const JWT_SECRET = process.env.JWT_SECRET as string;
+export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string;
+export const JWT_COOKIES_EXPIRES_IN = process.env.JWT_COOKIES_EXPIRES_IN as string;
+export const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY as string;
+export const EMAIL_USERNAME = process.env.EMAIL_USERNAME as string;
+export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;
+export const EMAIL_HOST = process.env.EMAIL_HOST as string;
+export const EMAIL_PORT = process.env.EMAIL_PORT as string;
+export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
+export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';
+export const REDIS_TIMEOUT_SECONDS = parseInt(process.env.REDIS_TIMEOUT_SECONDS as string, 10) ?? 3600;
+export const DATABASE_UNITTEST = process.env.DATABASE_UNITTEST as string;
+export const DATABASE_UNITTEST_USERNAME = process.env.DATABASE_UNITTEST_USERNAME as string;
+export const DATABASE_UNITTEST_PASSWORD = process.env.DATABASE_UNITTEST_PASSWORD as string;
+export const S3_KEY = process.env.S3_KEY as string;
+export const S3_SECRET = process.env.S3_SECRET as string;
+export const BUCKET_NAME = process.env.BUCKET_NAME as string;
+export const BUCKET_REGION = process.env.BUCKET_REGION as string

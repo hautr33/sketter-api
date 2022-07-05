@@ -1,10 +1,10 @@
 import { Sequelize } from 'sequelize';
-import { POSTGRES_URI } from '../utils/secrets';
+import { DB_URL } from '../config/default';
 
 /**
  * Sequelize Connection related actions
  */
 
-const sequelizeConnection = new Sequelize(POSTGRES_URI);
+const sequelizeConnection = new Sequelize(DB_URL);
 
 export default sequelizeConnection;

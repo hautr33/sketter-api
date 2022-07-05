@@ -1,11 +1,14 @@
 /**
  * Module dependencies.
  */
+import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import path from 'path';
 import app from '../app';
-import { PORT, ENVIRONMENT } from '../utils/secrets';
+import { PORT, ENVIRONMENT } from '../config/default';
 import db from '../db/init.db';
+import logger from '../utils/logger.util'
 
 /**
  * Get port from environment and store in Express.
@@ -23,7 +26,19 @@ db.connect();
  * Create HTTP / HTTPS server.
  */
 let server: http.Server | https.Server;
-server = http.createServer(app);
+if (ENVIRONMENT === 'production') {
+    const privateKey = fs.readFileSync(
+        path.join(__dirname, '../../security/creator.thetravels.io.key'),
+        'utf8'
+    );
+    const certificate = fs.readFileSync(
+        path.join(__dirname, '../../security/creator.thetravels.io.pem'),
+        'utf8'
+    );
+    const credentials = { key: privateKey, cert: certificate };
+
+    server = https.createServer(credentials, app);
+} else server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -35,6 +50,7 @@ try {
 } catch (e) {
     console.error(e);
 }
+
 
 /**
  * Normalize a port into a number, string, or false.
@@ -85,5 +101,5 @@ function onListening() {
     const bind =
         typeof addr === 'string' ? `pipe ${addr}` : `port ${addr?.port}`;
 
-    console.info(`⚡️ Listening on ${bind} as ${ENVIRONMENT}`);
+    logger.info(`⚡️ Listening on ${bind} as ${ENVIRONMENT}`);
 }

@@ -1,10 +1,17 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, Model, Optional } from 'sequelize'
-import sequelize from '../db/config.db';
-import { ROLE } from '../config/constant'
+import sequelize from '../db/sequelize.db';
+import { ROLE } from '../utils/constant.util'
 
 export type Gender = 'Male' | 'Female';
-export type RoleID = 1 | 2 | 3 | 4;
+export type UserRole = 1 | 2 | 3 | 4;
+
+export const privateFields = [
+    "password",
+    "passwordResetToken",
+    "isActive"
+];
+
 export interface UserAttributes {
     id: string;
     email: string;
@@ -21,7 +28,7 @@ export interface UserAttributes {
     owner?: string;
     taxCode?: string;
     isActive?: boolean;
-    roleID?: RoleID;
+    roleID?: UserRole;
     createdAt?: Date;
     updatedAt?: Date;
     deletedAt?: Date;
@@ -32,8 +39,8 @@ export interface UserOuput extends Required<UserAttributes> { };
 
 export class User extends Model<UserAttributes, UserInput> implements UserAttributes {
     declare id: string;
-    email: string;
-    password: string;
+    email!: string;
+    password!: string;
     passwordUpdatedAt!: Date;
     passwordResetToken!: string;
     passwordResetExpires!: Date;
@@ -46,28 +53,43 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     owner!: string;
     taxCode!: string;
     isActive!: boolean;
-    roleID!: RoleID;
+    roleID!: UserRole;
     readonly createdAt!: Date;
     readonly updatedAt!: Date;
-    comparePassword: comparePasswordFunction;
+    checkCorrectness!: (candidatePassword: string) => Promise<any>;
 }
 
-type comparePasswordFunction = (candidatePassword: string, cb: (err: any, isMatch: any) => void) => void;
 User.init({
     // Model attributes are defined here
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
+        primaryKey: true,
+        validate: {
+            isUUID: 4
+        }
     },
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        unique: true,
+        validate: {
+            notEmpty: {
+                msg: 'Please enter Email'
+            },
+            isEmail: {
+                msg: "Invalid Email"
+            }
+        }
     },
     password: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Please enter Password'
+            },
+        }
     },
     passwordUpdatedAt: {
         type: DataTypes.STRING,
@@ -91,7 +113,8 @@ User.init({
         type: DataTypes.DATEONLY
     },
     phone: {
-        type: DataTypes.STRING(10)
+        type: DataTypes.STRING(10),
+        unique: true
     },
     address: {
         type: DataTypes.STRING
@@ -104,6 +127,7 @@ User.init({
     },
     isActive: {
         type: DataTypes.BOOLEAN,
+        defaultValue: false
     },
     roleID: {
         type: DataTypes.INTEGER,
@@ -116,7 +140,8 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
-User.beforeSave(async (user, options) => {
+
+User.beforeSave(async (user) => {
     if (user.changed("password")) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(user.password, salt);
@@ -125,5 +150,9 @@ User.beforeSave(async (user, options) => {
     }
 });
 
-// the defined model is the class itself
-console.log(User === sequelize.models.User); // true
+User.prototype.checkCorrectness = async function (
+    candidatePassword: string,
+) {
+    // 'This point' to the current password
+    return await bcrypt.compare(candidatePassword, this.password);
+};
