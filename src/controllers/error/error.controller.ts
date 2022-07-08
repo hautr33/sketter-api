@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { ENVIRONMENT } from '../../config/default';
-import AppError from '../../utils/app_error.util';
+import AppError from '../../utils/appError';
 
 /**
  * Token Invalid Error - JWT (prod)

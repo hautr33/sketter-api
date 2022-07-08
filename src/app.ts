@@ -14,8 +14,8 @@ import xss from 'xss-clean';
 import {ENVIRONMENT, } from './config/default';
 import globalErrorHandler from './controllers/error/error.controller';
 import cookiesReader from './services/cookies.service';
-import AppError from './utils/app_error.util';
-import authRoute from './routes/auth.route'
+import AppError from './utils/appError';
+import router from './routes';
 
 const app = express();
 
@@ -95,8 +95,10 @@ if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test')
 	app.use(morganProd('common'));
 else morganDev(app);
 
+
+
 // App Route
-app.use('/api/v1/auth', authRoute);
+app.use(router);
 
 /* -------------ERROR HANDLERS MIDDLEWARE---------------*/
 // If not handle by other router, implement 404 Router

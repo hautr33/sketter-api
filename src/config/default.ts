@@ -26,6 +26,7 @@ export const PORT = process.env.PORT ?? '3001';
 export const DB_URL = POSTGRES_URI as string;
 export const JWT_COOKIES = '' as string;
 export const JWT_SECRET = process.env.JWT_SECRET as string;
+export const JWT_PUBLIC = process.env.JWT_PUBLIC as string;
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string;
 export const JWT_COOKIES_EXPIRES_IN = process.env.JWT_COOKIES_EXPIRES_IN as string;
 export const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY as string;

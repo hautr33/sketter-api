@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { createClient } from 'redis';
 import { REDIS_CONNECT_HOST, REDIS_CONNECT_PORT, REDIS_TIMEOUT_SECONDS } from '../config/default';
-import AppError from '../utils/app_error.util';
+import AppError from '../utils/appError';
 import { respondJSON } from './global.middleware';
 
 if (!REDIS_CONNECT_HOST) throw new Error('No Redis connection found');

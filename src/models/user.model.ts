@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, Model, Optional } from 'sequelize'
 import sequelize from '../db/sequelize.db';
-import { ROLE } from '../utils/constant.util'
+import { Role } from '../utils/constant'
 
 export type Gender = 'Male' | 'Female';
 export type UserRole = 1 | 2 | 3 | 4;
@@ -9,7 +9,10 @@ export type UserRole = 1 | 2 | 3 | 4;
 export const privateFields = [
     "password",
     "passwordResetToken",
-    "isActive"
+    "passwordResetExpires",
+    "passwordUpdatedAt",
+    "createdAt",
+    "updatedAt"
 ];
 
 export interface UserAttributes {
@@ -31,7 +34,6 @@ export interface UserAttributes {
     roleID?: UserRole;
     createdAt?: Date;
     updatedAt?: Date;
-    deletedAt?: Date;
 }
 
 export interface UserInput extends Optional<UserAttributes, 'id' | 'email'> { };
@@ -131,7 +133,7 @@ User.init({
     },
     roleID: {
         type: DataTypes.INTEGER,
-        defaultValue: ROLE.TRAVELER
+        defaultValue: Role.Traveler
     },
 }, {
     // Other model options go here

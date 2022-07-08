@@ -2,12 +2,14 @@ import { Router } from "express";
 import { standardPipeline } from "../pipes";
 import AuthController from "../controllers/app/auth.controller";
 import { addRoleMiddleware } from "../middlewares/field.middleware";
-import { ROLE } from "../utils/constant.util";
+import { Role } from "../utils/constant";
 
 const router = Router();
 //Signup route
-router.post('/signup', standardPipeline(AuthController.signup));
+router.post('/signup', addRoleMiddleware(Role.Traveler), standardPipeline(AuthController.signup));
 
-router.post('/login', standardPipeline(addRoleMiddleware(ROLE.TRAVELER, ROLE.SUPPLIER), AuthController.login));
+router.post('/signup/supplier', addRoleMiddleware(Role.Supplier), standardPipeline(AuthController.signupSupplier));
+
+router.post('/login', standardPipeline(AuthController.login));
 
 export default router;
