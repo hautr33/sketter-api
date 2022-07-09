@@ -1,10 +1,12 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, Model, Optional } from 'sequelize'
 import sequelize from '../db/sequelize.db';
-import { Role } from '../utils/constant'
+import { Auth, Role } from '../utils/constant';
+import crypto from 'crypto';
 
 export type Gender = 'Male' | 'Female';
 export type UserRole = 1 | 2 | 3 | 4;
+export type AuthType = 'Sketter' | 'Google';
 
 export const privateFields = [
     "password",
@@ -21,7 +23,7 @@ export interface UserAttributes {
     password: string;
     passwordUpdatedAt?: Date;
     passwordResetToken?: string;
-    passwordResetExpires?: Date;
+    passwordResetExpires?: number;
     name?: string;
     image?: string;
     gender?: Gender;
@@ -32,6 +34,7 @@ export interface UserAttributes {
     taxCode?: string;
     isActive?: boolean;
     roleID?: UserRole;
+    authType?: AuthType;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -44,8 +47,8 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     email!: string;
     password!: string;
     passwordUpdatedAt!: Date;
-    passwordResetToken!: string;
-    passwordResetExpires!: Date;
+    passwordResetToken: string | undefined;
+    passwordResetExpires: number | undefined;
     name!: string;
     image!: string;
     gender!: Gender;
@@ -56,9 +59,11 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     taxCode!: string;
     isActive!: boolean;
     roleID!: UserRole;
+    authType!: AuthType;
     readonly createdAt!: Date;
     readonly updatedAt!: Date;
-    checkCorrectness!: (candidatePassword: string) => Promise<any>;
+    comparePassword!: (candidatePassword: string) => Promise<any>;
+    createResetPasswordToken!: () => Promise<string>;
 }
 
 User.init({
@@ -94,7 +99,7 @@ User.init({
         }
     },
     passwordUpdatedAt: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
     },
     passwordResetToken: {
         type: DataTypes.STRING,
@@ -135,6 +140,10 @@ User.init({
         type: DataTypes.INTEGER,
         defaultValue: Role.Traveler
     },
+    authType: {
+        type: DataTypes.STRING,
+        defaultValue: Auth.Sketter
+    },
 }, {
     // Other model options go here
     timestamps: true,
@@ -152,9 +161,26 @@ User.beforeSave(async (user) => {
     }
 });
 
-User.prototype.checkCorrectness = async function (
+User.prototype.comparePassword = async function (
     candidatePassword: string,
 ) {
     // 'This point' to the current password
     return await bcrypt.compare(candidatePassword, this.password);
+};
+
+User.prototype.createResetPasswordToken = async function () {
+    // 'This point' to the current password
+    // Create a random 32 bytes as HEX (unhashed)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hashing the resetToken with SHA256 as HEX and store to database
+    this.passwordResetToken = crypto.createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // 10 min expire
+    this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+    // Return the UNHASHED token, we need to hash and compare when have this
+    return resetToken;
 };

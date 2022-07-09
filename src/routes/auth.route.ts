@@ -12,4 +12,5 @@ router.post('/signup/supplier', addRoleMiddleware(Role.Supplier), standardPipeli
 
 router.post('/login', standardPipeline(AuthController.login));
 
+
 export default router;

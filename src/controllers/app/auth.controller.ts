@@ -1,6 +1,6 @@
 // import crypto from 'crypto';
 import { NextFunction, RequestHandler, Response } from 'express';
-
+import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
@@ -10,6 +10,8 @@ import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
 import RESDocument from '../factory/RESDocument';
 import { signJwt } from '../../utils/jwt.util';
+import { sendEmail } from '../../services/mail.service';
+import { Op } from 'sequelize';
 
 /**
  * This function is for signing a token or generate a JWT
@@ -85,7 +87,7 @@ class AuthController {
         // Get parameters from body
         const { email, password, confirmPassword, role } = req.body;
 
-        if (password === '' || password === null) {
+        if (!password) {
             return next(
                 new AppError('Please enter Password', StatusCodes.BAD_REQUEST)
             );
@@ -111,10 +113,9 @@ class AuthController {
         }
 
         await user.save()
-            .then(() => {
-                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
-                next();
-            });
+
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
+        next();
     });
 
     static signupSupplier = catchAsync(async (req, res, next) => {
@@ -175,10 +176,8 @@ class AuthController {
         }
 
         await user.save()
-            .then(() => {
-                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
-                next();
-            });
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
+        next();
     });
 
     static login = catchAsync(async (req, res, next) => {
@@ -194,17 +193,10 @@ class AuthController {
             );
         }
 
-        // 2) Check if user exists && password is correct
-
-        /* Because we exclude the password field by default, now we manually added 
-        in order to double-check with the provided password. We should use .select('+field').
-        To seperate and double-check role, we have to check role of user before 
-        allow they login into resource. 	
-        */
         const user = await User.findOne({ where: { email: email } });
 
         // Leverage the Mongo Methods has been written in User model. Check the correctness
-        if (!user || !(await user.checkCorrectness(password as string))) {
+        if (!user || !(await user.comparePassword(password as string))) {
             return next(
                 new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
             );
@@ -212,6 +204,121 @@ class AuthController {
 
         createSendToken(user, StatusCodes.OK, res, next);
     });
+
+    static forgotPassword = catchAsync(async (req, res, next) => {
+
+        // TODO 1) get user based on Posted email
+        const user = await User.findOne({ where: { email: req.body.email } });
+        if (!user) {
+            return next(
+                new AppError(
+                    'Email does not exist',
+                    StatusCodes.NOT_FOUND
+                )
+            );
+        }
+
+        // TODO 2) Generate random reset token
+        let resetToken = '';
+        await user.createResetPasswordToken()
+            .then((token) => {
+                resetToken = token;
+            })
+        // Save back to user Database & ignore the validation
+        await user.save();
+
+        // TODO 3) Send it to user's email
+        const resetURL = `${req.protocol}://${req.get(
+            'host'
+        )}/api/v1/user/reset_password/${resetToken})`;
+
+        const message = `Forget password? Fill PATCH route, new password with url: ${resetURL}. \n 
+      If you don't ask to reset your password, please skip this email.`;
+
+        try {
+            // Send Email
+            await sendEmail({
+                email: user.email,
+                subject: 'Password reset link (available for 10 minutes)',
+                message
+            });
+
+            // return to User the response
+            res.resDocument = new RESDocument(
+                StatusCodes.OK,
+                'Reset password link has been sent to your email',
+                null
+            );
+
+            next();
+        } catch (err) {
+            /* 
+        If there is some error that we can't send to user's email, 
+          we then delete the reset_token and its expiry time
+        */
+            user.passwordResetToken = undefined;
+            user.passwordResetExpires = undefined;
+
+            // Save back to Database the changes & ignore the validation
+            await user.save();
+
+            // Return the Error as a response
+            return next(
+                new AppError(
+                    'An error occurred while sending email. Please try again another time!',
+                    StatusCodes.INTERNAL_SERVER_ERROR
+                )
+            );
+        }
+    });
+
+    static resetPassword = catchAsync(async (req, res, next) => {
+        // TODO 1) Get user based on the token
+        /*
+      The Token provided on the URL is "unhashed", we need to hash
+        it, then compare to the hashed version token inside the database
+        validate. 
+      */
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        // Finding user by token & check if the token has expired
+        const user = await User.findOne({
+            where: {
+                passwordResetToken: hashedToken,
+                passwordResetExpires: { [Op.gt]: Date.now() }
+            }
+        });
+
+        // TODO 2) If token has not expired, and there is user, set the new password
+        if (!user) {
+            return next(
+                new AppError(
+                    'Password reset link has expired.',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
+        }
+
+        // Reset the password
+        user.password = req.body.password;
+
+        // Set token & its expiry to be undefined after using
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = Date.now() - 1000;
+
+        // Save the user, before save it will be Hash&Salt again
+        await user.save();
+
+        // TODO 3) Update changedPasswordAt property for the user
+        // Already did in userModel, 'pre' save
+
+        // TODO 4) Log the user in, send JWT
+        createSendToken(user, StatusCodes.OK, res, next);
+    });
+
 
     static restrictTo = (...roles: UserRole[]): RequestHandler => (
         _req,

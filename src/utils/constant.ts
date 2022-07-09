@@ -13,3 +13,9 @@ export class Gender {
 
     public static readonly Male = 'Male';
 }
+
+export class Auth {
+    public static readonly Sketter = 'Sketter';
+
+    public static readonly Google = 'Google';
+}
