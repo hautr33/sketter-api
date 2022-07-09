@@ -195,7 +195,6 @@ class AuthController {
 
         const user = await User.findOne({ where: { email: email } });
 
-        // Leverage the Mongo Methods has been written in User model. Check the correctness
         if (!user || !(await user.comparePassword(password as string))) {
             return next(
                 new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
@@ -224,6 +223,7 @@ class AuthController {
             .then((token) => {
                 resetToken = token;
             })
+            
         // Save back to user Database & ignore the validation
         await user.save();
 
