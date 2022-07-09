@@ -306,7 +306,6 @@ class AuthController {
         user.password = req.body.password;
 
         // Set token & its expiry to be undefined after using
-        user.passwordResetToken = undefined;
         user.passwordResetExpires = Date.now() - 1000;
 
         // Save the user, before save it will be Hash&Salt again
