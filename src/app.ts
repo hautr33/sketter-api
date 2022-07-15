@@ -2,7 +2,6 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors, { CorsOptions } from 'cors';
 import express from 'express';
-import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
@@ -11,11 +10,16 @@ import morganProd from 'morgan';
 import morganDev from 'morgan-body';
 import path from 'path';
 import xss from 'xss-clean';
-import {ENVIRONMENT, } from './config/default';
+import {
+	ENVIRONMENT,
+	GOOGLE_APPLICATION_CREDENTIALS
+} from './config/default';
 import globalErrorHandler from './controllers/error/error.controller';
 import cookiesReader from './services/cookies.service';
 import AppError from './utils/appError';
 import router from './routes';
+var admin = require("firebase-admin");
+
 
 const app = express();
 
@@ -71,9 +75,6 @@ app.use(cookieParser());
 app.use(cookiesReader);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Data sanitization NoSQL query injection
-app.use(mongoSanitize());
-
 // Data sanitization against XSS
 app.use(xss());
 
@@ -95,7 +96,12 @@ if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test')
 	app.use(morganProd('common'));
 else morganDev(app);
 
+// Firebase
+var serviceAccount = require(GOOGLE_APPLICATION_CREDENTIALS);
 
+admin.initializeApp({
+	credential: admin.credential.cert(serviceAccount)
+});
 
 // App Route
 app.use(router);

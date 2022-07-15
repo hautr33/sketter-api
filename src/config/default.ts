@@ -24,18 +24,22 @@ if (!POSTGRES_URI) {
 
 export const PORT = process.env.PORT ?? '3001';
 export const DB_URL = POSTGRES_URI as string;
-export const JWT_COOKIES = '' as string;
+
 export const JWT_SECRET = process.env.JWT_SECRET as string;
 export const JWT_PUBLIC = process.env.JWT_PUBLIC as string;
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string;
 export const JWT_COOKIES_EXPIRES_IN = process.env.JWT_COOKIES_EXPIRES_IN as string;
-export const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY as string;
+
+export const GOOGLE_APPLICATION_CREDENTIALS = process.env.GOOGLE_APPLICATION_CREDENTIALS as string;
+
 export const EMAIL_USERNAME = process.env.EMAIL_USERNAME as string;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;
 export const EMAIL_SERVICE = process.env.EMAIL_SERVICE as string;
+
 export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
 export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';
 export const REDIS_TIMEOUT_SECONDS = parseInt(process.env.REDIS_TIMEOUT_SECONDS as string, 10) ?? 3600;
+
 export const DATABASE_UNITTEST = process.env.DATABASE_UNITTEST as string;
 export const DATABASE_UNITTEST_USERNAME = process.env.DATABASE_UNITTEST_USERNAME as string;
 export const DATABASE_UNITTEST_PASSWORD = process.env.DATABASE_UNITTEST_PASSWORD as string;

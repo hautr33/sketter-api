@@ -1,21 +1,21 @@
 export class Role {
-    public static readonly Admin = 1;
+    public static readonly admin = 1;
 
-    public static readonly SupplierManager = 2;
+    public static readonly supplierManager = 2;
 
-    public static readonly Supplier = 3;
+    public static readonly supplier = 3;
 
-    public static readonly Traveler = 4;
+    public static readonly traveler = 4;
 }
 
 export class Gender {
-    public static readonly Female = 'Female';
+    public static readonly female = 'Female';
 
-    public static readonly Male = 'Male';
+    public static readonly male = 'Male';
 }
 
 export class Auth {
-    public static readonly Sketter = 'Sketter';
+    public static readonly sketter = 'Sketter';
 
-    public static readonly Google = 'Google';
+    public static readonly google = 'Google';
 }

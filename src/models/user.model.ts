@@ -1,18 +1,56 @@
 import bcrypt from 'bcryptjs';
-import { DataTypes, Model, Optional } from 'sequelize'
+import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Auth, Role } from '../utils/constant';
+import { Auth, Gender, Role } from '../utils/constant';
 import crypto from 'crypto';
 
-export type Gender = 'Male' | 'Female';
+export type UserGender = 'Male' | 'Female';
 export type UserRole = 1 | 2 | 3 | 4;
 export type AuthType = 'Sketter' | 'Google';
 
-export const privateFields = [
+export const defaultPrivateFields = [
     "password",
     "passwordResetToken",
     "passwordResetExpires",
     "passwordUpdatedAt",
+    "gender",
+    "dob",
+    "owner",
+    "taxCode",
+    "createdAt",
+    "isActive",
+    "authType",
+    "firebaseID",
+    "createdAt",
+    "updatedAt"
+];
+
+export const travelerPrivateFields = [
+    "password",
+    "passwordResetToken",
+    "passwordResetExpires",
+    "passwordUpdatedAt",
+    "owner",
+    "taxCode",
+    "createdAt",
+    "isActive",
+    "authType",
+    "firebaseID",
+    "createdAt",
+    "updatedAt"
+];
+
+export const supplierPrivateFields = [
+    "password",
+    "passwordResetToken",
+    "passwordResetExpires",
+    "passwordUpdatedAt",
+    "gender",
+    "dob",
+    "createdAt",
+    "isActive",
+    "authType",
+    "firebaseID",
     "createdAt",
     "updatedAt"
 ];
@@ -26,15 +64,16 @@ export interface UserAttributes {
     passwordResetExpires?: number;
     name?: string;
     image?: string;
-    gender?: Gender;
+    gender: UserGender;
     dob?: Date;
     phone?: string;
     address?: string;
     owner?: string;
     taxCode?: string;
     isActive?: boolean;
-    roleID?: UserRole;
-    authType?: AuthType;
+    roleID: UserRole;
+    authType: AuthType;
+    firebaseID?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -51,7 +90,7 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     passwordResetExpires: number | undefined;
     name!: string;
     image!: string;
-    gender!: Gender;
+    gender!: UserGender;
     dob!: Date;
     phone!: string;
     address!: string;
@@ -60,6 +99,7 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     isActive!: boolean;
     roleID!: UserRole;
     authType!: AuthType;
+    firebaseID!: string;
     readonly createdAt!: Date;
     readonly updatedAt!: Date;
     comparePassword!: (candidatePassword: string) => Promise<any>;
@@ -99,29 +139,39 @@ User.init({
         }
     },
     passwordUpdatedAt: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATE
     },
     passwordResetToken: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING
     },
     passwordResetExpires: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATE
     },
     name: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING
     },
     image: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING
     },
     gender: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        validate: {
+            checkGender() {
+                if (this.gender != Gender.female && this.gender != Gender.male) {
+                    throw new Error('Invalid Gender');
+                }
+            }
+        }
     },
     dob: {
         type: DataTypes.DATEONLY
     },
     phone: {
         type: DataTypes.STRING(10),
-        unique: true
+        unique: true,
+        validate: {
+            is: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g
+        }
     },
     address: {
         type: DataTypes.STRING
@@ -138,12 +188,41 @@ User.init({
     },
     roleID: {
         type: DataTypes.INTEGER,
-        defaultValue: Role.Traveler
+        defaultValue: Role.traveler,
+        validate: {
+            checkRole() {
+                if (this.roleID == Role.supplier) {
+                    if (!this.name || this.name == '') {
+                        throw new Error('Supplier\'s Name can not be blank');
+                    }
+                    if (!this.owner || this.owner == '') {
+                        throw new Error('Supplier\'s Owner can not be blank');
+                    }
+                    if (!this.phone || this.phone == '') {
+                        throw new Error('Supplier\'s Phone can not be blank');
+                    }
+                    if (!this.address || this.address == '') {
+                        throw new Error('Supplier\'s Address can not be blank');
+                    }
+                    if (!this.taxCode || this.taxCode == '') {
+                        throw new Error('Supplier\'s Tax Code can not be blank');
+                    }
+                }
+                if (this.roleID == Role.traveler) {
+                    if (!this.name || this.name == '') {
+                        throw new Error('Traveler\'s Name can not be blank');
+                    }
+                }
+            }
+        }
     },
     authType: {
         type: DataTypes.STRING,
-        defaultValue: Auth.Sketter
+        defaultValue: Auth.sketter
     },
+    firebaseID: {
+        type: DataTypes.STRING,
+    }
 }, {
     // Other model options go here
     timestamps: true,

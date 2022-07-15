@@ -1,17 +1,17 @@
-// import crypto from 'crypto';
-import { NextFunction, RequestHandler, Response } from 'express';
 import crypto from 'crypto';
+import { NextFunction, RequestHandler, Response } from 'express';
+import { getAuth } from "firebase-admin/auth";
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
+import { Op } from 'sequelize';
+import RESDocument from '../factory/RESDocument';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
 import { User, UserRole } from '../../models/user.model';
-// import { sendEmail } from '../../services/mail.service';
+import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
-import RESDocument from '../factory/RESDocument';
 import { signJwt } from '../../utils/jwt.util';
-import { sendEmail } from '../../services/mail.service';
-import { Op } from 'sequelize';
+import { Role } from '../../utils/constant';
 
 /**
  * This function is for signing a token or generate a JWT
@@ -89,9 +89,16 @@ class AuthController {
 
         if (!password) {
             return next(
-                new AppError('Please enter Password', StatusCodes.BAD_REQUEST)
+                new AppError('Password can not be blank', StatusCodes.BAD_REQUEST)
             );
         }
+
+        if (password.length < 6) {
+            return next(
+                new AppError('Password should be at least 6 characters', StatusCodes.BAD_REQUEST)
+            );
+        }
+
         if (password !== confirmPassword) {
             return next(
                 new AppError(
@@ -101,107 +108,88 @@ class AuthController {
             );
         }
 
-        let user = new User();
-        user.email = email;
-        user.name = email.split('@')[0];
-        user.password = password;
-        user.roleID = role;
-
         const userExsit = await User.findOne({ where: { email: email } });
         if (userExsit) {
             return next(new AppError('Email is exsit', StatusCodes.BAD_REQUEST));
         }
 
-        await user.save()
-
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
-        next();
-    });
-
-    static signupSupplier = catchAsync(async (req, res, next) => {
-        // Get parameters from body
-        const { email, password, confirmPassword, name, owner, phone, address, taxCode, role } = req.body;
-
-        if (!name) {
-            return next(
-                new AppError('Please enter Supplier\'s name', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (!owner) {
-            return next(
-                new AppError('Please enter Supplier\'s owner', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (!phone) {
-            return next(
-                new AppError('Please enter Supplier\'s phone', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (!address) {
-            return next(
-                new AppError('Please enter Supplier\'s address', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (!taxCode) {
-            return next(
-                new AppError('Please enter Supplier\'s tax code', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (!password) {
-            return next(
-                new AppError('Please enter Password', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (password !== confirmPassword) {
-            return next(
-                new AppError(
-                    'Incorrect Confirm Password', StatusCodes.BAD_REQUEST
-                )
-            );
-        }
 
         let user = new User();
         user.email = email;
-        user.name = name;
         user.password = password;
-        user.owner = owner;
-        user.phone = phone;
-        user.address = address;
-        user.taxCode = taxCode;
         user.roleID = role;
 
-        const userExsit = await User.findOne({ where: { email: email } });
-        if (userExsit) {
-            return next(new AppError('Email is exsit', StatusCodes.BAD_REQUEST));
+        if (role == Role.traveler) {
+            user.name = email.split('@')[0];
+        } else if (role == Role.supplier) {
+            const { name, owner, phone, address, taxCode } = req.body;
+            user.name = name;
+            user.password = password;
+            user.owner = owner;
+            user.phone = phone;
+            user.address = address;
+            user.taxCode = taxCode;
         }
-
         await user.save()
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
-        next();
+
+        getAuth()
+            .createUser({
+                email: email,
+                password: password
+            })
+            .then(async (userRecord) => {
+                await user.update({ firebaseID: userRecord.uid }, { where: { email: email } });
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
+                next();
+            })
+            .catch((error) => {
+                User.destroy({ where: { email: email } });
+                return next(new AppError(error, StatusCodes.BAD_REQUEST));
+            });
+
     });
 
     static login = catchAsync(async (req, res, next) => {
-        const { email, password } = req.body;
+        const { email, password, token } = req.body;
 
-        // 1) Check if email and password exist
-        if (!(email || password)) {
-            return next(
-                new AppError(
-                    'Cannot find account or password!',
-                    StatusCodes.BAD_REQUEST
-                )
-            );
+        if (token) {
+            getAuth()
+                .verifyIdToken(token)
+                .then(async (decodedToken) => {
+                    const user = await User.findOne({ where: { email: decodedToken.email, firebaseID: decodedToken.uid } });
+                    if (!user) {
+                        return next(
+                            new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                        );
+                    }
+                    createSendToken(user, StatusCodes.OK, res, next);
+                })
+                .catch(() => {
+                    return next(
+                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                    );
+                });
+        } else {
+            if (!(email || password)) {
+                return next(
+                    new AppError(
+                        'Cannot find account or password!',
+                        StatusCodes.BAD_REQUEST
+                    )
+                );
+            }
+
+            const user = await User.findOne({ where: { email: email } });
+
+            if (!user || !(await user.comparePassword(password as string))) {
+                return next(
+                    new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                );
+            }
+
+            createSendToken(user, StatusCodes.OK, res, next);
         }
 
-        const user = await User.findOne({ where: { email: email } });
-
-        if (!user || !(await user.comparePassword(password as string))) {
-            return next(
-                new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
-            );
-        }
-
-        createSendToken(user, StatusCodes.OK, res, next);
     });
 
     static forgotPassword = catchAsync(async (req, res, next) => {
@@ -223,7 +211,7 @@ class AuthController {
             .then((token) => {
                 resetToken = token;
             })
-            
+
         // Save back to user Database & ignore the validation
         await user.save();
 
