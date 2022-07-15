@@ -1,0 +1,493 @@
+{
+	"info": {
+		"_postman_id": "573cd298-f015-4130-b694-1ab70f162766",
+		"name": "sketter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13372724"
+	},
+	"item": [
+		{
+			"name": "signup",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"test15@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/signup",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "signup supplier",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"test14@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698731\",\r\n    \"address\":\"Hong biết luôn =]]\",\r\n    \"taxCode\":\"1234567890123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/signup/supplier",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"signup",
+						"supplier"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login with email password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"2s2svenus2s112s@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login with firebase token",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6ImVhNWY2NDYxMjA4Y2ZmMGVlYzgwZDFkYmI1MjgyZTkyMDY0MjAyNWEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZW1haWxwYXNzd29yZGF1dGgtYWZjM2QiLCJhdWQiOiJlbWFpbHBhc3N3b3JkYXV0aC1hZmMzZCIsImF1dGhfdGltZSI6MTY1Nzg3OTYxMSwidXNlcl9pZCI6IkhwdHJPb0VMcHFSdmdEcnpXQTBQRUxGOWg3ZzIiLCJzdWIiOiJIcHRyT29FTHBxUnZnRHJ6V0EwUEVMRjloN2cyIiwiaWF0IjoxNjU3ODc5NjExLCJleHAiOjE2NTc4ODMyMTEsImVtYWlsIjoidGVzdDE0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0MTRAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.BHIELnfKzHDYDVuQt_japCnNaRSQAPklqoB0TPeBhRUoapezXal8wRxCmMTSui9NwuemNQvqUnEOvcbz6qHMukciPA_Kg7NXVgXQzQR28r7RJj9KAV5CHnhWKUr5gCnUnPpRqNlWr_5-5kj2d-hiQQrqWbRaZu_aCs1ik17oiE72jjD9d-3nmhiTTiG52D_DBo9oODJ_PCYeLyIIgllUgBn7onRLvy4Hk3jffjqJP4XhHtu9pXZpQuV05O9rXap-sGzVLk6szVMoNzR7b6-ikVntq1Dks3HXvq4XE91nypkX39BqznM5lNtrlwbuDc2dNGcqJkuXHPfSzzatWg2gzw\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "logout",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/logout",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login to firebase (just for test)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"test14@gmail.com\",\r\n    \"password\":\"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/firebase/login",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"firebase",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "forgot password - send email (nhập mail thiệt nha)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"2s2svenus2s2s@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/forgot_password",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"forgot_password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "forgot password - change new password (copy link trong email òi pass vào đây)",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"password\":\"123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/421ebf86a023a735289f4a813253f73e2ee881a2d6413c94c0a2aa1809c4eda6",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"reset_password",
+						"421ebf86a023a735289f4a813253f73e2ee881a2d6413c94c0a2aa1809c4eda6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get me",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQ2NzEyNmIzLTc5NDMtNGZkYi04ZjY2LWVlMTE0ZmNhNWM1NCIsImlhdCI6MTY1Nzg3NzA5NywiZXhwIjoxNjY1NjUzMDk3fQ.FKOGjYoq75kQyGajsq2-f2St8sy8g6OE9iFgV_m0nJ5HJZzoXU6AohzCevJ9UkVpZGi2rzzC0OwSMEfO7vSUmA",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update me",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Dương Thanh Huy12\",\r\n    \"image\": null,\r\n    \"gender\": null,\r\n    \"dob\": null,\r\n    \"phone\": null,\r\n    \"address\": null\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"me"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update password",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"currentPassword\": \"123123\",\r\n    \"newPassword\": \"123456\",\r\n    \"confirmNewPassword\": \"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/update_password",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"update_password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "test",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/healthcheck",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"healthcheck"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer"
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "PORT",
+			"value": "3000",
+			"type": "string"
+		},
+		{
+			"key": "HOST",
+			"value": "localhost",
+			"type": "string"
+		}
+	]
+}
