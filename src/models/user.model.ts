@@ -20,6 +20,8 @@ export const defaultPrivateFields = [
     "createdAt",
     "isActive",
     "authType",
+    "iat",
+    "exp",
     "firebaseID",
     "createdAt",
     "updatedAt"
@@ -35,6 +37,8 @@ export const travelerPrivateFields = [
     "createdAt",
     "isActive",
     "authType",
+    "iat",
+    "exp",
     "firebaseID",
     "createdAt",
     "updatedAt"
@@ -50,6 +54,8 @@ export const supplierPrivateFields = [
     "createdAt",
     "isActive",
     "authType",
+    "iat",
+    "exp",
     "firebaseID",
     "createdAt",
     "updatedAt"
@@ -60,8 +66,8 @@ export interface UserAttributes {
     email: string;
     password: string;
     passwordUpdatedAt?: Date;
-    passwordResetToken?: string;
-    passwordResetExpires?: number;
+    passwordResetToken?: string | null;
+    passwordResetExpires?: number | null;
     name?: string;
     image?: string;
     gender: UserGender;
@@ -73,6 +79,8 @@ export interface UserAttributes {
     isActive?: boolean;
     roleID: UserRole;
     authType: AuthType;
+    iat?: number | null;
+    exp?: number | null;
     firebaseID?: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -86,8 +94,8 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     email!: string;
     password!: string;
     passwordUpdatedAt!: Date;
-    passwordResetToken: string | undefined;
-    passwordResetExpires: number | undefined;
+    passwordResetToken!: string | null;
+    passwordResetExpires!: number | null;
     name!: string;
     image!: string;
     gender!: UserGender;
@@ -99,6 +107,8 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     isActive!: boolean;
     roleID!: UserRole;
     authType!: AuthType;
+    iat!: number | null;
+    exp!: number | null;
     firebaseID!: string;
     readonly createdAt!: Date;
     readonly updatedAt!: Date;
@@ -219,6 +229,12 @@ User.init({
     authType: {
         type: DataTypes.STRING,
         defaultValue: Auth.sketter
+    },
+    iat: {
+        type: DataTypes.INTEGER
+    },
+    exp: {
+        type: DataTypes.INTEGER
     },
     firebaseID: {
         type: DataTypes.STRING,

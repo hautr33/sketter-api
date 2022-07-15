@@ -18,5 +18,7 @@ router
     .get(standardPipeline(AuthController.restrictTo(Role.traveler, Role.supplier), UserController.getMe))
     .patch(standardPipeline(AuthController.restrictTo(Role.traveler, Role.supplier), UserController.updateMe));
 
+router.patch('/update_password', standardPipeline(UserController.updatePassword));
+
 
 export default router;

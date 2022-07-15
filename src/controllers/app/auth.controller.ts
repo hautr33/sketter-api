@@ -6,12 +6,14 @@ import _ from 'lodash';
 import { Op } from 'sequelize';
 import RESDocument from '../factory/RESDocument';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
-import { User, UserRole } from '../../models/user.model';
+import { defaultPrivateFields, User, UserRole } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
 import { signJwt } from '../../utils/jwt.util';
 import { Role } from '../../utils/constant';
+import jwt from 'jsonwebtoken';
+
 
 /**
  * This function is for signing a token or generate a JWT
@@ -73,12 +75,20 @@ const createSendToken = (
   */
     if (ENVIRONMENT === 'production') cookieOptions.secure = true;
 
-    // Send the JWT Token as cookie
-    res.cookie('jwt', token, cookieOptions);
+    const decoded = jwt.decode(token) as JWTPayload;
+    if (decoded) {
 
-    res.resDocument = new RESDocument(statusCode, 'success', { token });
+        User.update({ iat: decoded.iat, exp: decoded.exp }, { where: { email: user.email } })
+        // Send the JWT Token as cookie
+        res.cookie('jwt', token, cookieOptions);
 
-    next();
+        res.resDocument = new RESDocument(statusCode, 'success', { token });
+
+        next();
+    } else {
+        return next(new AppError('Fail to send token', StatusCodes.BAD_GATEWAY))
+    }
+
 };
 
 
@@ -129,6 +139,8 @@ class AuthController {
             user.phone = phone;
             user.address = address;
             user.taxCode = taxCode;
+        } else {
+            return next(new AppError('Signup not supported for this role', StatusCodes.BAD_REQUEST));
         }
         await user.save()
 
@@ -192,6 +204,14 @@ class AuthController {
 
     });
 
+    static logout = catchAsync(async (_req, res, next) => {
+        await User.update({ iat: null, exp: null }, { where: { email: res.locals.user.email } });
+        res.clearCookie('jwt');
+        res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'success', null);
+
+        next();
+    });
+
     static forgotPassword = catchAsync(async (req, res, next) => {
 
         // TODO 1) get user based on Posted email
@@ -220,14 +240,14 @@ class AuthController {
             'host'
         )}/api/v1/user/reset_password/${resetToken})`;
 
-        const message = `Forget password? Fill PATCH route, new password with url: ${resetURL}. \n 
-      If you don't ask to reset your password, please skip this email.`;
+        const message = `Forget password? Follow this link to reset your Sketter password for your ${user.email} account.\n ${resetURL}. \n 
+        If you didn’t ask to reset your password, you can ignore this email. \n Thanks, \n Sketter Team`;
 
         try {
             // Send Email
             await sendEmail({
                 email: user.email,
-                subject: 'Password reset link (available for 10 minutes)',
+                subject: 'Reset your password for Sketter (available for 10 minutes)',
                 message
             });
 
@@ -244,8 +264,8 @@ class AuthController {
         If there is some error that we can't send to user's email, 
           we then delete the reset_token and its expiry time
         */
-            user.passwordResetToken = undefined;
-            user.passwordResetExpires = undefined;
+            user.passwordResetToken = null;
+            user.passwordResetExpires = null;
 
             // Save back to Database the changes & ignore the validation
             await user.save();
@@ -277,7 +297,8 @@ class AuthController {
             where: {
                 passwordResetToken: hashedToken,
                 passwordResetExpires: { [Op.gt]: Date.now() }
-            }
+            },
+            attributes: { exclude: defaultPrivateFields }
         });
 
         // TODO 2) If token has not expired, and there is user, set the new password
@@ -294,7 +315,8 @@ class AuthController {
         user.password = req.body.password;
 
         // Set token & its expiry to be undefined after using
-        user.passwordResetExpires = Date.now() - 1000;
+        user.passwordResetToken = null;
+        user.passwordResetExpires = null;
 
         // Save the user, before save it will be Hash&Salt again
         await user.save();

@@ -6,7 +6,6 @@ export const signJwt = (payload: Object, options: SignOptions = {}) => {
         JWT_SECRET,
         'base64'
     ).toString('ascii');
-    console.log(privateKey)
     return jwt.sign(payload, privateKey, {
         ...(options && options),
         algorithm: 'RS256',
@@ -24,4 +23,3 @@ export const verifyJwt = <T>(token: string): T | null => {
         return null;
     }
 };
- 

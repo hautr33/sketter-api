@@ -27,7 +27,7 @@ export const deserializeUser = async (
     }
 
     // Validate Access Token
-    const decoded = verifyJwt<{ id: string }>(access_token);
+    const decoded = verifyJwt<{ id: string, iat: number, exp: number }>(access_token);
 
     if (!decoded) {
       return next(new AppError(`Invalid token or user doesn't exist`, 401));
@@ -41,7 +41,7 @@ export const deserializeUser = async (
     // }
 
     // Check if user still exist
-    const user = await User.findOne({ where: { id: decoded.id } });
+    const user = await User.findOne({ where: { id: decoded.id, iat: decoded.iat, exp: decoded.exp } });
 
     if (!user) {
       return next(new AppError(`User with that token no longer exist`, 401));
