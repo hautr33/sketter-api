@@ -66,6 +66,12 @@ class UserController {
     static updatePassword = catchAsync(async (req, res, next) => {
         const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
+        if (!currentPassword) {
+            return next(
+                new AppError('Current Password can not be blank', StatusCodes.BAD_REQUEST)
+            );
+        }
+
         if (currentPassword == newPassword) {
             return next(
                 new AppError('New Password must be different Current Password', StatusCodes.BAD_REQUEST)
@@ -73,7 +79,7 @@ class UserController {
         }
         if (!newPassword) {
             return next(
-                new AppError('Password can not be blank', StatusCodes.BAD_REQUEST)
+                new AppError('New Password can not be blank', StatusCodes.BAD_REQUEST)
             );
         }
 

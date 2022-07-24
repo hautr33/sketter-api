@@ -1,18 +1,20 @@
 import crypto from 'crypto';
 import { NextFunction, RequestHandler, Response } from 'express';
-import { getAuth } from "firebase-admin/auth";
+// import firebaseAdmin from "firebase-admin/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 import { Op } from 'sequelize';
 import RESDocument from '../factory/RESDocument';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
-import { defaultPrivateFields, User, UserRole } from '../../models/user.model';
+import { User, UserRole } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
-import { signJwt } from '../../utils/jwt.util';
+import { signJwt } from '../../utils/jwt';
 import { Role } from '../../utils/constant';
 import jwt from 'jsonwebtoken';
+const firebaseAdmin = require("firebase-admin/auth");
 
 
 /**
@@ -132,29 +134,28 @@ class AuthController {
         if (role == Role.traveler) {
             user.name = email.split('@')[0];
         } else if (role == Role.supplier) {
-            const { name, owner, phone, address, taxCode } = req.body;
+            const { name, owner, phone, address } = req.body;
             user.name = name;
             user.password = password;
             user.owner = owner;
             user.phone = phone;
             user.address = address;
-            user.taxCode = taxCode;
         } else {
             return next(new AppError('Signup not supported for this role', StatusCodes.BAD_REQUEST));
         }
         await user.save()
 
-        getAuth()
+        firebaseAdmin.getAuth()
             .createUser({
                 email: email,
                 password: password
             })
-            .then(async (userRecord) => {
+            .then(async (userRecord: { uid: any; }) => {
                 await user.update({ firebaseID: userRecord.uid }, { where: { email: email } });
                 res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
                 next();
             })
-            .catch((error) => {
+            .catch((error: string) => {
                 User.destroy({ where: { email: email } });
                 return next(new AppError(error, StatusCodes.BAD_REQUEST));
             });
@@ -162,51 +163,67 @@ class AuthController {
     });
 
     static login = catchAsync(async (req, res, next) => {
-        const { email, password, token } = req.body;
+        const { email, password } = req.body;
 
-        if (token) {
-            getAuth()
-                .verifyIdToken(token)
-                .then(async (decodedToken) => {
-                    const user = await User.findOne({ where: { email: decodedToken.email, firebaseID: decodedToken.uid } });
-                    if (!user) {
-                        return next(
-                            new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
-                        );
-                    }
-                    createSendToken(user, StatusCodes.OK, res, next);
-                })
-                .catch(() => {
+        if (!(email || password)) {
+            return next(
+                new AppError(
+                    'Cannot find account or password!',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
+        }
+
+        const auth = getAuth();
+        signInWithEmailAndPassword(auth, email, password)
+            .then(async (userCredential) => {
+                const userFirebase = userCredential.user;
+                const user = await User.findOne({ where: { email: email, firebaseID: userFirebase.uid } });
+                if (!user) {
                     return next(
                         new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
                     );
-                });
-        } else {
-            if (!(email || password)) {
-                return next(
-                    new AppError(
-                        'Cannot find account or password!',
-                        StatusCodes.BAD_REQUEST
-                    )
-                );
-            }
+                }
+                createSendToken(user, StatusCodes.OK, res, next);
+            })
+            .catch((error) => {
+                const errorMessage = error.message;
+                if (errorMessage.includes('wrong-password')) {
+                    return next(
+                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                    );
+                } else {
+                    return next(new AppError(errorMessage, StatusCodes.BAD_REQUEST));
+                }
+            });
+    });
 
-            const user = await User.findOne({ where: { email: email } });
 
-            if (!user || !(await user.comparePassword(password as string))) {
+    static loginGoogle = catchAsync(async (req, res, next) => {
+        const { token } = req.body;
+
+        firebaseAdmin.getAuth()
+            .verifyIdToken(token)
+            .then(async (decodedToken: { email: any; uid: any; }) => {
+                const user = await User.findOne({ where: { email: decodedToken.email, firebaseID: decodedToken.uid } });
+                if (!user) {
+                    return next(
+                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                    );
+                }
+                createSendToken(user, StatusCodes.OK, res, next);
+            })
+            .catch(() => {
                 return next(
                     new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
                 );
-            }
-
-            createSendToken(user, StatusCodes.OK, res, next);
-        }
-
+            });
     });
 
-    static logout = catchAsync(async (_req, res, next) => {
+    static logout = catchAsync(async (req, res, next) => {
         await User.update({ iat: null, exp: null }, { where: { email: res.locals.user.email } });
         res.clearCookie('jwt');
+        req.headers.authorization = undefined;
         res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'success', null);
 
         next();
@@ -238,10 +255,10 @@ class AuthController {
         // TODO 3) Send it to user's email
         const resetURL = `${req.protocol}://${req.get(
             'host'
-        )}/api/v1/user/reset_password/${resetToken})`;
+        )}/api/v1/user/reset_password/${resetToken}`;
 
-        const message = `Forget password? Follow this link to reset your Sketter password for your ${user.email} account.\n ${resetURL}. \n 
-        If you didn’t ask to reset your password, you can ignore this email. \n Thanks, \n Sketter Team`;
+        const message = `Forget password? Follow this link to reset your Sketter password for your ${user.email} account.\n ${resetURL}. 
+        \nIf you didn’t ask to reset your password, you can ignore this email. \n Thanks, \n Sketter Team`;
 
         try {
             // Send Email
@@ -287,6 +304,18 @@ class AuthController {
         it, then compare to the hashed version token inside the database
         validate. 
       */
+        const { password } = req.body;
+        if (!password) {
+            return next(
+                new AppError('Password can not be blank', StatusCodes.BAD_REQUEST)
+            );
+        }
+        if (password.length < 6) {
+            return next(
+                new AppError('Password should be at least 6 characters', StatusCodes.BAD_REQUEST)
+            );
+        }
+
         const hashedToken = crypto
             .createHash('sha256')
             .update(req.params.token)
@@ -297,8 +326,7 @@ class AuthController {
             where: {
                 passwordResetToken: hashedToken,
                 passwordResetExpires: { [Op.gt]: Date.now() }
-            },
-            attributes: { exclude: defaultPrivateFields }
+            }
         });
 
         // TODO 2) If token has not expired, and there is user, set the new password
@@ -312,20 +340,29 @@ class AuthController {
         }
 
         // Reset the password
-        user.password = req.body.password;
+        user.password = password;
 
         // Set token & its expiry to be undefined after using
         user.passwordResetToken = null;
         user.passwordResetExpires = null;
 
         // Save the user, before save it will be Hash&Salt again
-        await user.save();
 
+        firebaseAdmin.getAuth()
+            .updateUser(user.firebaseID, {
+                password: password,
+            })
+            .then(async () => {
+                await user.save();
+                createSendToken(user, StatusCodes.OK, res, next);
+            })
+            .catch((error: { message: string; }) => {
+                return next(new AppError(error.message, StatusCodes.BAD_GATEWAY));
+            });
         // TODO 3) Update changedPasswordAt property for the user
         // Already did in userModel, 'pre' save
 
         // TODO 4) Log the user in, send JWT
-        createSendToken(user, StatusCodes.OK, res, next);
     });
 
 

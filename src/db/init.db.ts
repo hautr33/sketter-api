@@ -1,6 +1,6 @@
 import sequelizeConnection from './sequelize.db'
 import { ENVIRONMENT } from '../config/default'
-import logger from '../utils/logger.util'
+import logger from '../utils/logger'
 
 /**
  * DB Connection related actions

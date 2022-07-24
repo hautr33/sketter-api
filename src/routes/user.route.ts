@@ -12,6 +12,7 @@ const router = Router();
 router.post('/forgot_password', standardPipeline(AuthController.forgotPassword));
 
 router.patch('/reset_password/:token', standardPipeline(AuthController.resetPassword));
+
 router.use(deserializeUser, requireUser);
 router
     .route('/me')

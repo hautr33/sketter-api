@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { Role } from '../utils/constant';
 import { User, travelerPrivateFields, supplierPrivateFields, defaultPrivateFields } from '../models/user.model';
 import AppError from '../utils/appError';
-import { verifyJwt } from '../utils/jwt.util';
+import { verifyJwt } from '../utils/jwt';
 
 export const deserializeUser = async (
   req: Request,

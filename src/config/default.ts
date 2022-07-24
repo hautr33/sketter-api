@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import fs from "fs";
-import logger from '../utils/logger.util';
+import logger from '../utils/logger';
 
 if (fs.existsSync(".env")) {
 	logger.debug("Using .env file to supply config environment variables");
@@ -31,6 +31,12 @@ export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN as string;
 export const JWT_COOKIES_EXPIRES_IN = process.env.JWT_COOKIES_EXPIRES_IN as string;
 
 export const GOOGLE_APPLICATION_CREDENTIALS = process.env.GOOGLE_APPLICATION_CREDENTIALS as string;
+export const API_KEY = process.env.API_KEY as string;
+export const AUTH_DOMAIN = process.env.AUTH_DOMAIN as string;
+export const PROJECT_ID = process.env.PROJECT_ID as string;
+export const STORAGE_BUCKET = process.env.STORAGE_BUCKET as string;
+export const MESSAGING_SENDER_ID = process.env.MESSAGING_SENDER_ID as string;
+export const APP_ID = process.env.APP_ID as string;
 
 export const EMAIL_USERNAME = process.env.EMAIL_USERNAME as string;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;

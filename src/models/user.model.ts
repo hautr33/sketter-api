@@ -16,7 +16,6 @@ export const defaultPrivateFields = [
     "gender",
     "dob",
     "owner",
-    "taxCode",
     "createdAt",
     "isActive",
     "authType",
@@ -33,7 +32,6 @@ export const travelerPrivateFields = [
     "passwordResetExpires",
     "passwordUpdatedAt",
     "owner",
-    "taxCode",
     "createdAt",
     "isActive",
     "authType",
@@ -75,7 +73,6 @@ export interface UserAttributes {
     phone?: string;
     address?: string;
     owner?: string;
-    taxCode?: string;
     isActive?: boolean;
     roleID: UserRole;
     authType: AuthType;
@@ -103,7 +100,6 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     phone!: string;
     address!: string;
     owner!: string;
-    taxCode!: string;
     isActive!: boolean;
     roleID!: UserRole;
     authType!: AuthType;
@@ -189,9 +185,6 @@ User.init({
     owner: {
         type: DataTypes.STRING
     },
-    taxCode: {
-        type: DataTypes.STRING(14)
-    },
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
@@ -213,9 +206,6 @@ User.init({
                     }
                     if (!this.address || this.address == '') {
                         throw new Error('Supplier\'s Address can not be blank');
-                    }
-                    if (!this.taxCode || this.taxCode == '') {
-                        throw new Error('Supplier\'s Tax Code can not be blank');
                     }
                 }
                 if (this.roleID == Role.traveler) {

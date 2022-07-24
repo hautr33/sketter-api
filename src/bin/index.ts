@@ -8,7 +8,7 @@ import path from 'path';
 import app from '../app';
 import { PORT, ENVIRONMENT } from '../config/default';
 import db from '../db/init.db';
-import logger from '../utils/logger.util'
+import logger from '../utils/logger'
 
 /**
  * Get port from environment and store in Express.
