@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { Role } from "../../utils/constant";
+import { UserRole } from "../../utils/constant";
 import catchAsync from "../../utils/catchAsync";
 import RESDocument from "../factory/RESDocument";
 import AppError from "../../utils/appError";
@@ -40,12 +40,12 @@ class UserController {
         }
         //-----------------
 
-        if (user.roleID == Role.traveler) {
+        if (user.roleID == UserRole.traveler) {
             const { gender, dob } = req.body;
             user.gender = gender;
             user.dob = dob;
 
-        } else if (user.roleID == Role.supplier) {
+        } else if (user.roleID == UserRole.supplier) {
             const { owner } = req.body;
             user.owner = owner;
         }

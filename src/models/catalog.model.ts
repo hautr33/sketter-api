@@ -1,6 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Destination } from './destination.model';
+// import { Destination } from './destination.model';
 
 // const listCatalog: string[] = [
 //     'Quán ăn',
@@ -44,4 +44,3 @@ Catalog.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Catalog' // We need to choose the model name
 });
-Catalog.belongsToMany(Destination, { through: 'Destination_Catalog' });

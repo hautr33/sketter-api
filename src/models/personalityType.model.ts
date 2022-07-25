@@ -44,4 +44,4 @@ TravelPersonalityType.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'TravelPersonalityType' // We need to choose the model name
 });
-TravelPersonalityType.belongsToMany(Destination, { through: 'Destination_TravelPersonality' });
+// TravelPersonalityType.belongsToMany(Destination, { through: 'Destination_TravelPersonality' });

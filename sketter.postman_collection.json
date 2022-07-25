@@ -44,7 +44,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"quachkhongtriet1@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698740\",\r\n    \"address\":\"Hong biết luôn =]]\",\r\n    \"taxCode\":\"1234567890123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"quachkhongtriet1@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698740\",\r\n    \"address\":\"Hong biết luôn =]]\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"quachkhongtriet@gmail.com\",\r\n    \"password\":\"123456\"\r\n}",
+					"raw": "{\r\n    \"email\": \"2s2svenus2s2s@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -271,7 +271,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"Duong Thanh Huy13\",\r\n    \"image\": null,\r\n    \"gender\": null,\r\n    \"dob\": null,\r\n    \"phone\": null,\r\n    \"address\": null\r\n}",
+					"raw": "{\r\n    \"name\": \"Duong Thanh Huy\",\r\n    \"image\": null,\r\n    \"gender\": \"Nữ\",\r\n    \"dob\": null,\r\n    \"phone\": null,\r\n    \"address\": null\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"

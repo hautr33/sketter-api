@@ -7,13 +7,14 @@ import _ from 'lodash';
 import { Op } from 'sequelize';
 import RESDocument from '../factory/RESDocument';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
-import { User, UserRole } from '../../models/user.model';
+import { User, UserRoles } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
 import { signJwt } from '../../utils/jwt';
-import { Role } from '../../utils/constant';
+import { UserRole } from '../../utils/constant';
 import jwt from 'jsonwebtoken';
+import { Destination } from '../../models/destination.model';
 const firebaseAdmin = require("firebase-admin/auth");
 
 
@@ -131,9 +132,9 @@ class AuthController {
         user.password = password;
         user.roleID = role;
 
-        if (role == Role.traveler) {
+        if (role == UserRole.traveler) {
             user.name = email.split('@')[0];
-        } else if (role == Role.supplier) {
+        } else if (role == UserRole.supplier) {
             const { name, owner, phone, address } = req.body;
             user.name = name;
             user.password = password;
@@ -201,6 +202,7 @@ class AuthController {
 
     static loginGoogle = catchAsync(async (_req, res, next) => {
         res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Update successfully');
+        Destination.findOne({where:{id:'ahihi'}});
         next();
     });
 
@@ -243,8 +245,8 @@ class AuthController {
 
         const message = `Xin chào ${user.name},\nChúng tôi đã nhận được yêu cầu đặt lại mật khẩu Sketter của bạn.
         \nVui lòng bấm vào đường dẫn ở dưới để đặt lại mật khẩu:
-        \n ${resetURL}. 
-        \nBạn đã không yêu cầu thay đổi này?\nNếu bạn không yêu cầu đặt lại mật khẩu mới, hãy bỏ qua tin nhắn này.`;
+        \n${resetURL}.
+        \nNếu bạn không yêu cầu đặt lại mật khẩu mới, hãy bỏ qua tin nhắn này.`;
 
         try {
             // Send Email
@@ -361,7 +363,7 @@ class AuthController {
     });
 
 
-    static restrictTo = (...roles: UserRole[]): RequestHandler => (
+    static restrictTo = (...roles: UserRoles[]): RequestHandler => (
         _req,
         res,
         next
@@ -371,7 +373,7 @@ class AuthController {
           whitelist of permissions
         */
 
-        if (!roles.includes(res.locals.user?.roleID as UserRole)) {
+        if (!roles.includes(res.locals.user?.roleID as UserRoles)) {
             return next(
                 new AppError(
                     'Bạn không có quyền để sử dụng tính năng này',

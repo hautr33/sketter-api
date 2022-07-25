@@ -1,4 +1,4 @@
-export class Role {
+export class UserRole {
     public static readonly admin = 1;
 
     public static readonly supplierManager = 2;

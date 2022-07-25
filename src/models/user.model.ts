@@ -1,11 +1,12 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Auth, Gender, Role } from '../utils/constant';
+import { Auth, Gender, UserRole } from '../utils/constant';
 import crypto from 'crypto';
+import { Role } from './role.model';
 
 export type UserGender = 'Nam' | 'Nữ';
-export type UserRole = 1 | 2 | 3 | 4;
+export type UserRoles = 1 | 2 | 3 | 4;
 export type AuthType = 'Sketter' | 'Google';
 
 export interface UserAttributes {
@@ -23,7 +24,7 @@ export interface UserAttributes {
     address?: string;
     owner?: string;
     isActive?: boolean;
-    roleID: UserRole;
+    roleID: UserRoles;
     authType: AuthType;
     iat?: number | null;
     exp?: number | null;
@@ -50,7 +51,7 @@ export class User extends Model<UserAttributes, UserInput> implements UserAttrib
     address!: string;
     owner!: string;
     isActive!: boolean;
-    roleID!: UserRole;
+    roleID!: UserRoles;
     authType!: AuthType;
     iat!: number | null;
     exp!: number | null;
@@ -140,7 +141,7 @@ User.init({
     },
     roleID: {
         type: DataTypes.INTEGER,
-        defaultValue: Role.traveler
+        defaultValue: UserRole.traveler
     },
     authType: {
         type: DataTypes.STRING,
@@ -162,9 +163,10 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
+Role.hasOne(User);
 
 User.beforeSave(async (user) => {
-    if (user.roleID == Role.supplier) {
+    if (user.roleID == UserRole.supplier) {
         if (!user.name || user.name == '') {
             throw new Error('Supplier can not be blank');
         }
@@ -178,7 +180,7 @@ User.beforeSave(async (user) => {
             throw new Error('Supplier\'s Address can not be blank');
         }
     }
-    if (user.roleID == Role.traveler) {
+    if (user.roleID == UserRole.traveler) {
         if (!user.name || user.name == '') {
             throw new Error('Traveler\'s Name can not be blank');
         }

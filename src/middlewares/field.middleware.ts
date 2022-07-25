@@ -1,7 +1,7 @@
 /* eslint-disable import/no-unresolved */
 import { NextFunction, Request, RequestHandler, Response } from 'express';
 import { decode } from 'jsonwebtoken';
-import { UserRole } from '../../src/models/user.model';
+import { UserRoles } from '../../src/models/user.model';
 
 /**
  * [USE-WITH-CARE] only use this one when user are CREATING resources.
@@ -42,7 +42,7 @@ export function blockUnwantedFields(
  * This middleware will add role param to request body. This is because
  * we login to webapp by sending email and password.
  */
-export const addRoleMiddleware = (...roles: UserRole[]): RequestHandler => (
+export const addRoleMiddleware = (...roles: UserRoles[]): RequestHandler => (
 	req,
 	_res,
 	next
