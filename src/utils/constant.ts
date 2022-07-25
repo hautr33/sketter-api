@@ -9,9 +9,9 @@ export class Role {
 }
 
 export class Gender {
-    public static readonly female = 'Female';
+    public static readonly female = 'Nam';
 
-    public static readonly male = 'Male';
+    public static readonly male = 'Nữ';
 }
 
 export class Auth {

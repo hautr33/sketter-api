@@ -4,7 +4,7 @@ import sequelize from '../db/sequelize.db';
 import { Auth, Gender, Role } from '../utils/constant';
 import crypto from 'crypto';
 
-export type UserGender = 'Male' | 'Female';
+export type UserGender = 'Nam' | 'Nữ';
 export type UserRole = 1 | 2 | 3 | 4;
 export type AuthType = 'Sketter' | 'Google';
 
