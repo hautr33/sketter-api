@@ -101,20 +101,20 @@ class AuthController {
 
         if (!password) {
             return next(
-                new AppError('Password can not be blank', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu không được trống', StatusCodes.BAD_REQUEST)
             );
         }
 
         if (password.length < 6) {
             return next(
-                new AppError('Password should be at least 6 characters', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu phải có ít nhất 6 kí tự', StatusCodes.BAD_REQUEST)
             );
         }
 
         if (password !== confirmPassword) {
             return next(
                 new AppError(
-                    'Incorrect Confirm Password',
+                    'Nhập lại mật khẩu không khớp',
                     StatusCodes.BAD_REQUEST
                 )
             );
@@ -122,7 +122,7 @@ class AuthController {
 
         const userExsit = await User.findOne({ where: { email: email } });
         if (userExsit) {
-            return next(new AppError('Email is exsit', StatusCodes.BAD_REQUEST));
+            return next(new AppError('Email đã tồn tại', StatusCodes.BAD_REQUEST));
         }
 
 
@@ -141,7 +141,7 @@ class AuthController {
             user.phone = phone;
             user.address = address;
         } else {
-            return next(new AppError('Signup not supported for this role', StatusCodes.BAD_REQUEST));
+            return next(new AppError('Không thể đăng kí', StatusCodes.BAD_REQUEST));
         }
         await user.save()
 
@@ -152,7 +152,7 @@ class AuthController {
             })
             .then(async (userRecord: { uid: any; }) => {
                 await user.update({ firebaseID: userRecord.uid }, { where: { email: email } });
-                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Signup success");
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đăng kí thành công");
                 next();
             })
             .catch((error: string) => {
@@ -168,7 +168,7 @@ class AuthController {
         if (!(email || password)) {
             return next(
                 new AppError(
-                    'Cannot find account or password!',
+                    'Email hoặc mật khẩu không đúng',
                     StatusCodes.BAD_REQUEST
                 )
             );
@@ -181,7 +181,7 @@ class AuthController {
                 const user = await User.findOne({ where: { email: email, firebaseID: userFirebase.uid } });
                 if (!user) {
                     return next(
-                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                        new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
                     );
                 }
                 createSendToken(user, StatusCodes.OK, res, next);
@@ -190,7 +190,7 @@ class AuthController {
                 const errorMessage = error.message;
                 if (errorMessage.includes('wrong-password')) {
                     return next(
-                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
+                        new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
                     );
                 } else {
                     return next(new AppError(errorMessage, StatusCodes.BAD_REQUEST));
@@ -199,25 +199,9 @@ class AuthController {
     });
 
 
-    static loginGoogle = catchAsync(async (req, res, next) => {
-        const { token } = req.body;
-
-        firebaseAdmin.getAuth()
-            .verifyIdToken(token)
-            .then(async (decodedToken: { email: any; uid: any; }) => {
-                const user = await User.findOne({ where: { email: decodedToken.email, firebaseID: decodedToken.uid } });
-                if (!user) {
-                    return next(
-                        new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
-                    );
-                }
-                createSendToken(user, StatusCodes.OK, res, next);
-            })
-            .catch(() => {
-                return next(
-                    new AppError('Wrong Email or password!', StatusCodes.UNAUTHORIZED)
-                );
-            });
+    static loginGoogle = catchAsync(async (_req, res, next) => {
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Update successfully');
+        next();
     });
 
     static logout = catchAsync(async (req, res, next) => {
@@ -236,7 +220,7 @@ class AuthController {
         if (!user) {
             return next(
                 new AppError(
-                    'Email does not exist',
+                    'Email không tồn tại',
                     StatusCodes.NOT_FOUND
                 )
             );
@@ -257,21 +241,23 @@ class AuthController {
             'host'
         )}/api/v1/user/reset_password/${resetToken}`;
 
-        const message = `Forget password? Follow this link to reset your Sketter password for your ${user.email} account.\n ${resetURL}. 
-        \nIf you didn’t ask to reset your password, you can ignore this email. \n Thanks, \n Sketter Team`;
+        const message = `Xin chào ${user.name},\nChúng tôi đã nhận được yêu cầu đặt lại mật khẩu Sketter của bạn.
+        \nVui lòng bấm vào đường dẫn ở dưới để đặt lại mật khẩu:
+        \n ${resetURL}. 
+        \nBạn đã không yêu cầu thay đổi này?\nNếu bạn không yêu cầu đặt lại mật khẩu mới, hãy bỏ qua tin nhắn này.`;
 
         try {
             // Send Email
             await sendEmail({
                 email: user.email,
-                subject: 'Reset your password for Sketter (available for 10 minutes)',
+                subject: 'Đặt lại mật khẩu Sketter (hết hạn sau 10 phút)',
                 message
             });
 
             // return to User the response
             res.resDocument = new RESDocument(
                 StatusCodes.OK,
-                'Reset password link has been sent to your email',
+                'Đường dẫn đặt lại mật khẩu đã được gửi sang email của bạn',
                 null
             );
 
@@ -290,7 +276,7 @@ class AuthController {
             // Return the Error as a response
             return next(
                 new AppError(
-                    'An error occurred while sending email. Please try again another time!',
+                    'Đã có lỗi xảy ra khi gửi mail cho bạn. Vui lòng thử lại sau',
                     StatusCodes.INTERNAL_SERVER_ERROR
                 )
             );
@@ -304,18 +290,27 @@ class AuthController {
         it, then compare to the hashed version token inside the database
         validate. 
       */
-        const { password } = req.body;
+        const { password, confirmPassword } = req.body;
         if (!password) {
             return next(
-                new AppError('Password can not be blank', StatusCodes.BAD_REQUEST)
-            );
-        }
-        if (password.length < 6) {
-            return next(
-                new AppError('Password should be at least 6 characters', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu không được trống', StatusCodes.BAD_REQUEST)
             );
         }
 
+        if (password.length < 6) {
+            return next(
+                new AppError('Mật khẩu phải có ít nhất 6 kí tự', StatusCodes.BAD_REQUEST)
+            );
+        }
+
+        if (password !== confirmPassword) {
+            return next(
+                new AppError(
+                    'Nhập lại mật khẩu không khớp',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
+        }
         const hashedToken = crypto
             .createHash('sha256')
             .update(req.params.token)
@@ -333,7 +328,7 @@ class AuthController {
         if (!user) {
             return next(
                 new AppError(
-                    'Password reset link has expired.',
+                    'Đường dẫn đặt lại mật khẩu đã hết hạn',
                     StatusCodes.BAD_REQUEST
                 )
             );
@@ -375,10 +370,11 @@ class AuthController {
         We check if the attached User with the "role" is in the 
           whitelist of permissions
         */
+
         if (!roles.includes(res.locals.user?.roleID as UserRole)) {
             return next(
                 new AppError(
-                    'You do not have permission to use this feature.',
+                    'Bạn không có quyền để sử dụng tính năng này',
                     StatusCodes.FORBIDDEN
                 )
             );

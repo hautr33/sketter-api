@@ -15,7 +15,7 @@ import AppError from '../../utils/appError';
  */
 const handleJWTError = () =>
 	new AppError(
-		'Cannot authenticate! Please resend it again',
+		'Không thể xác thực! Vui lòng thử lại',
 		StatusCodes.UNAUTHORIZED
 	);
 
@@ -30,7 +30,7 @@ const handleJWTError = () =>
  * @param {*} err - Instance of AppError
  */
 const handleJWTExpiredError = () =>
-	new AppError('Session time out!', StatusCodes.UNAUTHORIZED);
+	new AppError('Phiên đăng nhập đã hết hạn!', StatusCodes.UNAUTHORIZED);
 
 /**
  * Cast to Object Error - DB (prod)
@@ -130,7 +130,7 @@ const sendErrorProd = (err: AppError, res: Response) => {
 
 		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
 			status: 'error',
-			message: 'Error happen!'
+			message: 'Có lổi xảy ra!'
 		});
 	}
 };

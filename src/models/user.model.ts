@@ -8,57 +8,6 @@ export type UserGender = 'Male' | 'Female';
 export type UserRole = 1 | 2 | 3 | 4;
 export type AuthType = 'Sketter' | 'Google';
 
-export const defaultPrivateFields = [
-    "password",
-    "passwordResetToken",
-    "passwordResetExpires",
-    "passwordUpdatedAt",
-    "gender",
-    "dob",
-    "owner",
-    "createdAt",
-    "isActive",
-    "authType",
-    "iat",
-    "exp",
-    "firebaseID",
-    "createdAt",
-    "updatedAt"
-];
-
-export const travelerPrivateFields = [
-    "password",
-    "passwordResetToken",
-    "passwordResetExpires",
-    "passwordUpdatedAt",
-    "owner",
-    "createdAt",
-    "isActive",
-    "authType",
-    "iat",
-    "exp",
-    "firebaseID",
-    "createdAt",
-    "updatedAt"
-];
-
-export const supplierPrivateFields = [
-    "password",
-    "passwordResetToken",
-    "passwordResetExpires",
-    "passwordUpdatedAt",
-    "gender",
-    "dob",
-    "createdAt",
-    "isActive",
-    "authType",
-    "iat",
-    "exp",
-    "firebaseID",
-    "createdAt",
-    "updatedAt"
-];
-
 export interface UserAttributes {
     id: string;
     email: string;
@@ -128,10 +77,10 @@ User.init({
         unique: true,
         validate: {
             notEmpty: {
-                msg: 'Please enter Email'
+                msg: 'Email không được trống'
             },
             isEmail: {
-                msg: "Invalid Email"
+                msg: "Email không hợp lệ"
             }
         }
     },
@@ -140,7 +89,7 @@ User.init({
         allowNull: false,
         validate: {
             notEmpty: {
-                msg: 'Please enter Password'
+                msg: 'Mật khẩu không được trống'
             },
         }
     },
@@ -164,7 +113,7 @@ User.init({
         validate: {
             checkGender() {
                 if (this.gender != Gender.female && this.gender != Gender.male) {
-                    throw new Error('Invalid Gender');
+                    throw new Error('Giới tính không hợp lệ');
                 }
             }
         }
@@ -191,30 +140,7 @@ User.init({
     },
     roleID: {
         type: DataTypes.INTEGER,
-        defaultValue: Role.traveler,
-        validate: {
-            checkRole() {
-                if (this.roleID == Role.supplier) {
-                    if (!this.name || this.name == '') {
-                        throw new Error('Supplier\'s Name can not be blank');
-                    }
-                    if (!this.owner || this.owner == '') {
-                        throw new Error('Supplier\'s Owner can not be blank');
-                    }
-                    if (!this.phone || this.phone == '') {
-                        throw new Error('Supplier\'s Phone can not be blank');
-                    }
-                    if (!this.address || this.address == '') {
-                        throw new Error('Supplier\'s Address can not be blank');
-                    }
-                }
-                if (this.roleID == Role.traveler) {
-                    if (!this.name || this.name == '') {
-                        throw new Error('Traveler\'s Name can not be blank');
-                    }
-                }
-            }
-        }
+        defaultValue: Role.traveler
     },
     authType: {
         type: DataTypes.STRING,
@@ -238,6 +164,25 @@ User.init({
 
 
 User.beforeSave(async (user) => {
+    if (user.roleID == Role.supplier) {
+        if (!user.name || user.name == '') {
+            throw new Error('Supplier can not be blank');
+        }
+        if (!user.owner || user.owner == '') {
+            throw new Error('Supplier\'s Owner can not be blank');
+        }
+        if (!user.phone || user.phone == '') {
+            throw new Error('Supplier\'s Phone can not be blank');
+        }
+        if (!user.address || user.address == '') {
+            throw new Error('Supplier\'s Address can not be blank');
+        }
+    }
+    if (user.roleID == Role.traveler) {
+        if (!user.name || user.name == '') {
+            throw new Error('Traveler\'s Name can not be blank');
+        }
+    }
     if (user.changed("password")) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(user.password, salt);

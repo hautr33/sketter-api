@@ -4,8 +4,9 @@ import catchAsync from "../../utils/catchAsync";
 import RESDocument from "../factory/RESDocument";
 import AppError from "../../utils/appError";
 import isImageURL from "image-url-validator";
-import { defaultPrivateFields, User } from "../../models/user.model";
+import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
+import { UserPrivateFields } from "../../utils/privateField";
 
 class UserController {
     static getMe = catchAsync(async (_req, res, next) => {
@@ -15,21 +16,17 @@ class UserController {
     });
 
     static updateMe = catchAsync(async (req, res, next) => {
-        let user = await User.findOne({ where: { email: res.locals.user.email }, attributes: { exclude: defaultPrivateFields } });
+        let user = await User.findOne({ where: { email: res.locals.user.email }, attributes: { exclude: UserPrivateFields.default } });
 
         if (!user) {
-            return next(new AppError('User not found', StatusCodes.NOT_FOUND))
+            return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND))
         }
         const { name, image, phone, address } = req.body;
-        if (name) {
-            user.name = name;
-        }
-        if (phone) {
-            user.phone = phone;
-        }
-        if (address) {
-            user.address = address;
-        }
+        user.name = name;
+        user.phone = phone;
+        user.address = address;
+
+        //--------------
         if (image) {
             isImageURL(image)
                 .then(isImage => {
@@ -41,25 +38,20 @@ class UserController {
                 });
             user.image = image;
         }
+        //-----------------
 
         if (user.roleID == Role.traveler) {
             const { gender, dob } = req.body;
-            if (gender) {
-                user.gender = gender;
-            }
-            if (dob) {
-                user.dob = dob;
-            }
+            user.gender = gender;
+            user.dob = dob;
 
         } else if (user.roleID == Role.supplier) {
             const { owner } = req.body;
-            if (owner) {
-                user.owner = owner;
-            }
+            user.owner = owner;
         }
 
         await user.save();
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Update successfully');
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
         next();
     });
 
@@ -68,36 +60,36 @@ class UserController {
 
         if (!currentPassword) {
             return next(
-                new AppError('Current Password can not be blank', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu hiện tại không được trống', StatusCodes.BAD_REQUEST)
             );
         }
 
         if (currentPassword == newPassword) {
             return next(
-                new AppError('New Password must be different Current Password', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu mới không được giống mật khẩu hiện tại', StatusCodes.BAD_REQUEST)
             );
         }
         if (!newPassword) {
             return next(
-                new AppError('New Password can not be blank', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu mới không được trống', StatusCodes.BAD_REQUEST)
             );
         }
 
         if (newPassword.length < 6) {
             return next(
-                new AppError('New Password should be at least 6 characters', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu mới phải có ít nhất 6 kí tự', StatusCodes.BAD_REQUEST)
             );
         }
 
         if (newPassword !== confirmNewPassword) {
             return next(
-                new AppError('Incorrect Confirm New Password', StatusCodes.BAD_REQUEST)
+                new AppError('Nhập lại mật khẩu mới không khớp', StatusCodes.BAD_REQUEST)
             );
         }
         const user = await User.findOne({ where: { email: res.locals.user.email } });
         if (!user || !(await user.comparePassword(currentPassword as string))) {
             return next(
-                new AppError('Incorrect Current Password!', StatusCodes.BAD_REQUEST)
+                new AppError('Mật khẩu hiện tại không đúng', StatusCodes.BAD_REQUEST)
             );
         }
         user.password = newPassword;
@@ -107,7 +99,7 @@ class UserController {
                 password: newPassword,
             })
             .then(() => {
-                res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Update successfully');
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Thay đổi mật khẩu thành công');
                 next();
             })
             .catch((error) => {

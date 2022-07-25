@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test13@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test15@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -44,7 +44,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test14@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698731\",\r\n    \"address\":\"Hong biết luôn =]]\",\r\n    \"taxCode\":\"1234567890123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"quachkhongtriet1@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698740\",\r\n    \"address\":\"Hong biết luôn =]]\",\r\n    \"taxCode\":\"1234567890123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test14@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"quachkhongtriet@gmail.com\",\r\n    \"password\":\"123456\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -160,7 +160,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"2s2svenus2s2s@gmail.com\"\r\n}",
+					"raw": "{\r\n    \"email\": \"quachkhongtriet@gmail.com\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -191,7 +191,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"password\":\"123456\"\r\n}",
+					"raw": "{\r\n    \"password\":\"123456\",\r\n    \"confirmPassword\":\"123456\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -199,7 +199,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/bd4ad11f360c9a2fb09d91fe33f3db9bfe98bca00978f28afdfa1490e457c28d",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/ad62faea7602aef1ea157e462e5ddacb1b4f2e8109d8b1520cfbf13cb62eceba",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -210,7 +210,7 @@
 						"v1",
 						"user",
 						"reset_password",
-						"bd4ad11f360c9a2fb09d91fe33f3db9bfe98bca00978f28afdfa1490e457c28d"
+						"ad62faea7602aef1ea157e462e5ddacb1b4f2e8109d8b1520cfbf13cb62eceba"
 					]
 				}
 			},
@@ -271,7 +271,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"Dương Thanh Huy12\",\r\n    \"image\": null,\r\n    \"gender\": null,\r\n    \"dob\": null,\r\n    \"phone\": null,\r\n    \"address\": null\r\n}",
+					"raw": "{\r\n    \"name\": \"Duong Thanh Huy13\",\r\n    \"image\": null,\r\n    \"gender\": null,\r\n    \"dob\": null,\r\n    \"phone\": null,\r\n    \"address\": null\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -309,7 +309,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"currentPassword\": \"123123\",\r\n    \"newPassword\": \"123456\",\r\n    \"confirmNewPassword\": \"123456\"\r\n}",
+					"raw": "{\r\n    \"currentPassword\": \"123456\",\r\n    \"newPassword\": \"123123\",\r\n    \"confirmNewPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -397,7 +397,7 @@
 	"variable": [
 		{
 			"key": "PORT",
-			"value": "3000",
+			"value": "3123",
 			"type": "string"
 		},
 		{

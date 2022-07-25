@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
 import { Role } from '../utils/constant';
-import { User, travelerPrivateFields, supplierPrivateFields, defaultPrivateFields } from '../models/user.model';
+import { User } from '../models/user.model';
 import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
+import { UserPrivateFields } from '../utils/privateField';
 
 export const deserializeUser = async (
   req: Request,
@@ -23,14 +24,14 @@ export const deserializeUser = async (
     }
 
     if (!access_token) {
-      return next(new AppError('You are not logged in', 401));
+      return next(new AppError('Vui lòng đăng nhập để sử dụng tính năng này', 401));
     }
 
     // Validate Access Token
     const decoded = verifyJwt<{ id: string, iat: number, exp: number }>(access_token);
 
     if (!decoded) {
-      return next(new AppError(`Invalid token or user doesn't exist`, 401));
+      return next(new AppError(`Token không hợp lệ hoặc tài khoản không tồn tại`, 401));
     }
 
     // Check if user has a valid session
@@ -44,23 +45,22 @@ export const deserializeUser = async (
     const user = await User.findOne({ where: { id: decoded.id, iat: decoded.iat, exp: decoded.exp } });
 
     if (!user) {
-      return next(new AppError(`User with that token no longer exist`, 401));
+      return next(new AppError(`Phiên đăng nhập đã hết hạn`, 401));
     }
 
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
     if (user.roleID == Role.traveler) {
-      const excludedUser = _.omit(user.toJSON(), travelerPrivateFields);
+      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.traveler);
       res.locals.user = excludedUser;
     } else if (user.roleID == Role.supplier) {
-      const excludedUser = _.omit(user.toJSON(), supplierPrivateFields);
+      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.supplier);
       res.locals.user = excludedUser;
     } else {
-      const excludedUser = _.omit(user.toJSON(), defaultPrivateFields);
+      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.default);
       res.locals.user = excludedUser;
     }
-
     next();
   } catch (err: any) {
     next(err);
