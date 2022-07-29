@@ -283,6 +283,11 @@
 							"type": "text"
 						},
 						{
+							"key": "phone",
+							"value": "0387698745",
+							"type": "text"
+						},
+						{
 							"key": "address",
 							"value": "Nhà của Huy",
 							"type": "text"
@@ -290,7 +295,28 @@
 						{
 							"key": "gender",
 							"value": "Nữ",
+							"description": "update for traveler",
 							"type": "text"
+						},
+						{
+							"key": "dob",
+							"value": "2000-01-13",
+							"description": "update for traveler",
+							"type": "text"
+						},
+						{
+							"key": "dob",
+							"value": "2000/01/13",
+							"description": "nhập ngày kiểu này cũng được",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "owner",
+							"value": "Quách Khổng Triết",
+							"description": "update for supplier",
+							"type": "text",
+							"disabled": true
 						}
 					]
 				},
