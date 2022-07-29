@@ -5,6 +5,7 @@ import { User } from '../models/user.model';
 import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
 import { UserPrivateFields } from '../utils/privateField';
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 
 export const deserializeUser = async (
   req: Request,
@@ -61,6 +62,11 @@ export const deserializeUser = async (
       const excludedUser = _.omit(user.toJSON(), UserPrivateFields.default);
       res.locals.user = excludedUser;
     }
+    const storage = getStorage();
+    await getDownloadURL(ref(storage, user.image))
+      .then((url) => {
+        res.locals.user.image = url;
+      })
     next();
   } catch (err: any) {
     next(err);

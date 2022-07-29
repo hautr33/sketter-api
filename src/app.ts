@@ -2,6 +2,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors, { CorsOptions } from 'cors';
 import express from 'express';
+import fileUpload from 'express-fileupload';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
@@ -26,7 +27,6 @@ import AppError from './utils/appError';
 import router from './routes';
 import admin from 'firebase-admin';
 import { initializeApp } from "firebase/app";
-
 
 
 const app = express();
@@ -82,7 +82,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(cookiesReader);
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(fileUpload());
 // Data sanitization against XSS
 app.use(xss());
 

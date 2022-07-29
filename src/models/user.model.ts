@@ -141,7 +141,6 @@ User.init({
     },
     roleID: {
         type: DataTypes.INTEGER,
-        defaultValue: UserRole.traveler
     },
     authType: {
         type: DataTypes.STRING,
@@ -163,7 +162,10 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
-Role.hasOne(User);
+
+Role.hasOne(User, {
+    foreignKey: "roleID"
+});
 
 User.beforeSave(async (user) => {
     if (user.roleID == UserRole.supplier) {
