@@ -6,6 +6,7 @@ import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
 import { UserPrivateFields } from '../utils/privateField';
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
+import { USER_DEFAULT_IMG_URL } from '../config/default';
 
 export const deserializeUser = async (
   req: Request,
@@ -66,6 +67,12 @@ export const deserializeUser = async (
     await getDownloadURL(ref(storage, user.image))
       .then((url) => {
         res.locals.user.image = url;
+      })
+      .catch(async () => {
+        await getDownloadURL(ref(storage, USER_DEFAULT_IMG_URL))
+          .then((url) => {
+            res.locals.user.image = url;
+          })
       })
     next();
   } catch (err: any) {

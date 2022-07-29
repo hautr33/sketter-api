@@ -6,81 +6,58 @@ import AppError from "../../utils/appError";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
 import { UserPrivateFields } from "../../utils/privateField";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { UploadedFile } from "express-fileupload";
+import { USER_IMG_URL } from "../../config/default";
 
-export const getImg = catchAsync(async (_req, res, next) => {
-    const storage = getStorage();
-    getDownloadURL(ref(storage, 'images/avatar/Screenshot 2022-06-19 224711.png'))
-        .then((url) => {
-            res.resDocument = new RESDocument(StatusCodes.OK, 'success', url);
-            next();
-        })
-})
 export const getMe = catchAsync(async (_req, res, next) => {
     const user = res.locals.user;
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', user);
     next();
 });
 
-
-
 export const updateMe = catchAsync(async (req, res, next) => {
-    let user = await User.findOne({ where: { email: res.locals.user.email }, attributes: { exclude: UserPrivateFields.default } });
+    const user = await User.findOne({ where: { email: res.locals.user.email }, attributes: { exclude: UserPrivateFields.default } });
 
     if (!user)
         return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND))
 
     const { name, phone, address } = req.body;
-    user.name = name;
-    user.phone = phone;
-    user.address = address;
 
     if (user.roleID == UserRole.traveler) {
         const { gender, dob } = req.body;
-        user.gender = gender;
-        user.dob = dob;
-
+        await User.update({ name: name, phone: phone, address: address, gender: gender, dob: dob }, { where: { id: user.id } })
     } else if (user.roleID == UserRole.supplier) {
         const { owner } = req.body;
-        user.owner = owner;
+        await User.update({ name: name, phone: phone, address: address, owner: owner }, { where: { id: user.id } })
     }
-    await user.save();
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
-    next();
-});
-
-
-export const updateAvatar = catchAsync(async (req, res, next) => {
-    const id = res.locals.user.id;
     if (req.files) {
         if ((req.files.avatar as UploadedFile[]).length == 1 || (req.files.avatar as UploadedFile[]).length == undefined) {
             const avatar = req.files.avatar as UploadedFile;
             if (avatar.mimetype.includes('image')) {
                 const storage = getStorage();
-                const storageRef = ref(storage, `images/avatar/${id}${avatar.name.split('.')[1]}`);
+                const image = `${USER_IMG_URL}/${user?.id}.${avatar.name.split('.')[1]}`;
+                const storageRef = ref(storage, image);
 
                 const bytes = new Uint8Array(avatar.data);
                 await uploadBytes(storageRef, bytes).then(async (snapshot) => {
                     const image = snapshot.metadata.fullPath;
                     await User.update({ image: image }, {
                         where: {
-                            id: id
+                            id: user?.id
                         }
                     });
                 });
-                res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Upload ảnh đại diện thành công');
-                next()
             } else {
                 return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
             }
         } else {
             return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_REQUEST))
         }
-
     }
-    return next(new AppError('Vui lòng chọn một ảnh', StatusCodes.BAD_REQUEST))
-})
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
+    next();
+});
 
 export const updatePassword = catchAsync(async (req, res, next) => {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;

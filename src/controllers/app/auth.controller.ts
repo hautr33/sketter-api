@@ -5,7 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 import { Op } from 'sequelize';
 import RESDocument from '../factory/RESDocument';
-import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN } from '../../config/default';
+import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN, FORGOT_PASSWORD_URL } from '../../config/default';
 import { User, UserRoles } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
@@ -218,8 +218,17 @@ export const logout = catchAsync(async (req, res, next) => {
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
 
+    const email = req.body.email;
+    if (!email) {
+        return next(
+            new AppError(
+                'Vui lòng nhập email',
+                StatusCodes.NOT_FOUND
+            )
+        );
+    }
     // TODO 1) get user based on Posted email
-    const user = await User.findOne({ where: { email: req.body.email } });
+    const user = await User.findOne({ where: { email: email } });
     if (!user) {
         return next(
             new AppError(
@@ -240,9 +249,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     await user.save();
 
     // TODO 3) Send it to user's email
-    const resetURL = `${req.protocol}://${req.get(
-        'host'
-    )}/api/v1/user/reset_password/${resetToken}`;
+    const resetURL = `${FORGOT_PASSWORD_URL}/${resetToken}`;
 
     const message = `Xin chào ${user.name},\nChúng tôi đã nhận được yêu cầu đặt lại mật khẩu Sketter của bạn.
         \nVui lòng bấm vào đường dẫn ở dưới để đặt lại mật khẩu:

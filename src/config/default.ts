@@ -38,9 +38,16 @@ export const STORAGE_BUCKET = process.env.STORAGE_BUCKET as string;
 export const MESSAGING_SENDER_ID = process.env.MESSAGING_SENDER_ID as string;
 export const APP_ID = process.env.APP_ID as string;
 
+export const USER_IMG_URL = process.env.USER_IMG_URL as string;
+export const USER_DEFAULT_IMG_URL = USER_IMG_URL + '/default.png' as string;
+
+
 export const EMAIL_USERNAME = process.env.EMAIL_USERNAME as string;
 export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;
 export const EMAIL_SERVICE = process.env.EMAIL_SERVICE as string;
+export const FORGOT_PASSWORD_URL = process.env.FORGOT_PASSWORD_URL as string;
+
+
 
 export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
 export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';
