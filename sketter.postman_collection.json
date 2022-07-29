@@ -436,14 +436,16 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/healthcheck",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/initRole",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
 					],
 					"port": "{{PORT}}",
 					"path": [
-						"healthcheck"
+						"api",
+						"v1",
+						"initRole"
 					]
 				}
 			},
