@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
-// import { TravelPersonalityType } from './personalityType.model';
+import { TravelPersonalityType } from './personalityType.model';
 
 
 export interface DestinationAttributes {
@@ -121,4 +121,4 @@ Destination.init({
 });
 
 Destination.belongsToMany(Catalog, { through: 'Destination_Catalog' });
-// Destination.belongsToMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });
+Destination.belongsToMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });

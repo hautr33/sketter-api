@@ -1,6 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Destination } from './destination.model';
 
 // const listTravelPersonalityType: string[] = [
 //     'Thích khám phá',
@@ -44,4 +43,3 @@ TravelPersonalityType.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'TravelPersonalityType' // We need to choose the model name
 });
-// TravelPersonalityType.belongsToMany(Destination, { through: 'Destination_TravelPersonality' });
