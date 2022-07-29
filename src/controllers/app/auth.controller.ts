@@ -253,7 +253,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 
     const message = `Xin chào ${user.name},\nChúng tôi đã nhận được yêu cầu đặt lại mật khẩu Sketter của bạn.
         \nVui lòng bấm vào đường dẫn ở dưới để đặt lại mật khẩu:
-        \n${resetURL}.
+        \n${resetURL}
         \nNếu bạn không yêu cầu đặt lại mật khẩu mới, hãy bỏ qua tin nhắn này.`;
 
     try {
@@ -359,7 +359,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
         })
         .then(async () => {
             await user.save();
-            createSendToken(user, StatusCodes.OK, res, next);
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success','Reset Password Success')
         })
         .catch((error: { message: string; }) => {
             return next(new AppError(error.message, StatusCodes.BAD_GATEWAY));

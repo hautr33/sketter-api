@@ -162,7 +162,6 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
-
 Role.hasOne(User, {
     foreignKey: "roleID"
 });

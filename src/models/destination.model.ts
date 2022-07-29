@@ -3,9 +3,9 @@ import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
 import { TravelPersonalityType } from './personalityType.model';
 
-
 export interface DestinationAttributes {
     id: string;
+    name?: string;
     address?: string;
     longitude?: number;
     latitude?: number;
@@ -29,6 +29,7 @@ export interface DestinationOuput extends Required<DestinationAttributes> { };
 
 export class Destination extends Model<DestinationAttributes, DestinationInput> implements DestinationAttributes {
     declare id: string;
+    name!: string;
     address!: string;
     longitude!: number;
     latitude!: number;
@@ -57,61 +58,51 @@ Destination.init({
             isUUID: 4
         }
     },
-    address: {
+    name: {
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    address: {
+        type: DataTypes.STRING,
     },
     longitude: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     latitude: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     lowestPrice: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     highestPrice: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     openingTime: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     closingTime: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     spendingTime: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     recommendationTimeFrom: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     recommendationTimeTo: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     estimatedTimeStay: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     rating: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     supplierID: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
 }, {
     // Other model options go here
@@ -122,3 +113,4 @@ Destination.init({
 
 Destination.belongsToMany(Catalog, { through: 'Destination_Catalog' });
 Destination.belongsToMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });
+
