@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -376,7 +376,7 @@
 			"response": []
 		},
 		{
-			"name": "create destination test",
+			"name": "create destination test (đăng nhập bằng supplier mới xài được nha)",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -444,7 +444,7 @@
 			"response": []
 		},
 		{
-			"name": "init data",
+			"name": "init data (send này trước rồi làm mấy kia nha)",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
