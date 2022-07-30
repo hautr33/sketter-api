@@ -359,7 +359,8 @@ export const resetPassword = catchAsync(async (req, res, next) => {
         })
         .then(async () => {
             await user.save();
-            res.resDocument = new RESDocument(StatusCodes.OK, 'success','Reset Password Success')
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success','Reset Password Success');
+            next()
         })
         .catch((error: { message: string; }) => {
             return next(new AppError(error.message, StatusCodes.BAD_GATEWAY));

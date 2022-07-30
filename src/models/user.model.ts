@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Auth, Gender, UserRole } from '../utils/constant';
 import crypto from 'crypto';
@@ -9,34 +9,7 @@ export type UserGender = 'Nam' | 'Nữ';
 export type UserRoles = 1 | 2 | 3 | 4;
 export type AuthType = 'Sketter' | 'Google';
 
-export interface UserAttributes {
-    id: string;
-    email: string;
-    password: string;
-    passwordUpdatedAt?: Date;
-    passwordResetToken?: string | null;
-    passwordResetExpires?: number | null;
-    name?: string;
-    image?: string;
-    gender: UserGender;
-    dob?: Date;
-    phone?: string;
-    address?: string;
-    owner?: string;
-    isActive?: boolean;
-    roleID: UserRoles;
-    authType: AuthType;
-    iat?: number | null;
-    exp?: number | null;
-    firebaseID?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-
-export interface UserInput extends Optional<UserAttributes, 'id' | 'email'> { };
-export interface UserOuput extends Required<UserAttributes> { };
-
-export class User extends Model<UserAttributes, UserInput> implements UserAttributes {
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare id: string;
     email!: string;
     password!: string;
@@ -75,7 +48,10 @@ User.init({
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+        unique: {
+            name: 'email-exist',
+            msg: 'Email đã được sử dụng bởi tài khoản khác'
+        },
         validate: {
             notEmpty: {
                 msg: 'Email không được trống'
@@ -107,7 +83,8 @@ User.init({
         type: DataTypes.STRING
     },
     image: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        defaultValue: "images/avatar/default.png",
     },
     gender: {
         type: DataTypes.STRING,
@@ -124,9 +101,12 @@ User.init({
     },
     phone: {
         type: DataTypes.STRING(10),
-        unique: true,
+        unique: {
+            name: 'phone-exist',
+            msg: 'Số điện thoại đã được sử dụng bởi tài khoản khác'
+        },
         validate: {
-            is: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g
+            is: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
         }
     },
     address: {
@@ -154,7 +134,9 @@ User.init({
     },
     firebaseID: {
         type: DataTypes.STRING,
-    }
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
 }, {
     // Other model options go here
     timestamps: true,

@@ -1,8 +1,6 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-// import { Destination } from './destination.model';
 
-// const listCatalog: string[] = [
 //     'Quán ăn',
 //     'Quán cà phê',
 //     'Địa điểm du lịch',
@@ -11,18 +9,9 @@ import sequelize from '../db/sequelize.db';
 //     'Biệt thự',
 //     'Khu nghỉ dưỡng cao cấp',
 //     'Nhà xe'
-// ]
 
-export interface CatalogAttributes {
-    id: number;
-    name: string;
-}
-
-export interface CalalogInput extends Optional<CatalogAttributes, 'id'> { };
-export interface CatalogOuput extends Required<CatalogAttributes> { };
-
-export class Catalog extends Model<CatalogAttributes, CalalogInput> implements CatalogAttributes {
-    declare id: number;
+export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
+    declare id?: number;
     name!: string;
 }
 
@@ -40,7 +29,7 @@ Catalog.init({
     }
 }, {
     // Other model options go here
-    timestamps: true,
+    timestamps: false,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Catalog' // We need to choose the model name
 });

@@ -1,11 +1,12 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, HasManyAddAssociationMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
-import { TravelPersonalityType } from './personalityType.model';
+import { Destination_Catalog } from './destination_catalog.model';
 
-export interface DestinationAttributes {
-    id: string;
-    name?: string;
+export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
+    declare id?: string;
+    declare addCatalog: HasManyAddAssociationMixin<Catalog, number>;
+    name!: string;
     address?: string;
     longitude?: number;
     latitude?: number;
@@ -13,39 +14,15 @@ export interface DestinationAttributes {
     highestPrice?: number;
     openingTime?: string;
     closingTime?: string;
-    spendingTime: string;
+    spendingTime?: string;
     recommendationTimeFrom?: string;
     recommendationTimeTo?: string;
     estimatedTimeStay?: string;
     status?: string;
     rating?: number;
-    supplierID: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-
-export interface DestinationInput extends Optional<DestinationAttributes, 'id'> { };
-export interface DestinationOuput extends Required<DestinationAttributes> { };
-
-export class Destination extends Model<DestinationAttributes, DestinationInput> implements DestinationAttributes {
-    declare id: string;
-    name!: string;
-    address!: string;
-    longitude!: number;
-    latitude!: number;
-    lowestPrice!: number;
-    highestPrice!: number;
-    openingTime!: string;
-    closingTime!: string;
-    spendingTime!: string;
-    recommendationTimeFrom!: string;
-    recommendationTimeTo!: string;
-    estimatedTimeStay!: string;
-    status!: string;
-    rating!: number;
-    supplierID!: string;
-    readonly createdAt!: Date;
-    readonly updatedAt!: Date;
+    supplierID?: string;
+    readonly createdAt?: Date;
+    readonly updatedAt?: Date;
 }
 
 Destination.init({
@@ -104,6 +81,8 @@ Destination.init({
     supplierID: {
         type: DataTypes.STRING,
     },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
 }, {
     // Other model options go here
     timestamps: true,
@@ -111,6 +90,7 @@ Destination.init({
     modelName: 'Destination' // We need to choose the model name
 });
 
-Destination.belongsToMany(Catalog, { through: 'Destination_Catalog' });
-Destination.belongsToMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });
+Destination.belongsToMany(Catalog, { through: Destination_Catalog });
+Catalog.belongsToMany(Destination, { through: Destination_Catalog });
+// Destination.hasMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });
 

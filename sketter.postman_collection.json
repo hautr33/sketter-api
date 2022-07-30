@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"huydtse1402231@fpt.edu.vn\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -44,7 +44,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"quachkhongtriet@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Tindev\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698740\",\r\n    \"address\":\"Hong biết luôn =]]\"\r\n}",
+					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Sketter\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698739\",\r\n    \"address\":\"Hong biết luôn =]]\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"huydtse1402231@fpt.edu.vn\",\r\n    \"password\":\"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -160,7 +160,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"huydtse140223@fpt.edu.vn\"\r\n}",
+					"raw": "{\r\n    \"email\": \"2s2svenus2s2s@gmail.com\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -199,7 +199,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/ad62faea7602aef1ea157e462e5ddacb1b4f2e8109d8b1520cfbf13cb62eceba",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/aa6ed00dd19f0c223203d4ec5581f751cd379dca2fef73d23f5569d20e76467b",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -210,7 +210,7 @@
 						"v1",
 						"user",
 						"reset_password",
-						"ad62faea7602aef1ea157e462e5ddacb1b4f2e8109d8b1520cfbf13cb62eceba"
+						"aa6ed00dd19f0c223203d4ec5581f751cd379dca2fef73d23f5569d20e76467b"
 					]
 				}
 			},
@@ -284,7 +284,7 @@
 						},
 						{
 							"key": "phone",
-							"value": "0387698745",
+							"value": "0387698739",
 							"type": "text"
 						},
 						{
@@ -351,7 +351,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"currentPassword\": \"123456\",\r\n    \"newPassword\": \"123123\",\r\n    \"confirmNewPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"currentPassword\": \"123123\",\r\n    \"newPassword\": \"1231231\",\r\n    \"confirmNewPassword\": \"1231231\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -370,6 +370,37 @@
 						"v1",
 						"user",
 						"update_password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create destination test",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/create",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"destination",
+						"create"
 					]
 				}
 			},
@@ -413,7 +444,7 @@
 			"response": []
 		},
 		{
-			"name": "init role",
+			"name": "init data",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -436,16 +467,14 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/initRole",
+					"raw": "http://{{HOST}}:{{PORT}}/initData",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
 					],
 					"port": "{{PORT}}",
 					"path": [
-						"api",
-						"v1",
-						"initRole"
+						"initData"
 					]
 				}
 			},

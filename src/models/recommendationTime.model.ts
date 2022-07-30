@@ -1,17 +1,8 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 
-export interface RecommendationTimeAttributes {
-    destinationID: number;
-    from: string;
-    to: string;
-}
-
-export interface RecommendationTimeInput extends Optional<RecommendationTimeAttributes, 'destinationID'> { };
-export interface RecommendationTimeOuput extends Required<RecommendationTimeAttributes> { };
-
-export class RecommendationTime extends Model<RecommendationTimeAttributes, RecommendationTimeInput> implements RecommendationTimeAttributes {
+export class RecommendationTime extends Model<InferAttributes<RecommendationTime>, InferCreationAttributes<RecommendationTime>> {
     declare destinationID: number;
     from!: string;
     to!: string;

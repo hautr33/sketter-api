@@ -1,16 +1,8 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 
-export interface RoleAttributes {
-    id: number;
-    name: string;
-}
-
-export interface RoleInput extends Optional<RoleAttributes, 'id'> { };
-export interface RoleOuput extends Required<RoleAttributes> { };
-
-export class Role extends Model<RoleAttributes, RoleInput> implements RoleAttributes {
-    declare id: number;
+export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<Role>> {
+    declare id?: number;
     name!: string;
 }
 
