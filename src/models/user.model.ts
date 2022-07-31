@@ -83,8 +83,7 @@ User.init({
         type: DataTypes.STRING
     },
     image: {
-        type: DataTypes.STRING,
-        defaultValue: "images/avatar/default.png",
+        type: DataTypes.STRING
     },
     gender: {
         type: DataTypes.STRING,

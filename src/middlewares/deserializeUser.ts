@@ -63,17 +63,19 @@ export const deserializeUser = async (
       const excludedUser = _.omit(user.toJSON(), UserPrivateFields.default);
       res.locals.user = excludedUser;
     }
-    const storage = getStorage();
-    await getDownloadURL(ref(storage, user.image))
-      .then((url) => {
-        res.locals.user.image = url;
-      })
-      .catch(async () => {
-        await getDownloadURL(ref(storage, USER_DEFAULT_IMG_URL))
-          .then((url) => {
-            res.locals.user.image = url;
-          })
-      })
+    if (user.image) {
+      const storage = getStorage();
+      await getDownloadURL(ref(storage, user.image))
+        .then((url) => {
+          res.locals.user.image = url;
+        })
+        .catch(async () => {
+          await getDownloadURL(ref(storage, USER_DEFAULT_IMG_URL))
+            .then((url) => {
+              res.locals.user.image = url;
+            })
+        })
+    }
     next();
   } catch (err: any) {
     next(err);
