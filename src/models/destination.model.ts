@@ -7,16 +7,16 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare id?: string;
     declare addCatalog: HasManyAddAssociationMixin<Catalog, number>;
     name!: string;
-    address?: string;
-    longitude?: number;
-    latitude?: number;
-    lowestPrice?: number;
-    highestPrice?: number;
-    openingTime?: string;
-    closingTime?: string;
-    spendingTime?: string;
-    recommendationTimeFrom?: string;
-    recommendationTimeTo?: string;
+    address!: string;
+    phone!: string;
+    email!: string;
+    description!: string;
+    longitude!: number;
+    latitude!: number;
+    lowestPrice!: number;
+    highestPrice!: number;
+    openingTime!: string;
+    closingTime!: string;
     estimatedTimeStay?: string;
     status?: string;
     rating?: number;
@@ -42,6 +42,15 @@ Destination.init({
     address: {
         type: DataTypes.STRING,
     },
+    phone: {
+        type: DataTypes.STRING,
+    },
+    email: {
+        type: DataTypes.STRING,
+    },
+    description: {
+        type: DataTypes.STRING,
+    },
     longitude: {
         type: DataTypes.STRING,
     },
@@ -58,15 +67,6 @@ Destination.init({
         type: DataTypes.STRING,
     },
     closingTime: {
-        type: DataTypes.STRING,
-    },
-    spendingTime: {
-        type: DataTypes.STRING,
-    },
-    recommendationTimeFrom: {
-        type: DataTypes.STRING,
-    },
-    recommendationTimeTo: {
         type: DataTypes.STRING,
     },
     estimatedTimeStay: {

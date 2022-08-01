@@ -28,7 +28,6 @@ import router from './routes';
 import admin from 'firebase-admin';
 import { initializeApp } from "firebase/app";
 
-
 const app = express();
 
 // Hide X-Powered-By header

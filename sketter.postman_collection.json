@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test02@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -382,7 +382,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "",
+					"raw": "{\r\n    \"name\": \"1\",\r\n    \"address\": \"2\",\r\n    \"longitude\": \"3\",\r\n    \"latitude\": \"4\",\r\n    \"phone\": \"5\",\r\n    \"email\": \"6\",\r\n    \"supplier\": \"7\",\r\n    \"description\": \"8\",\r\n    \"lowestPrice\": \"9\",\r\n    \"openingTime\": \"10\",\r\n    \"closingTime\": \"11\",\r\n    \"estimatedTimeStay\": \"12\",\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"05:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"09:00\"\r\n        },\r\n        {\r\n            \"start\": \"10:00\",\r\n            \"end\": \"12:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        {\r\n            \"id\": 1\r\n        },\r\n        {\r\n            \"id\": 2\r\n        }\r\n    ],\r\n    \"catalogs\": [\r\n        {\r\n            \"name\": \"Quán ăn\"\r\n        }\r\n    ]\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -401,6 +401,45 @@
 						"v1",
 						"destination",
 						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "catalog - get all",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/catalog",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"catalog"
 					]
 				}
 			},

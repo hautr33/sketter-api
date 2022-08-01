@@ -2,6 +2,7 @@ import express from "express";
 import user from "./user.route";
 import auth from "./auth.route";
 import destination from "./destination.route";
+import catalog from "./catalog.route";
 import { StatusCodes } from "http-status-codes";
 import catchAsync from "../utils/catchAsync";
 import { Role } from "../models/role.model";
@@ -15,6 +16,7 @@ router.get("/healthcheck", (_, res) => res.status(StatusCodes.OK).send({ "status
 router.use('/api/v1/auth', auth);
 router.use('/api/v1/user', user);
 router.use('/api/v1/destination', destination);
+router.use('/api/v1/catalog', catalog);
 
 
 // just for test
