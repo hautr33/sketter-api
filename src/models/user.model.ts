@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Auth, Gender, UserRole } from '../utils/constant';
+import { Auth, Gender, Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
 
@@ -148,7 +148,7 @@ Role.hasOne(User, {
 });
 
 User.beforeSave(async (user) => {
-    if (user.roleID == UserRole.supplier) {
+    if (user.roleID == Roles.Supplier) {
         if (!user.name || user.name == '') {
             throw new Error('Supplier can not be blank');
         }
@@ -162,7 +162,7 @@ User.beforeSave(async (user) => {
             throw new Error('Supplier\'s Address can not be blank');
         }
     }
-    if (user.roleID == UserRole.traveler) {
+    if (user.roleID == Roles.Traveler) {
         if (!user.name || user.name == '') {
             throw new Error('Traveler\'s Name can not be blank');
         }

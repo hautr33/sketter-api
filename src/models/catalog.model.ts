@@ -10,6 +10,7 @@ import sequelize from '../db/sequelize.db';
 //     'Khu nghỉ dưỡng cao cấp',
 //     'Nhà xe'
 
+
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare id?: number;
     name!: string;
@@ -19,7 +20,6 @@ Catalog.init({
     // Model attributes are defined here
     id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true,
         primaryKey: true
     },
     name: {

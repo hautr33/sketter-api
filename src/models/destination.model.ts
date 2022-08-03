@@ -2,10 +2,13 @@ import { DataTypes, HasManyAddAssociationMixin, InferAttributes, InferCreationAt
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
 import { Destination_Catalog } from './destination_catalog.model';
+import { Destination_TravelPersonalityType } from './destination_personalityType.model';
+import { TravelPersonalityType } from './personalityType.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
     declare addCatalog: HasManyAddAssociationMixin<Catalog, number>;
+    declare addTravelPersonalityType: HasManyAddAssociationMixin<TravelPersonalityType, number>;
     name!: string;
     address!: string;
     phone!: string;
@@ -92,5 +95,7 @@ Destination.init({
 
 Destination.belongsToMany(Catalog, { through: Destination_Catalog });
 Catalog.belongsToMany(Destination, { through: Destination_Catalog });
-// Destination.hasMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });
 
+Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType });
+TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType });
+// Destination.hasMany(TravelPersonalityType, { through: 'Destination_TravelPersonality' });

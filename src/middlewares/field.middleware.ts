@@ -21,6 +21,11 @@ export function attachCreatedBy(
 	next();
 }
 
+/**
+ * @param unwantedFieldString - List of unwanted field in string
+ * This middleware will add unwanted fieid param to request body. This is because
+ * we want to block some unwanted fields from request body.
+ */
 export function blockUnwantedFields(
 	unwantedFieldString: string
 ): RequestHandler {
@@ -40,7 +45,7 @@ export function blockUnwantedFields(
 /**
  * @param roles - User role like admin, normal user, supplier
  * This middleware will add role param to request body. This is because
- * we login to webapp by sending email and password.
+ * we login by sending email and password.
  */
 export const addRoleMiddleware = (...roles: UserRoles[]): RequestHandler => (
 	req,

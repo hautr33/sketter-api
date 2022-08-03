@@ -376,13 +376,13 @@
 			"response": []
 		},
 		{
-			"name": "create destination test (đăng nhập bằng supplier mới xài được nha)",
+			"name": "create destination (đăng nhập bằng supplier ha supplier manager mới xài được nha)",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"1\",\r\n    \"address\": \"2\",\r\n    \"longitude\": \"3\",\r\n    \"latitude\": \"4\",\r\n    \"phone\": \"5\",\r\n    \"email\": \"6\",\r\n    \"supplier\": \"7\",\r\n    \"description\": \"8\",\r\n    \"lowestPrice\": \"9\",\r\n    \"openingTime\": \"10\",\r\n    \"closingTime\": \"11\",\r\n    \"estimatedTimeStay\": \"12\",\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"05:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"09:00\"\r\n        },\r\n        {\r\n            \"start\": \"10:00\",\r\n            \"end\": \"12:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        {\r\n            \"id\": 1\r\n        },\r\n        {\r\n            \"id\": 2\r\n        }\r\n    ],\r\n    \"catalogs\": [\r\n        {\r\n            \"name\": \"Quán ăn\"\r\n        }\r\n    ]\r\n}",
+					"raw": "{\r\n    \"name\": \"Đồi thông hai mộ\",\r\n    \"address\": \"Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam\",\r\n    \"longitude\": 11.9556795,\r\n    \"latitude\": 108.4772041,\r\n    \"phone\": \"0912345678\",\r\n    \"email\": \"huyhuyduong@gmail.com\",\r\n    \"description\": \"đây là cái đồi có cây thông\",\r\n    \"lowestPrice\": \"9\",\r\n    \"highestPrice\": \"90\",\r\n    \"openingTime\": \"08:00\",\r\n    \"closingTime\": \"22:00\",\r\n    \"estimatedTimeStay\": \"90m\",\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"05:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"09:00\"\r\n        },\r\n        {\r\n            \"start\": \"10:00\",\r\n            \"end\": \"12:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        {\r\n            \"name\": \"Ưa mạo hiểm\"\r\n        },\r\n        {\r\n            \"name\": \"Thích khám phá\"\r\n        }\r\n    ],\r\n    \"catalogs\": [\r\n        {\r\n            \"name\": \"Địa điểm du lịch\"\r\n        }\r\n    ]\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -430,7 +430,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/catalog",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/catalog?page=1",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -440,6 +440,57 @@
 						"api",
 						"v1",
 						"catalog"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "personality type - get all",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/travel_personality_type?page=1",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"travel_personality_type"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						}
 					]
 				}
 			},

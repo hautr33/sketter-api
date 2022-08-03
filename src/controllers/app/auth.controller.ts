@@ -11,7 +11,7 @@ import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
 import { signJwt } from '../../utils/jwt';
-import { UserRole } from '../../utils/constant';
+import { Roles } from '../../utils/constant';
 import jwt from 'jsonwebtoken';
 import { Destination } from '../../models/destination.model';
 const firebaseAdmin = require("firebase-admin/auth");
@@ -130,9 +130,9 @@ export const signup = catchAsync(async (req, res, next) => {
     user.password = password;
     user.roleID = role;
 
-    if (role == UserRole.traveler) {
+    if (role == Roles.Traveler) {
         user.name = email.split('@')[0];
-    } else if (role == UserRole.supplier) {
+    } else if (role == Roles.Supplier) {
         const { name, owner, phone, address } = req.body;
         user.name = name;
         user.password = password;

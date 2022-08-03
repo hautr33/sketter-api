@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { UserRole } from "../../utils/constant";
+import { Roles } from "../../utils/constant";
 import catchAsync from "../../utils/catchAsync";
 import RESDocument from "../factory/RESDocument";
 import AppError from "../../utils/appError";
@@ -24,10 +24,10 @@ export const updateMe = catchAsync(async (req, res, next) => {
 
     const { name, phone, address } = req.body;
 
-    if (user.roleID == UserRole.traveler) {
+    if (user.roleID == Roles.Traveler) {
         const { gender, dob } = req.body;
         await User.update({ name: name, phone: phone, address: address, gender: gender, dob: dob }, { where: { id: user.id } })
-    } else if (user.roleID == UserRole.supplier) {
+    } else if (user.roleID == Roles.Supplier) {
         const { owner } = req.body;
         await User.update({ name: name, phone: phone, address: address, owner: owner }, { where: { id: user.id } })
     }

@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/requireUser";
 import { getMe, updateMe, updatePassword } from "../controllers/app/user.controller";
 import { standardPipeline } from "../pipes";
 import { forgotPassword, resetPassword, restrictTo } from "../controllers/app/auth.controller";
-import { UserRole } from "../utils/constant";
+import { Roles } from "../utils/constant";
 
 const router = Router();
 
@@ -15,8 +15,8 @@ router.patch('/reset_password/:token', standardPipeline(resetPassword));
 router.use(deserializeUser, requireUser);
 router
     .route('/me')
-    .get(standardPipeline(restrictTo(UserRole.traveler, UserRole.supplier), getMe))
-    .patch(standardPipeline(restrictTo(UserRole.traveler, UserRole.supplier), updateMe))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), getMe))
+    .patch(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), updateMe))
 
 router.patch('/update_password', standardPipeline(updatePassword));
 

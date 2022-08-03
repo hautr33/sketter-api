@@ -5,6 +5,8 @@ import { Destination } from "../../models/destination.model";
 import catchAsync from "../../utils/catchAsync";
 import RESDocument from "../factory/RESDocument";
 import { TravelPersonalityType } from "../../models/personalityType.model";
+import { Destination_RecommendedTime } from "../../models/destination_recommendedTime.model";
+import lodash from "lodash";
 
 export const create = catchAsync(async (req, res, next) => {
     const {
@@ -39,24 +41,26 @@ export const create = catchAsync(async (req, res, next) => {
     // destination.openingTime = openingTime;
     // destination.closingTime = closingTime;
     // destination.estimatedTimeStay = estimatedTimeStay;
-
+    const supplierID = res.locals.user.id;
 
     let listCatalog: Catalog[] = [];
     for (let i = 0; i < catalogs.length; i++) {
-        const catalog = await Catalog.findOne(catalogs[i].name)
+        const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
         if (!catalog)
             return next(new AppError('Loại hình địa điểm không hợp lệ', StatusCodes.BAD_REQUEST))
         listCatalog.push(catalog);
     }
 
-
     let listpersonalityType: TravelPersonalityType[] = [];
     for (let i = 0; i < personalityTypes.length; i++) {
-        const personalityType = await TravelPersonalityType.findOne(personalityTypes[i].name)
+        const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
         if (!personalityType)
             return next(new AppError('Tính cách du lịch của địa điểm không hợp lệ', StatusCodes.BAD_REQUEST))
         listpersonalityType.push(personalityType);
     }
+
+    if (recommendedTimes.length < 1)
+        return next(new AppError('Thời gian đề xuất không hợp lệ', StatusCodes.BAD_REQUEST))
 
     const destination = await Destination.create({
         name: name,
@@ -70,20 +74,26 @@ export const create = catchAsync(async (req, res, next) => {
         highestPrice: highestPrice,
         openingTime: openingTime,
         closingTime: closingTime,
-        estimatedTimeStay: estimatedTimeStay
+        estimatedTimeStay: estimatedTimeStay,
+        supplierID: supplierID
     });
 
-    for (let i = 1; i <= recommendedTimes.length; i++) {
-        const catalog = await Catalog.findByPk(i);
-        if (catalog)
-            await destination.addCatalog(catalog);
-    }
+    for (let i = 0; i < listCatalog.length; i++)
+        await destination.addCatalog(listCatalog[i]);
 
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
-        destination: destination,
-        recommendedTime: recommendedTimes.length,
-        personalityType: personalityTypes.length,
-        catalog: catalogs.length
-    });
+    for (let i = 0; i < listpersonalityType.length; i++)
+        await destination.addTravelPersonalityType(listpersonalityType[i]);
+
+    if (destination.id)
+        for (let i = 0; i < recommendedTimes.length; i++)
+            await Destination_RecommendedTime.create({
+                destinationID: destination.id,
+                start: recommendedTimes[i].start,
+                end: recommendedTimes[i].end
+            })
+
+    const result = await Destination.findOne({ where: { id: destination.id }, include: [TravelPersonalityType, Catalog, Destination_RecommendedTime] })
+    const document = lodash.omit(result?.toJSON(), ["TravelPersonalityTypes.Destination_TravelPersonalityType", "Destination_Catalog", "destinationID"])
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', document);
     next();
 });

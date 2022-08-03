@@ -11,7 +11,7 @@ import sequelize from '../db/sequelize.db';
 //     'Có nhu cầu vui chơi, giải trí cao'
 
 export class TravelPersonalityType extends Model<InferAttributes<TravelPersonalityType>, InferCreationAttributes<TravelPersonalityType>> {
-    declare id?: string;
+    declare id?: number;
     name!: string;
 }
 
