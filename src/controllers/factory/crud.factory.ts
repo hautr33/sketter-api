@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import { StatusCodes } from "http-status-codes";
+import { PAGE_LIMIT } from "../../config/default";
 import AppError from "../../utils/appError";
 import catchAsync from "../../utils/catchAsync";
 import RESDocument from "./RESDocument";
@@ -84,16 +85,19 @@ export function createOne(Model: any): RequestHandler {
  *
  * @param {Object} Model - The model or collection pointing to
  */
-export function getOne(Model: any): RequestHandler {
+export function getOne(Model: any, option?: any): RequestHandler {
     return catchAsync(async (req, res, next) => {
         /* We only use "await" in the end, when the query is fulfilled 
         & ready to fetch */
-        const document = Model.findByPk(req.params.id);
-
+        const document = await Model.findOne(
+            option,
+            {
+                where: { id: req.params.id }
+            });
         if (!document) {
             return next(
                 new AppError(
-                    'Không tìm thấy thông tin với ID nêu',
+                    'Không tìm thấy thông tin với ID này',
                     StatusCodes.NOT_FOUND
                 )
             );
@@ -120,17 +124,20 @@ export function getOne(Model: any): RequestHandler {
 export function getAll(Model: any, option?: any): RequestHandler {
     return catchAsync(async (req, res, next) => {
         // Add features to the query by leveraging fetchAPIFeatures.js
-        const pageLimit = 10;
         const page = Number(req.query.page ?? 1);
         if (isNaN(page) || page < 1)
             return next(new AppError('Trang không hợp lệ', StatusCodes.BAD_REQUEST))
 
         const { count, rows } = await Model.findAndCountAll(option, {
-            offset: (page - 1) * pageLimit,
-            limit: pageLimit
+            offset: (page - 1) * PAGE_LIMIT as number,
+            limit: PAGE_LIMIT
         });
 
-        const maxPage = Math.ceil(count / pageLimit);
+        if (!rows) {
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success', null)
+            next()
+        }
+        const maxPage = Math.ceil(count / PAGE_LIMIT);
         if (page > maxPage)
             return next(new AppError('Trang không hợp lệ', StatusCodes.BAD_REQUEST))
 

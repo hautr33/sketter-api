@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Auth, Gender, Roles } from '../utils/constant';
 import crypto from 'crypto';
@@ -24,7 +24,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     address!: string;
     owner!: string;
     isActive!: boolean;
-    roleID!: UserRoles;
+    roleID!: ForeignKey<Role['id']>;
     authType!: AuthType;
     iat!: number | null;
     exp!: number | null;

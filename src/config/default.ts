@@ -47,7 +47,7 @@ export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string;
 export const EMAIL_SERVICE = process.env.EMAIL_SERVICE as string;
 export const FORGOT_PASSWORD_URL = process.env.FORGOT_PASSWORD_URL as string;
 
-
+export const PAGE_LIMIT = Number(process.env.PAGE_LIMIT ?? 10);
 
 export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
 export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';

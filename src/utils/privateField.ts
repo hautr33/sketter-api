@@ -7,7 +7,6 @@ export class UserPrivateFields {
         "gender",
         "dob",
         "owner",
-        "createdAt",
         "isActive",
         "authType",
         "iat",
@@ -23,7 +22,6 @@ export class UserPrivateFields {
         "passwordResetExpires",
         "passwordUpdatedAt",
         "owner",
-        "createdAt",
         "isActive",
         "authType",
         "iat",
@@ -40,12 +38,25 @@ export class UserPrivateFields {
         "passwordUpdatedAt",
         "gender",
         "dob",
-        "createdAt",
         "isActive",
         "authType",
         "iat",
         "exp",
         "firebaseID",
+        "createdAt",
+        "updatedAt"
+    ];
+}
+
+export class DestinationPrivateFields {
+    static default = [
+        "phone",
+        "email",
+        "description",
+        "longitude",
+        "latitude",
+        "estimatedTimeStay",
+        "supplierID",
         "createdAt",
         "updatedAt"
     ];

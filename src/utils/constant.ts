@@ -26,6 +26,7 @@ export enum PersonalityTypes {
     'Giá rẻ là trên hết',
     'Có nhu cầu vui chơi, giải trí cao'
 }
+
 export class Gender {
     public static readonly female = 'Nam';
 
@@ -36,4 +37,13 @@ export class Auth {
     public static readonly sketter = 'Sketter';
 
     public static readonly google = 'Google';
+}
+export class Status {
+    public static readonly unverified = 'Unverified';
+
+    public static readonly verified = 'Verified';
+
+    public static readonly reject = 'Reject';
+
+    public static readonly closed = 'Closed';
 }
