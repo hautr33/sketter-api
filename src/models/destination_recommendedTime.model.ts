@@ -3,7 +3,7 @@ import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 
 export class Destination_RecommendedTime extends Model<InferAttributes<Destination_RecommendedTime>, InferCreationAttributes<Destination_RecommendedTime>> {
-    declare destinationID: ForeignKey<Destination['id']>;
+    declare destinationID?: ForeignKey<Destination['id']>;
     start!: string;
     end!: string;
 }
@@ -37,6 +37,7 @@ Destination_RecommendedTime.init({
 }, {
     // Other model options go here
     timestamps: false,
+    paranoid: true,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Destination_RecommendedTime' // We need to choose the model name
 });

@@ -31,8 +31,9 @@ export const updateMe = catchAsync(async (req, res, next) => {
         const { owner } = req.body;
         await User.update({ name: name, phone: phone, address: address, owner: owner }, { where: { id: user.id } })
     }
-    if (req.files) {
-        if ((req.files.avatar as UploadedFile[]).length == 1 || (req.files.avatar as UploadedFile[]).length == undefined) {
+    if (req.files && req.files.avatar) {
+        const imgNum = (req.files.avatar as UploadedFile[]).length ?? 1;
+        if ((req.files.avatar as UploadedFile[] || req.files.avatar as UploadedFile) && imgNum == 1) {
             const avatar = req.files.avatar as UploadedFile;
             if (avatar.mimetype.includes('image')) {
                 const storage = getStorage();

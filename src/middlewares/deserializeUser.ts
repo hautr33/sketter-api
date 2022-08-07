@@ -5,8 +5,8 @@ import { User } from '../models/user.model';
 import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
 import { UserPrivateFields } from '../utils/privateField';
-import { getDownloadURL, getStorage, ref } from "firebase/storage";
-import { USER_DEFAULT_IMG_URL } from '../config/default';
+// import { getDownloadURL, getStorage, ref } from "firebase/storage";
+// import { USER_DEFAULT_IMG_URL } from '../config/default';
 
 export const deserializeUser = async (
   req: Request,
@@ -16,25 +16,23 @@ export const deserializeUser = async (
   try {
     // Get the token
     let access_token;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
+    if (req.headers.authorization
+      && req.headers.authorization.startsWith('Bearer')
     ) {
       access_token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies.jwt) {
       access_token = req.cookies.jwt;
     }
 
-    if (!access_token) {
+    if (!access_token)
       return next(new AppError('Vui lòng đăng nhập để sử dụng tính năng này', 401));
-    }
+
 
     // Validate Access Token
     const decoded = verifyJwt<{ id: string, iat: number, exp: number }>(access_token);
 
-    if (!decoded) {
+    if (!decoded)
       return next(new AppError(`Token không hợp lệ hoặc tài khoản không tồn tại`, 401));
-    }
 
     // Check if user has a valid session
     // const session = await redisClient.get(decoded.sub);
@@ -46,9 +44,10 @@ export const deserializeUser = async (
     // Check if user still exist
     const user = await User.findOne({ where: { id: decoded.id, iat: decoded.iat, exp: decoded.exp } });
 
-    if (!user) {
+    if (!user)
       return next(new AppError(`Phiên đăng nhập đã hết hạn`, 401));
-    }
+
+    // await user.getImageURL()
 
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
@@ -62,19 +61,6 @@ export const deserializeUser = async (
     } else {
       const excludedUser = _.omit(user.toJSON(), UserPrivateFields.default);
       res.locals.user = excludedUser;
-    }
-    if (user.image) {
-      const storage = getStorage();
-      await getDownloadURL(ref(storage, user.image))
-        .then((url) => {
-          res.locals.user.image = url;
-        })
-        .catch(async () => {
-          await getDownloadURL(ref(storage, USER_DEFAULT_IMG_URL))
-            .then((url) => {
-              res.locals.user.image = url;
-            })
-        })
     }
     next();
   } catch (err: any) {

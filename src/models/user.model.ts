@@ -4,6 +4,7 @@ import sequelize from '../db/sequelize.db';
 import { Auth, Gender, Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 export type UserGender = 'Nam' | 'Nữ';
 export type UserRoles = 1 | 2 | 3 | 4;
@@ -17,7 +18,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     passwordResetToken!: string | null;
     passwordResetExpires!: number | null;
     name!: string;
-    image!: string;
+    image!: string | null;
     gender!: UserGender;
     dob!: Date;
     phone!: string;
@@ -33,6 +34,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     readonly updatedAt!: Date;
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
+    getImageURL!: () => Promise<any>;
+
 }
 
 User.init({
@@ -83,7 +86,7 @@ User.init({
         type: DataTypes.STRING
     },
     image: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
     },
     gender: {
         type: DataTypes.STRING,
@@ -139,7 +142,7 @@ User.init({
 }, {
     // Other model options go here
     timestamps: true,
-    sequelize: sequelize, // We need to pass the connection instance
+    sequelize: sequelize,
     modelName: 'User' // We need to choose the model name
 });
 
@@ -174,6 +177,22 @@ User.beforeSave(async (user) => {
         user.passwordUpdatedAt = new Date(Date.now() - 1000); // Now - 1 minutes
     }
 });
+
+User.afterFind(async (user) => {
+    if (user) {
+        const img = (user as User).image;
+        if (img) {
+            const storage = getStorage();
+            await getDownloadURL(ref(storage, img))
+                .then((url) => {
+                    (user as User).image = url as string;
+                })
+                .catch(() => {
+                    (user as User).image = null;
+                })
+        }
+    }
+})
 
 User.prototype.comparePassword = async function (
     candidatePassword: string,

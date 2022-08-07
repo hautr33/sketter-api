@@ -7,69 +7,43 @@ import RESDocument from "../factory/RESDocument";
 import { TravelPersonalityType } from "../../models/personalityType.model";
 import { Destination_RecommendedTime } from "../../models/destination_recommendedTime.model";
 import { Roles, Status } from "../../utils/constant";
-import { PAGE_LIMIT } from "../../config/default";
+import { DESTINATION_IMG_URL, PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/privateField";
+import { UploadedFile } from "express-fileupload";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { Destination_Image } from "../../models/destination_image.model";
+import { deleteOne } from "../factory/crud.factory";
+import { validateDestination } from "../../utils/validateInput";
 
 export const createDestination = catchAsync(async (req, res, next) => {
-    const {
-        name,
-        address,
-        longitude,
-        latitude,
-        phone,
-        email,
-        description,
-        lowestPrice,
-        highestPrice,
-        openingTime,
-        closingTime,
-        estimatedTimeStay,
-        recommendedTimes,
-        personalityTypes,
-        catalogs
+    const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
+        openingTime, closingTime, estimatedTimeStay
     } = req.body;
 
-    if (lowestPrice >= highestPrice) {
-        return next(new AppError('Giá thấp nhất và giá cao nhất không hợp lệ', StatusCodes.BAD_REQUEST))
-    }
-    if (openingTime >= closingTime) {
-        return next(new AppError('Giờ mở cửa và giờ đóng cửa không hợp lệ', StatusCodes.BAD_REQUEST))
-    }
+    const catalogs = JSON.parse(req.body.catalogs)
+    const personalityTypes = JSON.parse(req.body.personalityTypes)
+    const recommendedTimes = JSON.parse(req.body.recommendedTimes)
     const supplierID = res.locals.user.id;
+
+    const error = await validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
+    if (error) {
+        return next(new AppError(error, StatusCodes.BAD_REQUEST))
+    }
 
     let listCatalog: Catalog[] = [];
     for (let i = 0; i < catalogs.length; i++) {
         const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
-        if (!catalog)
-            return next(new AppError('Loại hình địa điểm không hợp lệ', StatusCodes.BAD_REQUEST))
-        listCatalog.push(catalog);
+        if (catalog)
+            listCatalog.push(catalog);
     }
 
     let listpersonalityType: TravelPersonalityType[] = [];
     for (let i = 0; i < personalityTypes.length; i++) {
         const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
-        if (!personalityType)
-            return next(new AppError('Tính cách du lịch của địa điểm không hợp lệ', StatusCodes.BAD_REQUEST))
-        listpersonalityType.push(personalityType);
+        if (personalityType)
+            listpersonalityType.push(personalityType);
     }
 
-
-    if (recommendedTimes.length < 1)
-        return next(new AppError('Khung thời gian đề xuất không được trống', StatusCodes.BAD_REQUEST))
-
-    for (let i = 0; i < recommendedTimes.length; i++) {
-        if (recommendedTimes[i].start >= recommendedTimes[i].end) {
-            return next(new AppError(`Khung thời gian đề xuất ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST))
-        }
-        for (let j = i + 1; j < recommendedTimes.length; j++) {
-            if (recommendedTimes[i].start <= recommendedTimes[j].start
-                && recommendedTimes[j].start <= recommendedTimes[i].end
-                || recommendedTimes[i].start <= recommendedTimes[j].end
-                && recommendedTimes[j].end <= recommendedTimes[i].end) {
-                return next(new AppError(`Khung thời gian đề xuất ${i + 1} và ${j + 1} bị xung đột`, StatusCodes.BAD_REQUEST))
-            }
-        }
-    }
     const destination = await Destination.create({
         name: name,
         address: address,
@@ -86,40 +60,149 @@ export const createDestination = catchAsync(async (req, res, next) => {
         supplierID: supplierID
     });
 
-    for (let i = 0; i < listCatalog.length; i++)
-        await destination.addCatalog(listCatalog[i]);
+    await destination.addCatalogs(listCatalog);
+    await destination.addTravelPersonalityTypes(listpersonalityType);
+    for (let i = 0; i < recommendedTimes.length; i++)
+        await Destination_RecommendedTime.create({
+            destinationID: destination.id,
+            start: recommendedTimes[i].start,
+            end: recommendedTimes[i].end
+        })
 
-    for (let i = 0; i < listpersonalityType.length; i++)
-        await destination.addTravelPersonalityType(listpersonalityType[i]);
+    if (req.files && req.files.images) {
 
-    if (destination.id)
-        for (let i = 0; i < recommendedTimes.length; i++)
-            await Destination_RecommendedTime.create({
-                destinationID: destination.id,
-                start: recommendedTimes[i].start,
-                end: recommendedTimes[i].end
-            }).catch((e) => {
-                destination.destroy();
-                const msg = e.message;
-                if (msg.includes('Validation error: ')) {
-                    const message = msg.split('Validation error: ')[1];
-                    return next(new AppError(message, StatusCodes.BAD_REQUEST))
+        if (req.files.images as UploadedFile) {
+            let temp = JSON.stringify(req.files.images);
+            if (!temp.startsWith('[')) {
+                temp = '[' + temp + ']'
+                req.files.images = JSON.parse(temp)
+            }
+
+            const images = req.files.images as UploadedFile[];
+            images.forEach(async img => {
+                if (img.mimetype.includes('image')) {
+                    const storage = getStorage();
+                    const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.${img.name.split('.')[1]}`;
+                    const storageRef = ref(storage, image);
+
+                    const bytes = new Uint8Array(img.data);
+                    await uploadBytes(storageRef, bytes)
+                        .then(async (snapshot) => {
+                            const image = snapshot.metadata.fullPath;
+                            await Destination_Image.create({
+                                destinationID: destination.id,
+                                imgURL: image
+                            })
+                        })
+                        .catch((error) => {
+                            console.log(error)
+                        });
                 } else {
-                    return next(new AppError(msg, StatusCodes.BAD_REQUEST))
+                    destination.destroy();
+                    return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
                 }
-            })
+            });
 
+        } else {
+            destination.destroy();
+            return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_REQUEST))
+        }
+    }
     const result = await Destination.findOne({
-        where: { id: destination.id }, attributes: { exclude: ['updatedAt', 'createdAt'] },
+        where: { id: destination.id },
+        attributes: { exclude: ['updatedAt', 'deletedAt'] },
         include: [
             { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
             { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } }
+            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
+            { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
         ]
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
     next();
 });
+
+export const updateDestination = catchAsync(async (req, res, next) => {
+    const destination = await Destination.findOne({ where: { id: req.params.id } });
+    if (!destination)
+        return next(new AppError('Không tìm thấy thông tin với ID này', StatusCodes.NOT_FOUND));
+
+    const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
+        openingTime, closingTime, estimatedTimeStay
+    } = req.body;
+
+    const catalogs = JSON.parse(req.body.catalogs)
+    const personalityTypes = JSON.parse(req.body.personalityTypes)
+    const recommendedTimes = JSON.parse(req.body.recommendedTimes)
+    const supplierID = res.locals.user.id;
+
+    const error = await validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
+    if (error) {
+        return next(new AppError(error, StatusCodes.BAD_REQUEST))
+    }
+
+    let newCatalogs: Catalog[] = [];
+    for (let i = 0; i < catalogs.length; i++) {
+        const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
+        if (catalog)
+            newCatalogs.push(catalog);
+    }
+
+    let newPersonalityTypes: TravelPersonalityType[] = [];
+    for (let i = 0; i < personalityTypes.length; i++) {
+        const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
+        if (personalityType)
+            newPersonalityTypes.push(personalityType);
+    }
+    await Destination.update(
+        {
+            name: name,
+            address: address,
+            phone: phone,
+            email: email,
+            description: description,
+            longitude: longitude,
+            latitude: latitude,
+            lowestPrice: lowestPrice,
+            highestPrice: highestPrice,
+            openingTime: openingTime,
+            closingTime: closingTime,
+            estimatedTimeStay: estimatedTimeStay,
+            supplierID: supplierID
+        },
+        {
+            where: { id: req.params.id }
+        }
+    );
+
+    const curCatalogs = await destination.getCatalogs();
+    await destination.removeCatalogs(curCatalogs);
+    await destination.addCatalogs(newCatalogs);
+
+    const curPersonalityTypes = await destination.getTravelPersonalityTypes();
+    await destination.removeTravelPersonalityTypes(curPersonalityTypes);
+    await destination.addTravelPersonalityTypes(newPersonalityTypes);
+
+    await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id } })
+    for (let i = 0; i < recommendedTimes.length; i++)
+        await Destination_RecommendedTime.create({
+            destinationID: destination.id,
+            start: recommendedTimes[i].start,
+            end: recommendedTimes[i].end
+        })
+    const result = await Destination.findOne({
+        where: { id: destination.id },
+        attributes: { exclude: ['updatedAt', 'deletedAt'] },
+        include: [
+            { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
+            { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
+            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
+            { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
+        ]
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
+    next();
+})
 
 export const getAllDestination = catchAsync(async (req, res, next) => {
     const page = Number(req.query.page ?? 1);
@@ -163,18 +246,6 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
     next();
 });
 
-// export const getOneDestination = getOne(
-//     Destination,
-//     {
-// attributes: { exclude: ['updatedAt', 'createdAt'] },
-// include: [
-//     { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-//     { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-//     { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] }, }
-// ]
-//     });
-
-
 export const getOneDestination = catchAsync(async (req, res, next) => {
     const roleID = res.locals.user.roleID;
     const id = res.locals.user.id;
@@ -192,7 +263,8 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
             include: [
                 { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
                 { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] }, }
+                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
+                { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
             ]
         });
     if (!document) {
@@ -207,3 +279,5 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
 
     next();
 })
+
+export const deleteDestination = deleteOne(Destination);

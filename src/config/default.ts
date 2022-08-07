@@ -39,7 +39,7 @@ export const MESSAGING_SENDER_ID = process.env.MESSAGING_SENDER_ID as string;
 export const APP_ID = process.env.APP_ID as string;
 
 export const USER_IMG_URL = process.env.USER_IMG_URL as string;
-export const USER_DEFAULT_IMG_URL = USER_IMG_URL + '/default.png' as string;
+export const DESTINATION_IMG_URL = process.env.DESTINATION_IMG_URL as string;
 
 
 export const EMAIL_USERNAME = process.env.EMAIL_USERNAME as string;

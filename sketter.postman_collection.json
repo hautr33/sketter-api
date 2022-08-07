@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test02@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test041@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -44,7 +44,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Sketter\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698739\",\r\n    \"address\":\"Hong biết luôn =]]\"\r\n}",
+					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\",\r\n    \"confirmPassword\":\"123123\",\r\n    \"name\":\"Sketter\",\r\n    \"owner\":\"Dương Thanh Huy\",\r\n    \"phone\":\"0387698701\",\r\n    \"address\":\"Hong biết luôn =]]\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -275,7 +275,7 @@
 						{
 							"key": "avatar",
 							"type": "file",
-							"src": "/C:/Users/hautt/Desktop/Screenshot 2022-07-09 232056 - Copy.png"
+							"src": []
 						},
 						{
 							"key": "name",
@@ -284,7 +284,7 @@
 						},
 						{
 							"key": "phone",
-							"value": "0387698739",
+							"value": "0387698723",
 							"type": "text"
 						},
 						{
@@ -376,13 +376,126 @@
 			"response": []
 		},
 		{
-			"name": "destination - create (đăng nhập bằng supplier ha supplier manager mới xài được nha)",
+			"name": "destination - create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "Đồi thông hai mộ 21",
+							"type": "text"
+						},
+						{
+							"key": "address",
+							"value": "Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam",
+							"contentType": "",
+							"type": "text"
+						},
+						{
+							"key": "longitude",
+							"value": "11.9556795",
+							"contentType": "",
+							"type": "text"
+						},
+						{
+							"key": "latitude",
+							"value": "108.4772041",
+							"type": "text"
+						},
+						{
+							"key": "phone",
+							"value": "0912345678",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "huyhuyduong@gmail.com",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "đây là cái đồi có cây thông",
+							"type": "text"
+						},
+						{
+							"key": "lowestPrice",
+							"value": "90",
+							"type": "text"
+						},
+						{
+							"key": "highestPrice",
+							"value": "400",
+							"type": "text"
+						},
+						{
+							"key": "openingTime",
+							"value": "02:00",
+							"type": "text"
+						},
+						{
+							"key": "closingTime",
+							"value": "22:00",
+							"type": "text"
+						},
+						{
+							"key": "estimatedTimeStay",
+							"value": "90",
+							"type": "text"
+						},
+						{
+							"key": "recommendedTimes",
+							"value": "[{\"start\": \"04:00\",\"end\": \"07:00\"},{\"start\": \"08:00\",\"end\": \"10:00\"},{\"start\": \"13:00\",\"end\": \"16:00\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "personalityTypes",
+							"value": "[{\"name\": \"Ưa mạo hiểm\"},{\"name\": \"Thích khám phá\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "catalogs",
+							"value": "[{\"name\": \"Homestay\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "images",
+							"description": "chưa được",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/create",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"destination",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "destination - create (này cũ rồi)",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"Đồi thông hai mộ\",\r\n    \"address\": \"Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam\",\r\n    \"longitude\": 11.9556795,\r\n    \"latitude\": 108.4772041,\r\n    \"phone\": \"0912345678\",\r\n    \"email\": \"huyhuyduong@gmail.com\",\r\n    \"description\": \"đây là cái đồi có cây thông\",\r\n    \"lowestPrice\": \"9\",\r\n    \"highestPrice\": \"90\",\r\n    \"openingTime\": \"08:00\",\r\n    \"closingTime\": \"22:00\",\r\n    \"estimatedTimeStay\": \"90m\",\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"05:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"09:00\"\r\n        },\r\n        {\r\n            \"start\": \"10:00\",\r\n            \"end\": \"12:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        {\r\n            \"name\": \"Ưa mạo hiểm\"\r\n        },\r\n        {\r\n            \"name\": \"Thích khám phá\"\r\n        }\r\n    ],\r\n    \"catalogs\": [\r\n        {\r\n            \"name\": \"Địa điểm du lịch\"\r\n        }\r\n    ]\r\n}",
+					"raw": "{\r\n    \"name\": \"Đồi thông hai mộ 1\",\r\n    \"address\": \"Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam\",\r\n    \"longitude\": 11.9556795,\r\n    \"latitude\": 108.4772041,\r\n    \"phone\": \"0912345678\",\r\n    \"email\": \"huyhuyduong@gmail.com\",\r\n    \"description\": \"đây là cái đồi có cây thông\",\r\n    \"lowestPrice\": 90000,\r\n    \"highestPrice\": 400000,\r\n    \"openingTime\": \"02:00\",\r\n    \"closingTime\": \"22:00\",\r\n    \"estimatedTimeStay\": 90,\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"05:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"09:00\"\r\n        },\r\n        {\r\n            \"start\": \"10:00\",\r\n            \"end\": \"12:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        {\r\n            \"name\": \"Ưa mạo hiểm\"\r\n        },\r\n        {\r\n            \"name\": \"Thích khám phá\"\r\n        }\r\n    ],\r\n    \"catalogs\": [\r\n        {\r\n            \"name\": \"Địa điểm du lịch\"\r\n        }\r\n    ]\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -421,13 +534,8 @@
 					}
 				],
 				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"mode": "formdata",
+					"formdata": []
 				},
 				"url": {
 					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination?page=1",
@@ -475,7 +583,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination?page=1",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/094b2fdb-cafc-4748-b5fc-cc0b08a4226b",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -484,13 +592,158 @@
 					"path": [
 						"api",
 						"v1",
-						"destination"
-					],
-					"query": [
+						"destination",
+						"094b2fdb-cafc-4748-b5fc-cc0b08a4226b"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "destination - update",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
 						{
-							"key": "page",
-							"value": "1"
+							"key": "name",
+							"value": "Đồi thông hai mộ 212",
+							"type": "text"
+						},
+						{
+							"key": "address",
+							"value": "Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam",
+							"contentType": "",
+							"type": "text"
+						},
+						{
+							"key": "longitude",
+							"value": "11.9556795",
+							"contentType": "",
+							"type": "text"
+						},
+						{
+							"key": "latitude",
+							"value": "108.4772041",
+							"type": "text"
+						},
+						{
+							"key": "phone",
+							"value": "0912345678",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "huyhuyduong@gmail.com",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "đây là cái đồi có cây thông",
+							"type": "text"
+						},
+						{
+							"key": "lowestPrice",
+							"value": "90",
+							"type": "text"
+						},
+						{
+							"key": "highestPrice",
+							"value": "400",
+							"type": "text"
+						},
+						{
+							"key": "openingTime",
+							"value": "02:00",
+							"type": "text"
+						},
+						{
+							"key": "closingTime",
+							"value": "22:00",
+							"type": "text"
+						},
+						{
+							"key": "estimatedTimeStay",
+							"value": "90",
+							"type": "text"
+						},
+						{
+							"key": "recommendedTimes",
+							"value": "[{\"start\": \"04:00\",\"end\": \"07:00\"},{\"start\": \"08:00\",\"end\": \"10:00\"},{\"start\": \"13:00\",\"end\": \"16:00\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "personalityTypes",
+							"value": "[{\"name\": \"Ưa mạo hiểm\"},{\"name\": \"Thích khám phá\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "catalogs",
+							"value": "[{\"name\": \"Biệt thự\"}]",
+							"contentType": "application/json",
+							"type": "text"
+						},
+						{
+							"key": "images",
+							"description": "chưa được",
+							"type": "file",
+							"src": []
 						}
+					]
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/2c260757-f65c-413c-8d6c-82f45d973784",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"destination",
+						"2c260757-f65c-413c-8d6c-82f45d973784"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "destination  - delete one",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/620c60be-e0f4-4118-99ae-0309a0ccae90",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"destination",
+						"620c60be-e0f4-4118-99ae-0309a0ccae90"
 					]
 				}
 			},

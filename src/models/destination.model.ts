@@ -1,4 +1,4 @@
-import { DataTypes, ForeignKey, HasManyAddAssociationMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManyRemoveAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
@@ -9,8 +9,15 @@ import { User } from './user.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
-    declare addCatalog: HasManyAddAssociationMixin<Catalog, number>;
-    declare addTravelPersonalityType: HasManyAddAssociationMixin<TravelPersonalityType, number>;
+
+    declare getCatalogs: HasManyGetAssociationsMixin<Catalog>;
+    declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
+    declare removeCatalogs: HasManyRemoveAssociationsMixin<Catalog, string>;
+
+    declare getTravelPersonalityTypes: HasManyGetAssociationsMixin<TravelPersonalityType>;
+    declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
+    declare removeTravelPersonalityTypes: HasManyRemoveAssociationsMixin<TravelPersonalityType, string>;
+
     name!: string;
     address!: string;
     phone!: string;
@@ -144,6 +151,7 @@ Destination.init({
 }, {
     // Other model options go here
     timestamps: true,
+    paranoid: true,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Destination' // We need to choose the model name
 });
