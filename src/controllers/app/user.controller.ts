@@ -6,9 +6,10 @@ import AppError from "../../utils/appError";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
 import { UserPrivateFields } from "../../utils/privateField";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { UploadedFile } from "express-fileupload";
 import { USER_IMG_URL } from "../../config/default";
+import sharp from "sharp"
 
 export const getMe = catchAsync(async (_req, res, next) => {
     const user = res.locals.user;
@@ -34,21 +35,35 @@ export const updateMe = catchAsync(async (req, res, next) => {
     if (req.files && req.files.avatar) {
         const imgNum = (req.files.avatar as UploadedFile[]).length ?? 1;
         if ((req.files.avatar as UploadedFile[] || req.files.avatar as UploadedFile) && imgNum == 1) {
+
+
             const avatar = req.files.avatar as UploadedFile;
+            console.log(avatar)
             if (avatar.mimetype.includes('image')) {
                 const storage = getStorage();
-                const image = `${USER_IMG_URL}/${user?.id}.${avatar.name.split('.')[1]}`;
-                const storageRef = ref(storage, image);
-
+                const image = `${USER_IMG_URL}/${user?.id}.jpeg`;
+                const storageRef = ref(storage, image,);
+                const metadata = {
+                    contentType: 'image/jpeg',
+                };
                 const bytes = new Uint8Array(avatar.data);
-                await uploadBytes(storageRef, bytes).then(async (snapshot) => {
-                    const image = snapshot.metadata.fullPath;
-                    await User.update({ image: image }, {
-                        where: {
-                            id: user?.id
-                        }
-                    });
-                });
+                sharp(bytes)
+                    .resize(400, 400)
+                    .toFormat("jpeg", { mozjpeg: true })
+                    .toBuffer()
+                    .then(async data => {
+                        await uploadBytes(storageRef, data, metadata).then(async (snapshot) => {
+                            await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
+                                const imgURL = url.split('&token')[0]
+                                await User.update({ image: imgURL }, {
+                                    where: {
+                                        id: user.id
+                                    }
+                                });
+                            })
+                        });
+                    })
+
             } else {
                 return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
             }

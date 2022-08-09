@@ -4,7 +4,6 @@ import sequelize from '../db/sequelize.db';
 import { Auth, Gender, Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
-import { getDownloadURL, getStorage, ref } from 'firebase/storage';
 
 export type UserGender = 'Nam' | 'Nữ';
 export type UserRoles = 1 | 2 | 3 | 4;
@@ -177,22 +176,6 @@ User.beforeSave(async (user) => {
         user.passwordUpdatedAt = new Date(Date.now() - 1000); // Now - 1 minutes
     }
 });
-
-User.afterFind(async (user) => {
-    if (user) {
-        const img = (user as User).image;
-        if (img) {
-            const storage = getStorage();
-            await getDownloadURL(ref(storage, img))
-                .then((url) => {
-                    (user as User).image = url as string;
-                })
-                .catch(() => {
-                    (user as User).image = null;
-                })
-        }
-    }
-})
 
 User.prototype.comparePassword = async function (
     candidatePassword: string,

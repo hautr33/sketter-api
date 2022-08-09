@@ -10,10 +10,11 @@ import { Roles, Status } from "../../utils/constant";
 import { DESTINATION_IMG_URL, PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/privateField";
 import { UploadedFile } from "express-fileupload";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { Destination_Image } from "../../models/destination_image.model";
 import { deleteOne } from "../factory/crud.factory";
 import { validateDestination } from "../../utils/validateInput";
+import sharp from "sharp";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
@@ -82,44 +83,53 @@ export const createDestination = catchAsync(async (req, res, next) => {
             images.forEach(async img => {
                 if (img.mimetype.includes('image')) {
                     const storage = getStorage();
-                    const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.${img.name.split('.')[1]}`;
+                    const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.jpeg`;
                     const storageRef = ref(storage, image);
-
+                    const metadata = {
+                        contentType: 'image/jpeg',
+                    };
                     const bytes = new Uint8Array(img.data);
-                    await uploadBytes(storageRef, bytes)
-                        .then(async (snapshot) => {
-                            const image = snapshot.metadata.fullPath;
-                            await Destination_Image.create({
-                                destinationID: destination.id,
-                                imgURL: image
-                            })
+                    sharp(bytes)
+                        .resize(1080, 720)
+                        .toFormat("jpeg", { mozjpeg: true })
+                        .toBuffer()
+                        .then(async data => {
+                            await uploadBytes(storageRef, data, metadata)
+                                .then(async (snapshot) => {
+                                    await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
+                                        const imgURL = url.split('&token')[0]
+                                        await Destination_Image.create({
+                                            destinationID: destination.id,
+                                            imgURL: imgURL
+                                        })
+                                    })
+                                })
+                                .catch(() => {
+                                    destination.destroy();
+                                    return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_GATEWAY))
+                                })
                         })
-                        .catch((error) => {
-                            console.log(error)
-                        });
+                        .catch(() => {
+                            destination.destroy();
+                            return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_GATEWAY))
+                        })
+
                 } else {
                     destination.destroy();
                     return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
                 }
             });
-
+            const result = await Destination.findOne({
+                where: { id: destination.id },
+                attributes: { exclude: ['updatedAt', 'deletedAt'] }
+            })
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
+            next();
         } else {
             destination.destroy();
             return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_REQUEST))
         }
     }
-    const result = await Destination.findOne({
-        where: { id: destination.id },
-        attributes: { exclude: ['updatedAt', 'deletedAt'] },
-        include: [
-            { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-            { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
-            { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
-        ]
-    })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
-    next();
 });
 
 export const updateDestination = catchAsync(async (req, res, next) => {

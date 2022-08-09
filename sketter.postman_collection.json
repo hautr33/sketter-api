@@ -275,7 +275,7 @@
 						{
 							"key": "avatar",
 							"type": "file",
-							"src": []
+							"src": "/C:/Users/hautt/Desktop/1.png"
 						},
 						{
 							"key": "name",
@@ -284,7 +284,7 @@
 						},
 						{
 							"key": "phone",
-							"value": "0387698723",
+							"value": "0387698739",
 							"type": "text"
 						},
 						{
@@ -385,7 +385,7 @@
 					"formdata": [
 						{
 							"key": "name",
-							"value": "Đồi thông hai mộ 21",
+							"value": "Đồi thông hai mộ",
 							"type": "text"
 						},
 						{
@@ -467,7 +467,10 @@
 							"key": "images",
 							"description": "chưa được",
 							"type": "file",
-							"src": []
+							"src": [
+								"/C:/Users/hautt/Desktop/1461730158_doi-thong-2-mo-1.jpg",
+								"/C:/Users/hautt/Desktop/photo1474384285833-1474384286282.webp"
+							]
 						}
 					]
 				},
@@ -489,7 +492,7 @@
 			"response": []
 		},
 		{
-			"name": "destination - create (này cũ rồi)",
+			"name": "destination - create (cũ)",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -583,7 +586,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/094b2fdb-cafc-4748-b5fc-cc0b08a4226b",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/c52a7bc4-8122-40f8-b30f-402be32dd2d8",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -593,7 +596,7 @@
 						"api",
 						"v1",
 						"destination",
-						"094b2fdb-cafc-4748-b5fc-cc0b08a4226b"
+						"c52a7bc4-8122-40f8-b30f-402be32dd2d8"
 					]
 				}
 			},
