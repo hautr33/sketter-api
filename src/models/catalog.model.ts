@@ -10,7 +10,6 @@ import sequelize from '../db/sequelize.db';
 //     'Khu nghỉ dưỡng cao cấp',
 //     'Nhà xe'
 
-
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare id?: number;
     name!: string;

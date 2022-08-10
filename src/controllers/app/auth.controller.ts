@@ -6,14 +6,14 @@ import _ from 'lodash';
 import { Op } from 'sequelize';
 import RESDocument from '../factory/RESDocument';
 import { JWT_EXPIRES_IN, ENVIRONMENT, JWT_COOKIES_EXPIRES_IN, FORGOT_PASSWORD_URL } from '../../config/default';
-import { User, UserRoles } from '../../models/user.model';
+import { User } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/appError';
 import catchAsync from '../../utils/catchAsync';
 import { signJwt } from '../../utils/jwt';
 import { Roles } from '../../utils/constant';
 import jwt from 'jsonwebtoken';
-import { Destination } from '../../models/destination.model';
+import { Role } from '../../models/role.model';
 const firebaseAdmin = require("firebase-admin/auth");
 
 
@@ -166,45 +166,67 @@ export const signup = catchAsync(async (req, res, next) => {
 
 export const login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
-
-    if (!(email || password)) {
+    const authType = req.query.auth as string;
+    console.log(authType)
+    if (authType && !(['Sketter', 'Google'].includes(authType))) {
         return next(
             new AppError(
-                'Email hoặc mật khẩu không đúng',
+                'Phương thức xác thực không hợp lệ',
                 StatusCodes.BAD_REQUEST
             )
         );
     }
 
-    const auth = getAuth();
-    signInWithEmailAndPassword(auth, email, password)
-        .then(async (userCredential) => {
-            const userFirebase = userCredential.user;
-            const user = await User.findOne({ where: { email: email, firebaseID: userFirebase.uid } });
-            if (!user) {
-                return next(
-                    new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
-                );
-            }
-            createSendToken(user, StatusCodes.OK, res, next);
-        })
-        .catch((error) => {
-            const errorMessage = error.message;
-            if (errorMessage.includes('wrong-password')) {
-                return next(
-                    new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
-                );
-            } else {
-                return next(new AppError(errorMessage, StatusCodes.BAD_REQUEST));
-            }
-        });
-});
+    if (!authType || authType == 'Sketter') {
 
+        if (!(email || password)) {
+            return next(
+                new AppError(
+                    'Email hoặc mật khẩu không đúng',
+                    StatusCodes.BAD_REQUEST
+                )
+            );
+        }
+        const auth = getAuth();
+        signInWithEmailAndPassword(auth, email, password)
+            .then(async (userCredential) => {
+                const userFirebase = userCredential.user;
+                const user = await User.findOne({ where: { email: email, firebaseID: userFirebase.uid } });
+                if (!user) {
+                    return next(
+                        new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
+                    );
+                }
+                createSendToken(user, StatusCodes.OK, res, next);
+            })
+            .catch((error) => {
+                const errorMessage = error.message;
+                if (errorMessage.includes('wrong-password')) {
+                    return next(
+                        new AppError('Email hoặc mật khẩu không đúng', StatusCodes.UNAUTHORIZED)
+                    );
+                } else {
+                    return next(new AppError(errorMessage, StatusCodes.BAD_REQUEST));
+                }
+            });
 
-export const loginGoogle = catchAsync(async (_req, res, next) => {
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Update successfully');
-    Destination.findOne({ where: { id: 'ahihi' } });
-    next();
+    }
+    if (authType == 'Google') {
+        const token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjA2M2E3Y2E0M2MzYzc2MDM2NzRlZGE0YmU5NzcyNWI3M2QwZGMwMWYiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiVHJpZXQgUXVhY2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUl0YnZtbWVsR1ZUejhxamRJRUhDS2cwT21NWXBMZGpaRjA3M2wzV3ZfdVA9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZW1haWxwYXNzd29yZGF1dGgtYWZjM2QiLCJhdWQiOiJlbWFpbHBhc3N3b3JkYXV0aC1hZmMzZCIsImF1dGhfdGltZSI6MTY2MDEzMTM5MCwidXNlcl9pZCI6IkhKTEJFNW4ybkhQU21IMTFQMmFTd0Q2aGFjRDMiLCJzdWIiOiJISkxCRTVuMm5IUFNtSDExUDJhU3dENmhhY0QzIiwiaWF0IjoxNjYwMTMxMzkwLCJleHAiOjE2NjAxMzQ5OTAsImVtYWlsIjoicXVhY2hraG9uZ3RyaWV0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTA5MjY4ODA5NTY3NDA2MzQxNDU5Il0sImVtYWlsIjpbInF1YWNoa2hvbmd0cmlldEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.aStgE7hQqO4apD76ys6I16YzYe-tg0HnEIwIJZGjPB_Zn349McEfZQK7uXUz6Y4IiG9_xhQgvCpBB4iOo-5y6El1pTs8dYQEUU8ydJyHEEv1niGo6AkxE-ooo2P8ebjkky3qrl7Ar5MSDe6c_ONzqwzn6900gWxs-qHMmXYmbctP7ypY-hvCKwtZhytWZHrcwOO1WF9DRVoiHR98LLoRacdV7JzmM-g4Hgv33X_HHF62GmNKrgRfGtPRhmg-OuS3gYfDQDG7-Q1Z97J2FxN7znQWW10CTGE-lMsve7MsIi7XwDKmkOEoPeatNnpc9HB-Rm3wN71SiMXrtRg8PXojKw'
+
+        firebaseAdmin.getAuth()
+            .verifyIdToken(token)
+            .then((decodedToken: any) => {
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', decodedToken);
+                next();
+
+            })
+            .catch((error: any) => {
+                res.resDocument = new RESDocument(StatusCodes.OK, 'fail', error);
+                next();
+
+            });
+    }
 });
 
 export const logout = catchAsync(async (req, res, next) => {
@@ -359,7 +381,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
         })
         .then(async () => {
             await user.save();
-            res.resDocument = new RESDocument(StatusCodes.OK, 'success','Reset Password Success');
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Reset Password Success');
             next()
         })
         .catch((error: { message: string; }) => {
@@ -372,7 +394,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 });
 
 
-export const restrictTo = (...roles: UserRoles[]): RequestHandler => (
+export const restrictTo = (...roles: Role['id'][]): RequestHandler => (
     _req,
     res,
     next
@@ -382,7 +404,7 @@ export const restrictTo = (...roles: UserRoles[]): RequestHandler => (
       whitelist of permissions
     */
 
-    if (!roles.includes(res.locals.user?.roleID as UserRoles)) {
+    if (!roles.includes(res.locals.user?.roleID as Role['id'])) {
         return next(
             new AppError(
                 'Bạn không có quyền để sử dụng tính năng này',

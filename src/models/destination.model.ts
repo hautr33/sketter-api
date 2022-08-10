@@ -94,19 +94,23 @@ Destination.init({
         }
     },
     longitude: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.REAL,
         validate: {
             notEmpty: {
                 msg: 'Kinh độ không được trống'
             },
+            min: -90,
+            max: 90
         }
     },
     latitude: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.REAL,
         validate: {
             notEmpty: {
                 msg: 'Vĩ độ không được trống'
             },
+            min: -180,
+            max: 180
         }
     },
     lowestPrice: {

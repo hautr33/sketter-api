@@ -5,7 +5,6 @@ import RESDocument from "../factory/RESDocument";
 import AppError from "../../utils/appError";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
-import { UserPrivateFields } from "../../utils/privateField";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { UploadedFile } from "express-fileupload";
 import { USER_IMG_URL } from "../../config/default";
@@ -18,9 +17,10 @@ export const getMe = catchAsync(async (_req, res, next) => {
 });
 
 export const updateMe = catchAsync(async (req, res, next) => {
-    const user = await User.findOne({ where: { email: res.locals.user.email }, attributes: { exclude: UserPrivateFields.default } });
+    const user = res.locals.user;
+    const count = await User.count({ where: { email: user.email, id: user.id, roleID: user.roleID } });
 
-    if (!user)
+    if (count != 1)
         return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND))
 
     const { name, phone, address } = req.body;
@@ -52,16 +52,17 @@ export const updateMe = catchAsync(async (req, res, next) => {
                     .toFormat("jpeg", { mozjpeg: true })
                     .toBuffer()
                     .then(async data => {
-                        await uploadBytes(storageRef, data, metadata).then(async (snapshot) => {
-                            await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
-                                const imgURL = url.split('&token')[0]
-                                await User.update({ image: imgURL }, {
-                                    where: {
-                                        id: user.id
-                                    }
-                                });
+                        await uploadBytes(storageRef, data, metadata)
+                            .then(async (snapshot) => {
+                                await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
+                                    const imgURL = url.split('&token')[0]
+                                    await User.update({ image: imgURL }, {
+                                        where: {
+                                            id: user.id
+                                        }
+                                    });
+                                })
                             })
-                        });
                     })
 
             } else {

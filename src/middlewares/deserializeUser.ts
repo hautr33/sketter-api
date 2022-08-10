@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
-import { Roles } from '../utils/constant';
 import { User } from '../models/user.model';
 import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
@@ -52,16 +51,8 @@ export const deserializeUser = async (
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
-    if (user.roleID == Roles.Traveler) {
-      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.traveler);
-      res.locals.user = excludedUser;
-    } else if (user.roleID == Roles.Supplier) {
-      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.supplier);
-      res.locals.user = excludedUser;
-    } else {
-      const excludedUser = _.omit(user.toJSON(), UserPrivateFields.default);
-      res.locals.user = excludedUser;
-    }
+    const excludedUser = _.omit(user.toJSON(), UserPrivateFields[user.roleID - 1]);
+    res.locals.user = excludedUser;
     next();
   } catch (err: any) {
     next(err);

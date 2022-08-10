@@ -2,7 +2,7 @@ import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequ
 import sequelize from '../db/sequelize.db';
 
 export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<Role>> {
-    declare id?: number;
+    declare id: number;
     name!: string;
 }
 

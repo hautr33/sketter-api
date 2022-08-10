@@ -1,13 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Auth, Gender, Roles } from '../utils/constant';
+import { Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
-
-export type UserGender = 'Nam' | 'Nữ';
-export type UserRoles = 1 | 2 | 3 | 4;
-export type AuthType = 'Sketter' | 'Google';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare id: string;
@@ -18,14 +14,14 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     passwordResetExpires!: number | null;
     name!: string;
     image!: string | null;
-    gender!: UserGender;
+    gender!: string;
     dob!: Date;
     phone!: string;
     address!: string;
     owner!: string;
     isActive!: boolean;
     roleID!: ForeignKey<Role['id']>;
-    authType!: AuthType;
+    authType!: string;
     iat!: number | null;
     exp!: number | null;
     firebaseID!: string;
@@ -90,10 +86,9 @@ User.init({
     gender: {
         type: DataTypes.STRING,
         validate: {
-            checkGender() {
-                if (this.gender != Gender.female && this.gender != Gender.male) {
-                    throw new Error('Giới tính không hợp lệ');
-                }
+            isIn: {
+                args: [['Nam', 'Nữ']],
+                msg: 'Giới tính không hợp lệ'
             }
         }
     },
@@ -125,7 +120,13 @@ User.init({
     },
     authType: {
         type: DataTypes.STRING,
-        defaultValue: Auth.sketter
+        validate: {
+            isIn: {
+                args: [['Sketter', 'Google']],
+                msg: 'Phương thức xác thực không hợp lệ'
+            }
+        },
+        defaultValue: 'Sketter'
     },
     iat: {
         type: DataTypes.INTEGER

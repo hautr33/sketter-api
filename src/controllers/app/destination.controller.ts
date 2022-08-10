@@ -15,6 +15,7 @@ import { Destination_Image } from "../../models/destination_image.model";
 import { deleteOne } from "../factory/crud.factory";
 import { validateDestination } from "../../utils/validateInput";
 import sharp from "sharp";
+import uuid from "uuid"
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
@@ -83,6 +84,9 @@ export const createDestination = catchAsync(async (req, res, next) => {
             images.forEach(async img => {
                 if (img.mimetype.includes('image')) {
                     const storage = getStorage();
+                    let id = uuid.v4()
+                    console.log(id);
+                    
                     const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.jpeg`;
                     const storageRef = ref(storage, image);
                     const metadata = {
@@ -121,7 +125,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
             });
             const result = await Destination.findOne({
                 where: { id: destination.id },
-                attributes: { exclude: ['updatedAt', 'deletedAt'] }
+                attributes: { exclude: DestinationPrivateFields.default }
             })
             res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
             next();
@@ -269,7 +273,7 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
     const document = await Destination.findOne(
         {
             where: option,
-            attributes: { exclude: ['updatedAt', 'createdAt'] },
+            attributes: { exclude: ['updatedAt', 'deletedAt'] },
             include: [
                 { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
                 { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },

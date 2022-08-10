@@ -1,5 +1,6 @@
-export class UserPrivateFields {
-    static default = [
+export const UserPrivateFields = [
+    // Admin
+    [
         "password",
         "passwordResetToken",
         "passwordResetExpires",
@@ -14,13 +15,15 @@ export class UserPrivateFields {
         "firebaseID",
         "createdAt",
         "updatedAt"
-    ];
-
-    static traveler = [
+    ],
+    // Supplier Manager
+    [
         "password",
         "passwordResetToken",
         "passwordResetExpires",
         "passwordUpdatedAt",
+        "gender",
+        "dob",
         "owner",
         "isActive",
         "authType",
@@ -29,9 +32,9 @@ export class UserPrivateFields {
         "firebaseID",
         "createdAt",
         "updatedAt"
-    ];
-
-    static supplier = [
+    ],
+    // Supplier
+    [
         "password",
         "passwordResetToken",
         "passwordResetExpires",
@@ -45,8 +48,23 @@ export class UserPrivateFields {
         "firebaseID",
         "createdAt",
         "updatedAt"
-    ];
-}
+    ],
+    // Traveler
+    [
+        "password",
+        "passwordResetToken",
+        "passwordResetExpires",
+        "passwordUpdatedAt",
+        "owner",
+        "isActive",
+        "authType",
+        "iat",
+        "exp",
+        "firebaseID",
+        "createdAt",
+        "updatedAt"
+    ]
+]
 
 export class DestinationPrivateFields {
     static default = [
