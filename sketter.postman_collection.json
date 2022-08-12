@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test041@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\": \"123123\",\r\n    \"confirmPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -106,6 +106,123 @@
 						"v1",
 						"auth",
 						"login"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "traveler",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"{{HOST}}"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "supplier",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"{{HOST}}"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
+		},
+		{
+			"name": "login via google",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"eyJhbGciOiJSUzI1NiIsImtpZCI6IjA2M2E3Y2E0M2MzYzc2MDM2NzRlZGE0YmU5NzcyNWI3M2QwZGMwMWYiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiVHJpZXQgUXVhY2giLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUl0YnZtbWVsR1ZUejhxamRJRUhDS2cwT21NWXBMZGpaRjA3M2wzV3ZfdVA9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vc2tldHRlci1kNDcxYSIsImF1ZCI6InNrZXR0ZXItZDQ3MWEiLCJhdXRoX3RpbWUiOjE2NjAzMDU5MTcsInVzZXJfaWQiOiI4YnFFeGpUTTgwYmNaenNpWkJqM1JIOU55QzIzIiwic3ViIjoiOGJxRXhqVE04MGJjWnpzaVpCajNSSDlOeUMyMyIsImlhdCI6MTY2MDMwNTkxNywiZXhwIjoxNjYwMzA5NTE3LCJlbWFpbCI6InF1YWNoa2hvbmd0cmlldEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwOTI2ODgwOTU2NzQwNjM0MTQ1OSJdLCJlbWFpbCI6WyJxdWFjaGtob25ndHJpZXRAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.jr7pGCmMVN9efIFqqTEnW9w_M1WacT0HUPip8oT40d_cCzosArbAWFVqqUWFJ7Ro_ScSznWpuWL-3hD5otMcqBrmu4cWSUHZf_EHYg5sR03swIwsrn_kKYCsO7mvTUILH-22v6FIbieYrMgD68Oj6yK3oL47OVxkWZNcx2nww7N6VTpWDi_FKY9GsE3gVpTXtn5WEmimOPh2plwIERPiOzVJ64UjkI7B45lkv3KtoMjgWhBPhwoXo4Aabx0QVRKGuGxIYusMojC_Nb4eidzAR8iYu13-HTiJLrz22SG1HP5nW1wz6k1g5cR5nRn2KYiSzueKh3GxRvkqTJlgjtf2yg\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/auth/login?auth=Google",
+					"protocol": "http",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					],
+					"query": [
+						{
+							"key": "auth",
+							"value": "Google"
+						}
 					]
 				}
 			},
@@ -199,7 +316,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/aa6ed00dd19f0c223203d4ec5581f751cd379dca2fef73d23f5569d20e76467b",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/reset_password/e6726aec7dd2a2fda1794845cd043dd1109768ad76c16ac2cc85b6bd7ee014d7",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -210,7 +327,7 @@
 						"v1",
 						"user",
 						"reset_password",
-						"aa6ed00dd19f0c223203d4ec5581f751cd379dca2fef73d23f5569d20e76467b"
+						"e6726aec7dd2a2fda1794845cd043dd1109768ad76c16ac2cc85b6bd7ee014d7"
 					]
 				}
 			},
@@ -226,7 +343,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQ2NzEyNmIzLTc5NDMtNGZkYi04ZjY2LWVlMTE0ZmNhNWM1NCIsImlhdCI6MTY1Nzg3NzA5NywiZXhwIjoxNjY1NjUzMDk3fQ.FKOGjYoq75kQyGajsq2-f2St8sy8g6OE9iFgV_m0nJ5HJZzoXU6AohzCevJ9UkVpZGi2rzzC0OwSMEfO7vSUmA",
+						"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImE5MWIzMzYyLWU3MjYtNDg4Ni05MThlLWRmNzU3MzgyNzc0MyIsImlhdCI6MTY2MDI5ODM1MywiZXhwIjoxNjY4MDc0MzUzfQ.n6PlBaWK8z9VeihcVnbyRztui2mggoqwBsybteXSr3_OLS5-8GBOpmrzxuIq1Xds-x0-Bbjsk5cErZPzFP-LCA",
 						"type": "text",
 						"disabled": true
 					}
@@ -284,7 +401,7 @@
 						},
 						{
 							"key": "phone",
-							"value": "0387698739",
+							"value": "0387698702",
 							"type": "text"
 						},
 						{
@@ -335,7 +452,145 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "traveler",
+					"originalRequest": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "name",
+									"value": "Dương Thanh Huy",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "0387698739",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Nhà của Huy",
+									"type": "text"
+								},
+								{
+									"key": "gender",
+									"value": "Nữ",
+									"description": "Nam | Nữ",
+									"type": "text"
+								},
+								{
+									"key": "dob",
+									"value": "2000-01-13",
+									"type": "text"
+								},
+								{
+									"key": "dob",
+									"value": "2000/01/13",
+									"description": "Nhập ngày kiểu này cũng được",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
+							"protocol": "http",
+							"host": [
+								"{{HOST}}"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"me"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "supplier",
+					"originalRequest": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "avatar",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "name",
+									"value": "Dương Thanh Huy",
+									"type": "text"
+								},
+								{
+									"key": "phone",
+									"value": "0387698739",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Nhà của Huy",
+									"type": "text"
+								},
+								{
+									"key": "owner",
+									"value": "Quách Khổng Triết",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
+							"protocol": "http",
+							"host": [
+								"{{HOST}}"
+							],
+							"port": "{{PORT}}",
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"me"
+							]
+						}
+					},
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
 		},
 		{
 			"name": "update password",
@@ -351,7 +606,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"currentPassword\": \"123123\",\r\n    \"newPassword\": \"1231231\",\r\n    \"confirmNewPassword\": \"1231231\"\r\n}",
+					"raw": "{\r\n    \"currentPassword\": \"123456\",\r\n    \"newPassword\": \"123123\",\r\n    \"confirmNewPassword\": \"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -467,10 +722,7 @@
 							"key": "images",
 							"description": "chưa được",
 							"type": "file",
-							"src": [
-								"/C:/Users/hautt/Desktop/1461730158_doi-thong-2-mo-1.jpg",
-								"/C:/Users/hautt/Desktop/photo1474384285833-1474384286282.webp"
-							]
+							"src": "/C:/Users/hautt/Desktop/1.png"
 						}
 					]
 				},
@@ -586,7 +838,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/c52a7bc4-8122-40f8-b30f-402be32dd2d8",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/1561fe6e-32da-4502-8d97-cff8cf515e75",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -596,7 +848,7 @@
 						"api",
 						"v1",
 						"destination",
-						"c52a7bc4-8122-40f8-b30f-402be32dd2d8"
+						"1561fe6e-32da-4502-8d97-cff8cf515e75"
 					]
 				}
 			},
@@ -880,7 +1132,7 @@
 			"response": []
 		},
 		{
-			"name": "init data (send này trước rồi làm mấy kia nha)",
+			"name": "init data",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
