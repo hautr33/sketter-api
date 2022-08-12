@@ -1,14 +1,15 @@
 import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Destination } from './destination.model';
+import { User } from './user.model';
 
-export class Destination_Image extends Model<InferAttributes<Destination_Image>, InferCreationAttributes<Destination_Image>> {
+export class Session extends Model<InferAttributes<Session>, InferCreationAttributes<Session>> {
     declare id?: string;
-    destinationID!: ForeignKey<Destination['id']>;
-    imgURL!: string;
+    userID!: ForeignKey<User['id']>;
+    iat!: number;
+    exp!: number;
 }
 
-Destination_Image.init({
+Session.init({
     // Model attributes are defined here
     id: {
         type: DataTypes.UUID,
@@ -18,19 +19,22 @@ Destination_Image.init({
             isUUID: 4
         }
     },
-    destinationID: {
-        type: DataTypes.UUID,
+    userID: {
+        type: DataTypes.UUID
     },
-    imgURL: {
-        type: DataTypes.STRING,
+    iat: {
+        type: DataTypes.INTEGER
     },
+    exp: {
+        type: DataTypes.INTEGER
+    }
 }, {
     // Other model options go here
     timestamps: false,
     sequelize: sequelize, // We need to pass the connection instance
-    modelName: 'Destination_Image' // We need to choose the model name
+    modelName: 'Session' // We need to choose the model name
 });
 
-Destination.hasMany(Destination_Image, {
-    foreignKey: "destinationID"
+User.hasMany(Session, {
+    foreignKey: "userID"
 });

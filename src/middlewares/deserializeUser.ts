@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
+import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import AppError from '../utils/appError';
 import { verifyJwt } from '../utils/jwt';
@@ -26,33 +28,25 @@ export const deserializeUser = async (
     if (!access_token)
       return next(new AppError('Vui lòng đăng nhập để sử dụng tính năng này', 401));
 
-
     // Validate Access Token
     const decoded = verifyJwt<{ id: string, iat: number, exp: number }>(access_token);
-
     if (!decoded)
       return next(new AppError(`Token không hợp lệ hoặc tài khoản không tồn tại`, 401));
 
-    // Check if user has a valid session
-    // const session = await redisClient.get(decoded.sub);
+    const session = await Session.findOne({ where: { userID: decoded.id, iat: decoded.iat, exp: decoded.exp } });
+    if (!session)
+      return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
 
-    // if (!session) {
-    //   return next(new AppError(`User session has expired`, 401));
-    // }
-
-    // Check if user still exist
-    const user = await User.findOne({ where: { id: decoded.id, iat: decoded.iat, exp: decoded.exp } });
-
+    const user = await User.findOne({ where: { id: decoded.id } });
     if (!user)
-      return next(new AppError(`Phiên đăng nhập đã hết hạn`, 401));
-
-    // await user.getImageURL()
+      return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND));
 
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
     const excludedUser = _.omit(user.toJSON(), UserPrivateFields[user.roleID - 1]);
     res.locals.user = excludedUser;
+    res.locals.user.sessionID = session.id;
     next();
   } catch (err: any) {
     next(err);

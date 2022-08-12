@@ -22,11 +22,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     isActive!: boolean;
     roleID!: ForeignKey<Role['id']>;
     authType!: string;
-    iat!: number | null;
-    exp!: number | null;
     firebaseID!: string;
-    readonly createdAt!: Date;
-    readonly updatedAt!: Date;
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
     getImageURL!: () => Promise<any>;
@@ -61,12 +57,6 @@ User.init({
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: {
-                msg: 'Mật khẩu không được trống'
-            },
-        }
     },
     passwordUpdatedAt: {
         type: DataTypes.DATE
@@ -128,17 +118,9 @@ User.init({
         },
         defaultValue: 'Sketter'
     },
-    iat: {
-        type: DataTypes.INTEGER
-    },
-    exp: {
-        type: DataTypes.INTEGER
-    },
     firebaseID: {
         type: DataTypes.STRING,
     },
-    createdAt: DataTypes.DATE,
-    updatedAt: DataTypes.DATE,
 }, {
     // Other model options go here
     timestamps: true,

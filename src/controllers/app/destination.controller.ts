@@ -15,7 +15,6 @@ import { Destination_Image } from "../../models/destination_image.model";
 import { deleteOne } from "../factory/crud.factory";
 import { validateDestination } from "../../utils/validateInput";
 import sharp from "sharp";
-import uuid from "uuid"
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
@@ -71,8 +70,8 @@ export const createDestination = catchAsync(async (req, res, next) => {
             end: recommendedTimes[i].end
         })
 
-    if (req.files && req.files.images) {
 
+    if (req.files && req.files.images) {
         if (req.files.images as UploadedFile) {
             let temp = JSON.stringify(req.files.images);
             if (!temp.startsWith('[')) {
@@ -84,56 +83,54 @@ export const createDestination = catchAsync(async (req, res, next) => {
             images.forEach(async img => {
                 if (img.mimetype.includes('image')) {
                     const storage = getStorage();
-                    let id = uuid.v4()
-                    console.log(id);
-                    
                     const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.jpeg`;
                     const storageRef = ref(storage, image);
                     const metadata = {
                         contentType: 'image/jpeg',
                     };
-                    const bytes = new Uint8Array(img.data);
-                    sharp(bytes)
+                    await sharp(img.data)
                         .resize(1080, 720)
                         .toFormat("jpeg", { mozjpeg: true })
                         .toBuffer()
                         .then(async data => {
                             await uploadBytes(storageRef, data, metadata)
                                 .then(async (snapshot) => {
-                                    await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
-                                        const imgURL = url.split('&token')[0]
-                                        await Destination_Image.create({
-                                            destinationID: destination.id,
-                                            imgURL: imgURL
+                                    await getDownloadURL(ref(storage, snapshot.metadata.fullPath))
+                                        .then(async (url) => {
+                                            const imgURL = url.split('&token')[0]
+                                            await Destination_Image.create({
+                                                destinationID: destination.id,
+                                                imgURL: imgURL
+                                            })
                                         })
-                                    })
+                                        .catch(async (e) => {
+                                            console.log(e)
+                                            return next(new AppError(e, StatusCodes.BAD_GATEWAY))
+                                        })
                                 })
-                                .catch(() => {
-                                    destination.destroy();
-                                    return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_GATEWAY))
+                                .catch(async (e) => {
+                                    await destination.destroy();
+                                    console.log(e)
+                                    return next(new AppError(e, StatusCodes.BAD_GATEWAY))
                                 })
                         })
-                        .catch(() => {
-                            destination.destroy();
-                            return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_GATEWAY))
+                        .catch(async (e) => {
+                            await destination.destroy();
+                            console.log(e)
+                            return next(new AppError(e, StatusCodes.BAD_GATEWAY))
                         })
-
                 } else {
-                    destination.destroy();
                     return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
                 }
             });
-            const result = await Destination.findOne({
-                where: { id: destination.id },
-                attributes: { exclude: DestinationPrivateFields.default }
-            })
-            res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
-            next();
-        } else {
-            destination.destroy();
-            return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_REQUEST))
         }
     }
+    const result = await Destination.findOne({
+        where: { id: destination.id },
+        attributes: { exclude: DestinationPrivateFields.default }
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
+    next();
 });
 
 export const updateDestination = catchAsync(async (req, res, next) => {

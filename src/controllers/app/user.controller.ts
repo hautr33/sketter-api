@@ -79,28 +79,14 @@ export const updateMe = catchAsync(async (req, res, next) => {
 export const updatePassword = catchAsync(async (req, res, next) => {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
-    if (!currentPassword) {
-        return next(
-            new AppError('Mật khẩu hiện tại không được trống', StatusCodes.BAD_REQUEST)
-        );
-    }
-
     if (currentPassword == newPassword) {
         return next(
             new AppError('Mật khẩu mới không được giống mật khẩu hiện tại', StatusCodes.BAD_REQUEST)
         );
     }
-    if (!newPassword) {
-        return next(
-            new AppError('Mật khẩu mới không được trống', StatusCodes.BAD_REQUEST)
-        );
-    }
 
-    if (newPassword.length < 6) {
-        return next(
-            new AppError('Mật khẩu mới phải có ít nhất 6 kí tự', StatusCodes.BAD_REQUEST)
-        );
-    }
+    if (!newPassword || newPassword.length < 6 || newPassword.length > 15)
+        return next(new AppError('Mật khẩu mới phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST));
 
     if (newPassword !== confirmNewPassword) {
         return next(
