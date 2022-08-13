@@ -13,7 +13,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     passwordResetToken!: string | null;
     passwordResetExpires!: number | null;
     name!: string;
-    image!: string | null;
+    avatar!: string | null;
     gender!: string;
     dob!: Date;
     phone!: string;
@@ -25,7 +25,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     firebaseID!: string;
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
-    getImageURL!: () => Promise<any>;
+    getavatarURL!: () => Promise<any>;
 
 }
 
@@ -70,7 +70,7 @@ User.init({
     name: {
         type: DataTypes.STRING
     },
-    image: {
+    avatar: {
         type: DataTypes.STRING,
     },
     gender: {

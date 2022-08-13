@@ -38,7 +38,6 @@ export const updateMe = catchAsync(async (req, res, next) => {
 
 
             const avatar = req.files.avatar as UploadedFile;
-            console.log(avatar)
             if (avatar.mimetype.includes('image')) {
                 const storage = getStorage();
                 const image = `${USER_IMG_URL}/${user?.id}.jpeg`;
@@ -56,7 +55,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
                             .then(async (snapshot) => {
                                 await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
                                     const imgURL = url.split('&token')[0]
-                                    await User.update({ image: imgURL }, {
+                                    await User.update({ avatar: imgURL }, {
                                         where: {
                                             id: user.id
                                         }

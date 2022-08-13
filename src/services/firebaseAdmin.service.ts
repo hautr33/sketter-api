@@ -35,7 +35,7 @@ export const loginViaGoogle = async (token: string): Promise<any> => {
                 user.email = decodedToken.email;
                 user.firebaseID = decodedToken.uid;
                 user.name = decodedToken.name;
-                user.image = decodedToken.picture;
+                user.avatar = decodedToken.picture;
                 user.authType = Auth.google;
                 user.roleID = Roles.Traveler;
                 await user.save()
