@@ -71,7 +71,7 @@ User.init({
         type: DataTypes.STRING
     },
     avatar: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
     },
     gender: {
         type: DataTypes.STRING,

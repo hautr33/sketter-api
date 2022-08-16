@@ -1,7 +1,12 @@
-import { InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
+import { Destination } from './destination.model';
+import { TravelPersonalityType } from './personalityType.model';
 
-export class Destination_TravelPersonalityType extends Model<InferAttributes<Destination_TravelPersonalityType>, InferCreationAttributes<Destination_TravelPersonalityType>> { }
+export class Destination_TravelPersonalityType extends Model<InferAttributes<Destination_TravelPersonalityType>, InferCreationAttributes<Destination_TravelPersonalityType>> { 
+    destinationID!: ForeignKey<Destination['id']>;
+    personalityName!: ForeignKey<TravelPersonalityType['name']>;
+}
 
 Destination_TravelPersonalityType.init({
     // Model attributes are defined here

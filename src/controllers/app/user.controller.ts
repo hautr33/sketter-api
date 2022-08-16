@@ -5,10 +5,6 @@ import RESDocument from "../factory/RESDocument";
 import AppError from "../../utils/appError";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
-import { UploadedFile } from "express-fileupload";
-import { USER_IMG_URL } from "../../config/default";
-import sharp from "sharp"
 
 export const getMe = catchAsync(async (_req, res, next) => {
     const user = res.locals.user;
@@ -18,58 +14,14 @@ export const getMe = catchAsync(async (_req, res, next) => {
 
 export const updateMe = catchAsync(async (req, res, next) => {
     const user = res.locals.user;
-    const count = await User.count({ where: { email: user.email, id: user.id, roleID: user.roleID } });
-
-    if (count != 1)
-        return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND))
-
-    const { name, phone, address } = req.body;
+    const { name, phone, address, avatar } = req.body;
 
     if (user.roleID == Roles.Traveler) {
         const { gender, dob } = req.body;
-        await User.update({ name: name, phone: phone, address: address, gender: gender, dob: dob }, { where: { id: user.id } })
+        await User.update({ name: name, phone: phone, address: address, gender: gender, dob: dob, avatar: avatar }, { where: { id: user.id } })
     } else if (user.roleID == Roles.Supplier) {
         const { owner } = req.body;
-        await User.update({ name: name, phone: phone, address: address, owner: owner }, { where: { id: user.id } })
-    }
-    if (req.files && req.files.avatar) {
-        const imgNum = (req.files.avatar as UploadedFile[]).length ?? 1;
-        if ((req.files.avatar as UploadedFile[] || req.files.avatar as UploadedFile) && imgNum == 1) {
-
-
-            const avatar = req.files.avatar as UploadedFile;
-            if (avatar.mimetype.includes('image')) {
-                const storage = getStorage();
-                const image = `${USER_IMG_URL}/${user?.id}.jpeg`;
-                const storageRef = ref(storage, image,);
-                const metadata = {
-                    contentType: 'image/jpeg',
-                };
-                const bytes = new Uint8Array(avatar.data);
-                sharp(bytes)
-                    .resize(400, 400)
-                    .toFormat("jpeg", { mozjpeg: true })
-                    .toBuffer()
-                    .then(async data => {
-                        await uploadBytes(storageRef, data, metadata)
-                            .then(async (snapshot) => {
-                                await getDownloadURL(ref(storage, snapshot.metadata.fullPath)).then(async (url) => {
-                                    const imgURL = url.split('&token')[0]
-                                    await User.update({ avatar: imgURL }, {
-                                        where: {
-                                            id: user.id
-                                        }
-                                    });
-                                })
-                            })
-                    })
-
-            } else {
-                return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
-            }
-        } else {
-            return next(new AppError('Có lỗi xảy ra khi upload ảnh', StatusCodes.BAD_REQUEST))
-        }
+        await User.update({ name: name, phone: phone, address: address, owner: owner, avatar: avatar }, { where: { id: user.id } })
     }
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
     next();

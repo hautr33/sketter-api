@@ -68,14 +68,8 @@ export const UserPrivateFields = [
 
 export class DestinationPrivateFields {
     static default = [
-        "phone",
-        "email",
-        "description",
-        "longitude",
-        "latitude",
-        "estimatedTimeStay",
-        "supplierID",
         "createdAt",
+        "deletedAt",
         "updatedAt"
     ];
 }

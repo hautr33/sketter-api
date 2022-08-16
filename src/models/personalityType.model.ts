@@ -11,21 +11,15 @@ import sequelize from '../db/sequelize.db';
 //     'Có nhu cầu vui chơi, giải trí cao'
 
 export class TravelPersonalityType extends Model<InferAttributes<TravelPersonalityType>, InferCreationAttributes<TravelPersonalityType>> {
-    declare id?: number;
-    name!: string;
+    declare name: string;
 }
 
 TravelPersonalityType.init({
     // Model attributes are defined here
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-    },
     name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        primaryKey: true
     }
 }, {
     // Other model options go here

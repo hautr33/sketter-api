@@ -1,7 +1,4 @@
-import { TravelPersonalityType } from "../models/personalityType.model";
-import { Catalog } from "../models/catalog.model";
-
-export const validateDestination = async (lowestPrice: any, highestPrice: any, openingTime: any, closingTime: any, catalogs: any, personalityTypes: any, recommendedTimes: any) => {
+export const validateDestination = (lowestPrice: any, highestPrice: any, openingTime: any, closingTime: any, catalogs: any, personalityTypes: any, recommendedTimes: any) => {
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
 
     if (Number(lowestPrice) >= Number(highestPrice))
@@ -18,18 +15,6 @@ export const validateDestination = async (lowestPrice: any, highestPrice: any, o
 
     if (!recommendedTimes || recommendedTimes.length == 0)
         return 'Khung thời gian đề xuất không được trống'
-
-    for (let i = 0; i < catalogs.length; i++) {
-        const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
-        if (!catalog)
-            return 'Loại hình địa điểm không hợp lệ'
-    }
-
-    for (let i = 0; i < personalityTypes.length; i++) {
-        const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
-        if (!personalityType)
-            return 'Tính cách du lịch của địa điểm không hợp lệ'
-    }
 
     for (let i = 0; i < recommendedTimes.length; i++) {
         if (!recommendedTimes[i].start.match(regex) || !recommendedTimes[i].end.match(regex) || recommendedTimes[i].start >= recommendedTimes[i].end) {

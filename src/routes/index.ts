@@ -33,14 +33,12 @@ router.get('/initData', catchAsync(async (_req, res, _next) => {
 
     for (let i = 1; i <= Object.keys(Catalogs).length / 2; i++) {
         await Catalog.upsert({
-            id: i,
             name: Catalogs[i]
         });
     }
 
     for (let i = 1; i <= Object.keys(PersonalityTypes).length / 2; i++) {
         await TravelPersonalityType.upsert({
-            id: i,
             name: PersonalityTypes[i]
         });
     }

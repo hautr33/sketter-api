@@ -7,129 +7,42 @@ import RESDocument from "../factory/RESDocument";
 import { TravelPersonalityType } from "../../models/personalityType.model";
 import { Destination_RecommendedTime } from "../../models/destination_recommendedTime.model";
 import { Roles, Status } from "../../utils/constant";
-import { DESTINATION_IMG_URL, PAGE_LIMIT } from "../../config/default";
+import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/privateField";
-import { UploadedFile } from "express-fileupload";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { Destination_Image } from "../../models/destination_image.model";
 import { deleteOne } from "../factory/crud.factory";
 import { validateDestination } from "../../utils/validateInput";
-import sharp from "sharp";
+import { omit } from "lodash";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay
+        openingTime, closingTime, estimatedTimeStay, catalogs, personalityTypes
     } = req.body;
 
-    const catalogs = JSON.parse(req.body.catalogs)
-    const personalityTypes = JSON.parse(req.body.personalityTypes)
-    const recommendedTimes = JSON.parse(req.body.recommendedTimes)
+    const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
+    const images = req.body.images as Destination_Image[]
     const supplierID = res.locals.user.id;
 
-    const error = await validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
-    if (error) {
+    const error = validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
+    if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
-    }
-
-    let listCatalog: Catalog[] = [];
-    for (let i = 0; i < catalogs.length; i++) {
-        const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
-        if (catalog)
-            listCatalog.push(catalog);
-    }
-
-    let listpersonalityType: TravelPersonalityType[] = [];
-    for (let i = 0; i < personalityTypes.length; i++) {
-        const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
-        if (personalityType)
-            listpersonalityType.push(personalityType);
-    }
 
     const destination = await Destination.create({
-        name: name,
-        address: address,
-        phone: phone,
-        email: email,
-        description: description,
-        longitude: longitude,
-        latitude: latitude,
-        lowestPrice: lowestPrice,
-        highestPrice: highestPrice,
-        openingTime: openingTime,
-        closingTime: closingTime,
-        estimatedTimeStay: estimatedTimeStay,
-        supplierID: supplierID
+        name: name, address: address, phone: phone, email: email, description: description,
+        longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
+        openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID,
     });
 
-    await destination.addCatalogs(listCatalog);
-    await destination.addTravelPersonalityTypes(listpersonalityType);
-    for (let i = 0; i < recommendedTimes.length; i++)
-        await Destination_RecommendedTime.create({
-            destinationID: destination.id,
-            start: recommendedTimes[i].start,
-            end: recommendedTimes[i].end
-        })
+    await destination.addCatalogs(catalogs);
+    await destination.addTravelPersonalityTypes(personalityTypes);
+    recommendedTimes.forEach(async time => {
+        await destination.createDestination_RecommendedTime(time);
+    });
+    images.forEach(async img => {
+        await destination.createDestination_Image(img);
+    });
 
-
-    if (req.files && req.files.images) {
-        if (req.files.images as UploadedFile) {
-            let temp = JSON.stringify(req.files.images);
-            if (!temp.startsWith('[')) {
-                temp = '[' + temp + ']'
-                req.files.images = JSON.parse(temp)
-            }
-
-            const images = req.files.images as UploadedFile[];
-            images.forEach(async img => {
-                if (img.mimetype.includes('image')) {
-                    const storage = getStorage();
-                    const image = `${DESTINATION_IMG_URL}/${destination.id}/${Date.now()}.jpeg`;
-                    const storageRef = ref(storage, image);
-                    const metadata = {
-                        contentType: 'image/jpeg',
-                    };
-                    await sharp(img.data)
-                        .resize(1080, 720)
-                        .toFormat("jpeg", { mozjpeg: true })
-                        .toBuffer()
-                        .then(async data => {
-                            await uploadBytes(storageRef, data, metadata)
-                                .then(async (snapshot) => {
-                                    await getDownloadURL(ref(storage, snapshot.metadata.fullPath))
-                                        .then(async (url) => {
-                                            const imgURL = url.split('&token')[0]
-                                            await Destination_Image.create({
-                                                destinationID: destination.id,
-                                                imgURL: imgURL
-                                            })
-                                        })
-                                        .catch(async (e) => {
-                                            console.log(e)
-                                            return next(new AppError(e, StatusCodes.BAD_GATEWAY))
-                                        })
-                                })
-                                .catch(async (e) => {
-                                    await destination.destroy();
-                                    console.log(e)
-                                    return next(new AppError(e, StatusCodes.BAD_GATEWAY))
-                                })
-                        })
-                        .catch(async (e) => {
-                            await destination.destroy();
-                            console.log(e)
-                            return next(new AppError(e, StatusCodes.BAD_GATEWAY))
-                        })
-                } else {
-                    return next(new AppError('Ảnh không hợp lệ', StatusCodes.BAD_REQUEST))
-                }
-            });
-        }
-    }
-    const result = await Destination.findOne({
-        where: { id: destination.id },
-        attributes: { exclude: DestinationPrivateFields.default }
-    })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', omit(destination.toJSON(), DestinationPrivateFields.default));
     next();
 });
 
@@ -139,32 +52,17 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy thông tin với ID này', StatusCodes.NOT_FOUND));
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay
+        openingTime, closingTime, estimatedTimeStay, catalogs, personalityTypes
     } = req.body;
 
-    const catalogs = JSON.parse(req.body.catalogs)
-    const personalityTypes = JSON.parse(req.body.personalityTypes)
-    const recommendedTimes = JSON.parse(req.body.recommendedTimes)
+    const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
+    const images = req.body.images as Destination_Image[]
     const supplierID = res.locals.user.id;
 
-    const error = await validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
-    if (error) {
+    const error = validateDestination(lowestPrice, highestPrice, openingTime, closingTime, catalogs, personalityTypes, recommendedTimes)
+    if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
-    }
 
-    let newCatalogs: Catalog[] = [];
-    for (let i = 0; i < catalogs.length; i++) {
-        const catalog = await Catalog.findOne({ where: { name: catalogs[i].name } })
-        if (catalog)
-            newCatalogs.push(catalog);
-    }
-
-    let newPersonalityTypes: TravelPersonalityType[] = [];
-    for (let i = 0; i < personalityTypes.length; i++) {
-        const personalityType = await TravelPersonalityType.findOne({ where: { name: personalityTypes[i].name } })
-        if (personalityType)
-            newPersonalityTypes.push(personalityType);
-    }
     await Destination.update(
         {
             name: name,
@@ -186,29 +84,27 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         }
     );
 
-    const curCatalogs = await destination.getCatalogs();
-    await destination.removeCatalogs(curCatalogs);
-    await destination.addCatalogs(newCatalogs);
-
-    const curPersonalityTypes = await destination.getTravelPersonalityTypes();
-    await destination.removeTravelPersonalityTypes(curPersonalityTypes);
-    await destination.addTravelPersonalityTypes(newPersonalityTypes);
+    await destination.setCatalogs(catalogs);
+    await destination.setTravelPersonalityTypes(personalityTypes);
 
     await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id } })
-    for (let i = 0; i < recommendedTimes.length; i++)
-        await Destination_RecommendedTime.create({
-            destinationID: destination.id,
-            start: recommendedTimes[i].start,
-            end: recommendedTimes[i].end
-        })
+    recommendedTimes.forEach(async time => {
+        await destination.createDestination_RecommendedTime(time);
+    });
+
+    await Destination_Image.destroy({ where: { destinationID: destination.id } })
+    images.forEach(async img => {
+        await destination.createDestination_Image(img);
+    });
+
     const result = await Destination.findOne({
         where: { id: destination.id },
-        attributes: { exclude: ['updatedAt', 'deletedAt'] },
+        attributes: { exclude: DestinationPrivateFields.default },
         include: [
             { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
             { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
-            { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
+            { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID', 'id'] } },
+            { model: Destination_Image, attributes: { exclude: ['destinationID', 'id'] } }
         ]
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
@@ -270,12 +166,12 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
     const document = await Destination.findOne(
         {
             where: option,
-            attributes: { exclude: ['updatedAt', 'deletedAt'] },
+            attributes: { exclude: DestinationPrivateFields.default },
             include: [
                 { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
                 { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID'] } },
-                { model: Destination_Image, attributes: { exclude: ['destinationID'] } }
+                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID', 'id'] } },
+                { model: Destination_Image, attributes: { exclude: ['destinationID', 'id'] } }
             ]
         });
     if (!document) {

@@ -87,7 +87,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"test01@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
+					"raw": "{\r\n    \"email\": \"supp@gmail.com\",\r\n    \"password\":\"123123\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -387,55 +387,13 @@
 					}
 				],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "avatar",
-							"type": "file",
-							"src": "/C:/Users/hautt/Desktop/1.png"
-						},
-						{
-							"key": "name",
-							"value": "Dương Thanh Huy",
-							"type": "text"
-						},
-						{
-							"key": "phone",
-							"value": "0387698702",
-							"type": "text"
-						},
-						{
-							"key": "address",
-							"value": "Nhà của Huy",
-							"type": "text"
-						},
-						{
-							"key": "gender",
-							"value": "Nữ",
-							"description": "update for traveler",
-							"type": "text"
-						},
-						{
-							"key": "dob",
-							"value": "2000-01-13",
-							"description": "update for traveler",
-							"type": "text"
-						},
-						{
-							"key": "dob",
-							"value": "2000/01/13",
-							"description": "nhập ngày kiểu này cũng được",
-							"type": "text",
-							"disabled": true
-						},
-						{
-							"key": "owner",
-							"value": "Quách Khổng Triết",
-							"description": "update for supplier",
-							"type": "text",
-							"disabled": true
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Dương Thanh Huy\",\r\n    \"phone\": \"0387698701\",\r\n    \"address\": \"Nhà của Huy\",\r\n    \"gender\": \"Nữ\",\r\n    \"dob\": \"2000-01-13\",\r\n    \"avatar\": \"https://scontent.fsgn5-13.fna.fbcdn.net/v/t39.30808-6/299510037_570436338094681_8671855749139690683_n.jpg?stp=cp1_dst-jpg&_nc_cat=1&ccb=1-7&_nc_sid=8bfeb9&_nc_ohc=DvGV2o1esigAX9HMt_y&_nc_ht=scontent.fsgn5-13.fna&oh=00_AT_H46XKtn6xiBlVnmef67p1ANSZHXLvqz4PVci6H9rJRg&oe=63003116\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
+					}
 				},
 				"url": {
 					"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
@@ -463,50 +421,22 @@
 								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
 								"type": "text",
 								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
 							}
 						],
 						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "avatar",
-									"type": "file",
-									"src": []
-								},
-								{
-									"key": "name",
-									"value": "Dương Thanh Huy",
-									"type": "text"
-								},
-								{
-									"key": "phone",
-									"value": "0387698739",
-									"type": "text"
-								},
-								{
-									"key": "address",
-									"value": "Nhà của Huy",
-									"type": "text"
-								},
-								{
-									"key": "gender",
-									"value": "Nữ",
-									"description": "Nam | Nữ",
-									"type": "text"
-								},
-								{
-									"key": "dob",
-									"value": "2000-01-13",
-									"type": "text"
-								},
-								{
-									"key": "dob",
-									"value": "2000/01/13",
-									"description": "Nhập ngày kiểu này cũng được",
-									"type": "text",
-									"disabled": true
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Dương Thanh Huy\",\r\n    \"phone\": \"0387698702\",\r\n    \"address\": \"Nhà của Huy\",\r\n    \"gender\": \"Nữ\",\r\n    \"dob\": \"2000-01-13\",\r\n    \"avatar\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
-							]
+							}
 						},
 						"url": {
 							"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
@@ -538,37 +468,22 @@
 								"value": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjRhNDRmLTE4OTQtNDMwNy1hMDM1LTU1ZmZlOGZhZjFmYiIsImlhdCI6MTY1NzQzODY2NCwiZXhwIjoxNjY1MjE0NjY0fQ.NQiKZ9jAMJb2nUSMBp7ucWld19IkVp_qeJ-D9X9tvEbOeKTS_2NM9LOS5T2N7TmwNab-kTbaiNOl1Qeai4lMlQ",
 								"type": "text",
 								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
 							}
 						],
 						"body": {
-							"mode": "formdata",
-							"formdata": [
-								{
-									"key": "avatar",
-									"type": "file",
-									"src": []
-								},
-								{
-									"key": "name",
-									"value": "Dương Thanh Huy",
-									"type": "text"
-								},
-								{
-									"key": "phone",
-									"value": "0387698739",
-									"type": "text"
-								},
-								{
-									"key": "address",
-									"value": "Nhà của Huy",
-									"type": "text"
-								},
-								{
-									"key": "owner",
-									"value": "Quách Khổng Triết",
-									"type": "text"
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Dương Thanh Huy\",\r\n    \"phone\": \"0387698702\",\r\n    \"address\": \"Nhà của Huy\",\r\n    \"owner\": \"Quách Khổng Triết\",\r\n    \"avatar\": null\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
 								}
-							]
+							}
 						},
 						"url": {
 							"raw": "http://{{HOST}}:{{PORT}}/api/v1/user/me",
@@ -636,95 +551,13 @@
 				"method": "POST",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "name",
-							"value": "Đồi thông hai mộ",
-							"type": "text"
-						},
-						{
-							"key": "address",
-							"value": "Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam",
-							"contentType": "",
-							"type": "text"
-						},
-						{
-							"key": "longitude",
-							"value": "11.9556795",
-							"contentType": "",
-							"type": "text"
-						},
-						{
-							"key": "latitude",
-							"value": "108.4772041",
-							"type": "text"
-						},
-						{
-							"key": "phone",
-							"value": "0912345678",
-							"type": "text"
-						},
-						{
-							"key": "email",
-							"value": "huyhuyduong@gmail.com",
-							"type": "text"
-						},
-						{
-							"key": "description",
-							"value": "đây là cái đồi có cây thông",
-							"type": "text"
-						},
-						{
-							"key": "lowestPrice",
-							"value": "90",
-							"type": "text"
-						},
-						{
-							"key": "highestPrice",
-							"value": "400",
-							"type": "text"
-						},
-						{
-							"key": "openingTime",
-							"value": "02:00",
-							"type": "text"
-						},
-						{
-							"key": "closingTime",
-							"value": "22:00",
-							"type": "text"
-						},
-						{
-							"key": "estimatedTimeStay",
-							"value": "90",
-							"type": "text"
-						},
-						{
-							"key": "recommendedTimes",
-							"value": "[{\"start\": \"04:00\",\"end\": \"07:00\"},{\"start\": \"08:00\",\"end\": \"10:00\"},{\"start\": \"13:00\",\"end\": \"16:00\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "personalityTypes",
-							"value": "[{\"name\": \"Ưa mạo hiểm\"},{\"name\": \"Thích khám phá\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "catalogs",
-							"value": "[{\"name\": \"Homestay\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "images",
-							"description": "chưa được",
-							"type": "file",
-							"src": "/C:/Users/hautt/Desktop/1.png"
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Đồi thông hai mộ\",\r\n    \"address\": \"Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam\",\r\n    \"longitude\": 11.9556795,\r\n    \"latitude\": 108.4772041,\r\n    \"phone\": \"0912345678\",\r\n    \"email\": \"huyhuyduong@gmail.com\",\r\n    \"description\": \"đây là cái đồi có cây thông\",\r\n    \"lowestPrice\": 90,\r\n    \"highestPrice\": 400,\r\n    \"openingTime\": \"02:00\",\r\n    \"closingTime\": \"22:00\",\r\n    \"estimatedTimeStay\": 90,\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"04:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"10:00\"\r\n        },\r\n        {\r\n            \"start\": \"13:00\",\r\n            \"end\": \"16:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        \"Ưa mạo hiểm\",\r\n        \"Thích khám phá\"\r\n    ],\r\n    \"catalogs\": [\r\n        \"Homestay\"\r\n    ],\r\n    \"images\": [\r\n        {\r\n            \"url\": \"https://firebasestorage.googleapis.com/v0/b/sketter-d471a.appspot.com/o/images%2Fdestination%2F1461730158_doi-thong-2-mo-1.jpg?alt=media\"\r\n        },\r\n        {\r\n            \"url\": \"https://firebasestorage.googleapis.com/v0/b/sketter-d471a.appspot.com/o/images%2Fdestination%2FDoi-thong-hai-mo-1024x819.jpg?alt=media\"\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
+					}
 				},
 				"url": {
 					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/create",
@@ -776,9 +609,6 @@
 		},
 		{
 			"name": "destination  - get all",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
 				"method": "GET",
 				"header": [
@@ -788,10 +618,6 @@
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "formdata",
-					"formdata": []
-				},
 				"url": {
 					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination?page=1",
 					"protocol": "http",
@@ -838,7 +664,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/1561fe6e-32da-4502-8d97-cff8cf515e75",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/b7848415-c466-4dbc-a464-46e3db306ff1",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -848,7 +674,7 @@
 						"api",
 						"v1",
 						"destination",
-						"1561fe6e-32da-4502-8d97-cff8cf515e75"
+						"b7848415-c466-4dbc-a464-46e3db306ff1"
 					]
 				}
 			},
@@ -860,98 +686,16 @@
 				"method": "PATCH",
 				"header": [],
 				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "name",
-							"value": "Đồi thông hai mộ 212",
-							"type": "text"
-						},
-						{
-							"key": "address",
-							"value": "Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam",
-							"contentType": "",
-							"type": "text"
-						},
-						{
-							"key": "longitude",
-							"value": "11.9556795",
-							"contentType": "",
-							"type": "text"
-						},
-						{
-							"key": "latitude",
-							"value": "108.4772041",
-							"type": "text"
-						},
-						{
-							"key": "phone",
-							"value": "0912345678",
-							"type": "text"
-						},
-						{
-							"key": "email",
-							"value": "huyhuyduong@gmail.com",
-							"type": "text"
-						},
-						{
-							"key": "description",
-							"value": "đây là cái đồi có cây thông",
-							"type": "text"
-						},
-						{
-							"key": "lowestPrice",
-							"value": "90",
-							"type": "text"
-						},
-						{
-							"key": "highestPrice",
-							"value": "400",
-							"type": "text"
-						},
-						{
-							"key": "openingTime",
-							"value": "02:00",
-							"type": "text"
-						},
-						{
-							"key": "closingTime",
-							"value": "22:00",
-							"type": "text"
-						},
-						{
-							"key": "estimatedTimeStay",
-							"value": "90",
-							"type": "text"
-						},
-						{
-							"key": "recommendedTimes",
-							"value": "[{\"start\": \"04:00\",\"end\": \"07:00\"},{\"start\": \"08:00\",\"end\": \"10:00\"},{\"start\": \"13:00\",\"end\": \"16:00\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "personalityTypes",
-							"value": "[{\"name\": \"Ưa mạo hiểm\"},{\"name\": \"Thích khám phá\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "catalogs",
-							"value": "[{\"name\": \"Biệt thự\"}]",
-							"contentType": "application/json",
-							"type": "text"
-						},
-						{
-							"key": "images",
-							"description": "chưa được",
-							"type": "file",
-							"src": []
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Đồi thông hai mộ 1\",\r\n    \"address\": \"Đồi Thông Hai Mộ, Hồ Xuân Hương, Phường 12, Thành phố Đà Lạt, Lâm Đồng, Việt Nam\",\r\n    \"longitude\": 11.9556795,\r\n    \"latitude\": 108.4772041,\r\n    \"phone\": \"0912345678\",\r\n    \"email\": \"huyhuyduong@gmail.com\",\r\n    \"description\": \"đây là cái đồi có cây thông\",\r\n    \"lowestPrice\": 90,\r\n    \"highestPrice\": 400,\r\n    \"openingTime\": \"02:00\",\r\n    \"closingTime\": \"22:00\",\r\n    \"estimatedTimeStay\": 90,\r\n    \"recommendedTimes\": [\r\n        {\r\n            \"start\": \"04:00\",\r\n            \"end\": \"07:00\"\r\n        },\r\n        {\r\n            \"start\": \"08:00\",\r\n            \"end\": \"10:00\"\r\n        },\r\n        {\r\n            \"start\": \"13:00\",\r\n            \"end\": \"17:00\"\r\n        }\r\n    ],\r\n    \"personalityTypes\": [\r\n        \"Ưa mạo hiểm\",\r\n        \"Thích khám phá\"\r\n    ],\r\n    \"catalogs\": [\r\n        \"Homestay\"\r\n    ],\r\n    \"images\": [\r\n        {\r\n            \"url\": \"https://firebasestorage.googleapis.com/v0/b/sketter-d471a.appspot.com/o/images%2Fdestination%2FDoi-thong-hai-mo-1024x819.jpg?alt=media\"\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
 						}
-					]
+					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/2c260757-f65c-413c-8d6c-82f45d973784",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/c48220bd-48d2-4888-b01c-ff679160f07e",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -961,7 +705,7 @@
 						"api",
 						"v1",
 						"destination",
-						"2c260757-f65c-413c-8d6c-82f45d973784"
+						"c48220bd-48d2-4888-b01c-ff679160f07e"
 					]
 				}
 			},
@@ -988,7 +732,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/620c60be-e0f4-4118-99ae-0309a0ccae90",
+					"raw": "http://{{HOST}}:{{PORT}}/api/v1/destination/4bf1f980-d245-40ca-8a15-d0c2eb792ebb",
 					"protocol": "http",
 					"host": [
 						"{{HOST}}"
@@ -998,7 +742,7 @@
 						"api",
 						"v1",
 						"destination",
-						"620c60be-e0f4-4118-99ae-0309a0ccae90"
+						"4bf1f980-d245-40ca-8a15-d0c2eb792ebb"
 					]
 				}
 			},

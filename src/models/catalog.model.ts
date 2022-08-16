@@ -11,20 +11,15 @@ import sequelize from '../db/sequelize.db';
 //     'Nhà xe'
 
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
-    declare id?: number;
-    name!: string;
+    declare name: string;
 }
 
 Catalog.init({
     // Model attributes are defined here
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true
-    },
     name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        primaryKey: true
     }
 }, {
     // Other model options go here

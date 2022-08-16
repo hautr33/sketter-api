@@ -1,4 +1,4 @@
-import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManyRemoveAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model, NonAttribute } from 'sequelize';
 import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
@@ -6,18 +6,26 @@ import { Destination_Catalog } from './destination_catalog.model';
 import { Destination_TravelPersonalityType } from './destination_personalityType.model';
 import { TravelPersonalityType } from './personalityType.model';
 import { User } from './user.model';
+import { Destination_RecommendedTime } from './destination_recommendedTime.model';
+import { Destination_Image } from './destination_image.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
 
     declare getCatalogs: HasManyGetAssociationsMixin<Catalog>;
     declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
+    declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
     declare removeCatalogs: HasManyRemoveAssociationsMixin<Catalog, string>;
+    declare catalogs?: NonAttribute<Catalog[]>;
 
     declare getTravelPersonalityTypes: HasManyGetAssociationsMixin<TravelPersonalityType>;
     declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
+    declare setTravelPersonalityTypes: HasManySetAssociationsMixin<TravelPersonalityType, string>;
     declare removeTravelPersonalityTypes: HasManyRemoveAssociationsMixin<TravelPersonalityType, string>;
+    declare travelPersonalityTypes?: NonAttribute<TravelPersonalityType[]>;
 
+    declare createDestination_RecommendedTime: HasManyCreateAssociationMixin<Destination_RecommendedTime, 'destinationID'>;
+    declare createDestination_Image: HasManyCreateAssociationMixin<Destination_Image, 'destinationID'>;
     name!: string;
     address!: string;
     phone!: string;
@@ -160,11 +168,11 @@ Destination.init({
     modelName: 'Destination' // We need to choose the model name
 });
 
-Destination.belongsToMany(Catalog, { through: Destination_Catalog });
-Catalog.belongsToMany(Destination, { through: Destination_Catalog });
+Destination.belongsToMany(Catalog, { through: Destination_Catalog, foreignKey: "destinationID" });
+Catalog.belongsToMany(Destination, { through: Destination_Catalog, foreignKey: "catalogName" });
 
-Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType });
-TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType });
+Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType, foreignKey: "destinationID" });
+TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType, foreignKey: "personalityName" });
 
 User.hasOne(Destination, {
     foreignKey: "supplierID"

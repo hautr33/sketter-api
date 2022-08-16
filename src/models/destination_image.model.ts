@@ -5,7 +5,7 @@ import { Destination } from './destination.model';
 export class Destination_Image extends Model<InferAttributes<Destination_Image>, InferCreationAttributes<Destination_Image>> {
     declare id?: string;
     destinationID!: ForeignKey<Destination['id']>;
-    imgURL!: string;
+    url!: string;
 }
 
 Destination_Image.init({
@@ -21,7 +21,7 @@ Destination_Image.init({
     destinationID: {
         type: DataTypes.UUID,
     },
-    imgURL: {
+    url: {
         type: DataTypes.STRING,
     },
 }, {
