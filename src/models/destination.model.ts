@@ -95,7 +95,7 @@ Destination.init({
         }
     },
     description: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         validate: {
             notEmpty: {
                 msg: 'Mô tả địa điểm không được trống'
