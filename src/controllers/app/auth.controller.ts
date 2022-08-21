@@ -48,18 +48,21 @@ export const signup = catchAsync(async (req, res, next) => {
 
     // Add user to db
     await user.save()
+        .then(async () => {
+            // Add user to firebase
+            const err = await signUpFirebase(email, password)
+            if (err)
+                return next(new AppError(err, StatusCodes.BAD_REQUEST));
+            else {
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đăng kí thành công");
+                next();
+            }
+        })
         .catch((error) => {
             return next(new AppError(error.errors[0].message, StatusCodes.BAD_REQUEST));
         });
 
-    // Add user to firebase
-    const err = await signUpFirebase(email, password)
-    if (err)
-        return next(new AppError(err, StatusCodes.BAD_REQUEST));
-    else {
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đăng kí thành công");
-        next();
-    }
+
 });
 
 export const login = catchAsync(async (req, res, next) => {
@@ -104,19 +107,6 @@ export const login = catchAsync(async (req, res, next) => {
         else {
             createSendToken(result.id, StatusCodes.OK, res, next);
         }
-
-        // firebaseAdmin.getAuth()
-        //     .verifyIdToken(token)
-        //     .then((decodedToken: any) => {
-        //         res.resDocument = new RESDocument(StatusCodes.OK, 'success', decodedToken);
-        //         next();
-
-        //     })
-        //     .catch((error: any) => {
-        //         res.resDocument = new RESDocument(StatusCodes.OK, 'fail', error);
-        //         next();
-
-        //     });
     }
 });
 

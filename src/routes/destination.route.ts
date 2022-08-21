@@ -10,8 +10,10 @@ const router = Router();
 
 router.use(deserializeUser, requireUser);
 
-router.get('/', standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier, Roles.Traveler), getAllDestination));
-router.post('/create', standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), createDestination));
+router
+    .route('/')
+    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), getAllDestination))
+    .post(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), createDestination));
 
 router
     .route('/:id')

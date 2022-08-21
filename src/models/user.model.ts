@@ -134,23 +134,21 @@ Role.hasOne(User, {
 
 User.beforeSave(async (user) => {
     if (user.roleID == Roles.Supplier) {
-        if (!user.name || user.name == '') {
-            throw new Error('Supplier can not be blank');
-        }
-        if (!user.owner || user.owner == '') {
-            throw new Error('Supplier\'s Owner can not be blank');
-        }
-        if (!user.phone || user.phone == '') {
-            throw new Error('Supplier\'s Phone can not be blank');
-        }
-        if (!user.address || user.address == '') {
-            throw new Error('Supplier\'s Address can not be blank');
-        }
+        if (!user.name || user.name == '')
+            throw new Error('Tên Supplier không được trống');
+
+        if (!user.owner || user.owner == '')
+            throw new Error('Tên chủ sở hữu không được trống');
+
+        if (!user.phone || user.phone == '')
+            throw new Error('Số điện thoại không được trống');
+
+        if (!user.address || user.address == '')
+            throw new Error('Địa chỉ không được trống');
     }
     if (user.roleID == Roles.Traveler) {
-        if (!user.name || user.name == '') {
-            throw new Error('Traveler\'s Name can not be blank');
-        }
+        if (!user.name || user.name == '')
+            throw new Error('Tên không được trống');
     }
     if (user.changed("password")) {
         const salt = await bcrypt.genSalt(10);

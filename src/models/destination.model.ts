@@ -1,4 +1,4 @@
-import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model, NonAttribute } from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
@@ -11,21 +11,6 @@ import { Destination_Image } from './destination_image.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
-
-    declare getCatalogs: HasManyGetAssociationsMixin<Catalog>;
-    declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
-    declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
-    declare removeCatalogs: HasManyRemoveAssociationsMixin<Catalog, string>;
-    declare catalogs?: NonAttribute<Catalog[]>;
-
-    declare getTravelPersonalityTypes: HasManyGetAssociationsMixin<TravelPersonalityType>;
-    declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
-    declare setTravelPersonalityTypes: HasManySetAssociationsMixin<TravelPersonalityType, string>;
-    declare removeTravelPersonalityTypes: HasManyRemoveAssociationsMixin<TravelPersonalityType, string>;
-    declare travelPersonalityTypes?: NonAttribute<TravelPersonalityType[]>;
-
-    declare createDestination_RecommendedTime: HasManyCreateAssociationMixin<Destination_RecommendedTime, 'destinationID'>;
-    declare createDestination_Image: HasManyCreateAssociationMixin<Destination_Image, 'destinationID'>;
     name!: string;
     address!: string;
     phone!: string;
@@ -40,9 +25,25 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     estimatedTimeStay!: number;
     status?: string;
     rating?: number;
-    supplierID!: ForeignKey<Destination['id']>;
+    supplierID!: ForeignKey<User['id']>;
+    createdBy!: ForeignKey<User['id']>;
+
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
+
+    declare getCatalogs: HasManyGetAssociationsMixin<Catalog>;
+    declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
+    declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
+
+    declare getTravelPersonalityTypes: HasManyGetAssociationsMixin<TravelPersonalityType>;
+    declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
+    declare setTravelPersonalityTypes: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+
+    declare getDestination_RecommendedTimes: HasManyGetAssociationsMixin<Destination_RecommendedTime>;
+    declare createDestination_RecommendedTime: HasManyCreateAssociationMixin<Destination_RecommendedTime, 'destinationID'>;
+
+    declare getDestination_Images: HasManyGetAssociationsMixin<Destination_Image>;
+    declare createDestination_Image: HasManyCreateAssociationMixin<Destination_Image, 'destinationID'>;
 }
 
 Destination.init({
@@ -174,6 +175,21 @@ Catalog.belongsToMany(Destination, { through: Destination_Catalog, foreignKey: "
 Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType, foreignKey: "destinationID" });
 TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType, foreignKey: "personalityName" });
 
-User.hasOne(Destination, {
-    foreignKey: "supplierID"
-});
+User.hasOne(Destination, { foreignKey: "supplierID" });
+
+Destination.beforeSave(async (destination) => {
+    const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+
+    const count = await User.count({ where: { id: destination.supplierID } })
+    if (count != 1)
+        throw new Error('SupplierID không hợp lệ');
+
+    if (destination.highestPrice < destination.lowestPrice)
+        throw new Error('Giá cao nhất không hợp lệ');
+
+    if (!destination.openingTime.match(regex))
+        throw new Error('Giờ mở cửa không hợp lệ');
+
+    if (!destination.closingTime.match(regex) || destination.closingTime < destination.openingTime)
+        throw new Error('Giờ đóng cửa không hợp lệ');
+})

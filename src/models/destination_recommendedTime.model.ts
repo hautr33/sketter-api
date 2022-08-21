@@ -51,3 +51,22 @@ Destination_RecommendedTime.init({
 Destination.hasMany(Destination_RecommendedTime, {
     foreignKey: "destinationID"
 });
+
+export const validateRecommendedTime = function (
+    recommendedTimes: Destination_RecommendedTime[]
+) {
+
+    if (!recommendedTimes || recommendedTimes.length == 0)
+        return 'Khung thời gian đề xuất không được trống. '
+
+    const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+    let err = '';
+    recommendedTimes.forEach(time => {
+        if (!time.start.match(regex))
+            err = `Giờ bắt đầu "${time.start}" của khung thời gian đề xuất không hợp lệ. `
+        else if (!time.end.match(regex) || time.end < time.start)
+            err = `Giờ kết thúc "${time.end}" của khung thời gian đề xuất không hợp lệ. `
+    });
+
+    return err;
+};
