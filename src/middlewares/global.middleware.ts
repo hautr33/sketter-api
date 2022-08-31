@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import AppError from '../utils/appError';
+import AppError from '../utils/app_error';
 
 /**
  * Set up Pipeline

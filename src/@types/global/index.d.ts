@@ -1,4 +1,4 @@
-import RESDocument from '../../controllers/factory/RESDocument';
+import RESDocument from '../../controllers/factory/res_document';
 import { UserAttributes } from '../../models/user.model';
 
 declare global {

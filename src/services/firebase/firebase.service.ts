@@ -1,5 +1,5 @@
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { User } from "../models/user.model";
+import { User } from "../../models/user.model";
 
 export const loginEmailPasswordFirebase = async (email: string, password: string): Promise<any> => {
     let err = undefined;

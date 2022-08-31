@@ -1,9 +1,9 @@
 import { RequestHandler } from "express";
 import { StatusCodes } from "http-status-codes";
 import { PAGE_LIMIT } from "../../config/default";
-import AppError from "../../utils/appError";
-import catchAsync from "../../utils/catchAsync";
-import RESDocument from "./RESDocument";
+import AppError from "../../utils/app_error";
+import catchAsync from "../../utils/catch_async";
+import RESDocument from "./res_document";
 
 /**
  * This controller is a middleware (req, res, next) that perform

@@ -11,22 +11,11 @@ import morganProd from 'morgan';
 import morganDev from 'morgan-body';
 import path from 'path';
 import xss from 'xss-clean';
-import {
-	API_KEY,
-	APP_ID,
-	AUTH_DOMAIN,
-	ENVIRONMENT,
-	GOOGLE_APPLICATION_CREDENTIALS,
-	MESSAGING_SENDER_ID,
-	PROJECT_ID,
-	STORAGE_BUCKET
-} from './config/default';
+import { ENVIRONMENT } from './config/default';
 import globalErrorHandler from './controllers/error/error.controller';
 import cookiesReader from './services/cookies.service';
-import AppError from './utils/appError';
+import AppError from './utils/app_error';
 import router from './routes';
-import admin from 'firebase-admin';
-import { initializeApp } from "firebase/app";
 
 const app = express();
 
@@ -102,22 +91,6 @@ app.use(
 if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test')
 	app.use(morganProd('common'));
 else morganDev(app);
-
-// Firebase
-const serviceAccount = require(GOOGLE_APPLICATION_CREDENTIALS);
-admin.initializeApp({
-	credential: admin.credential.cert(serviceAccount)
-});
-
-const firebaseConfig = {
-	apiKey: API_KEY,
-	authDomain: AUTH_DOMAIN,
-	projectId: PROJECT_ID,
-	storageBucket: STORAGE_BUCKET,
-	messagingSenderId: MESSAGING_SENDER_ID,
-	appId: APP_ID
-};
-initializeApp(firebaseConfig);
 
 // App Route
 app.use(router);

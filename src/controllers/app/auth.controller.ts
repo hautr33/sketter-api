@@ -3,17 +3,17 @@ import { RequestHandler } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 import { Op } from 'sequelize';
-import RESDocument from '../factory/RESDocument';
+import RESDocument from '../factory/res_document';
 import { FORGOT_PASSWORD_URL } from '../../config/default';
 import { User } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
-import AppError from '../../utils/appError';
-import catchAsync from '../../utils/catchAsync';
+import AppError from '../../utils/app_error';
+import catchAsync from '../../utils/catch_async';
 import { Roles } from '../../utils/constant';
 import { Role } from '../../models/role.model';
 import { Session } from '../../models/session.model';
 import { createSendToken } from '../../utils/jwt';
-import { loginViaGoogle, signUpFirebase, updateUserPassword } from '../../services/firebaseAdmin.service';
+import { loginViaGoogle, signUpFirebase, updateUserPassword } from '../../services/firebase/firebase_admin.service';
 
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body

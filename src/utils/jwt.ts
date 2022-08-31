@@ -2,8 +2,8 @@ import { NextFunction, Response } from 'express';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { ENVIRONMENT, JWT_COOKIES_EXPIRES_IN, JWT_EXPIRES_IN, JWT_PUBLIC, JWT_SECRET } from '../config/default';
 import { Session } from '../models/session.model';
-import RESDocument from '../controllers/factory/RESDocument';
-import AppError from './appError';
+import RESDocument from '../controllers/factory/res_document';
+import AppError from './app_error';
 import { StatusCodes } from 'http-status-codes';
 
 const signJwt = (payload: Object, options: SignOptions = {}) => {

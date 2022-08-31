@@ -3,9 +3,9 @@ import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
 import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
-import AppError from '../utils/appError';
+import AppError from '../utils/app_error';
 import { verifyJwt } from '../utils/jwt';
-import { UserPrivateFields } from '../utils/privateField';
+import { UserPrivateFields } from '../utils/private_field';
 // import { getDownloadURL, getStorage, ref } from "firebase/storage";
 // import { USER_DEFAULT_IMG_URL } from '../config/default';
 

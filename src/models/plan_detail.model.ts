@@ -4,17 +4,27 @@ import { Destination } from './destination.model';
 import { Plan } from './plan.model';
 
 export class PlanDetail extends Model<InferAttributes<PlanDetail>, InferCreationAttributes<PlanDetail>> {
-    planID!: ForeignKey<Plan['id']>;;
-    destinationID!: ForeignKey<Destination['id']>;;
-    date!: Date;
-    fromTime!: string;
-    toTime!: string;
+    declare id?: string;
+    planID!: ForeignKey<Plan['id']>;
+    destinationID!: ForeignKey<Destination['id']>;
+    date?: Date;
+    fromTime?: string;
+    toTime?: string;
     checkinTime?: Date;
     checkoutTime?: Date;
+
 }
 
 PlanDetail.init({
     // Model attributes are defined here
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+        validate: {
+            isUUID: 4
+        }
+    },
     planID: {
         type: DataTypes.UUID
     },
@@ -23,11 +33,9 @@ PlanDetail.init({
     },
     date: {
         type: DataTypes.DATEONLY,
-        allowNull: false,
     },
     fromTime: {
         type: DataTypes.STRING,
-        allowNull: false,
         validate: {
             is: {
                 msg: "Giờ bắt đầu không hợp lệ (HH:MM)",
@@ -37,7 +45,6 @@ PlanDetail.init({
     },
     toTime: {
         type: DataTypes.STRING,
-        allowNull: false,
         validate: {
             is: {
                 msg: "Giờ kết thúc không hợp lệ (HH:MM)",
@@ -56,5 +63,10 @@ PlanDetail.init({
     timestamps: true,
     paranoid: true,
     sequelize: sequelize, // We need to pass the connection instance
-    modelName: 'Plan' // We need to choose the model name
+    modelName: 'PlanDetail' // We need to choose the model name
 });
+
+Plan.hasMany(PlanDetail, { foreignKey: 'planID' })
+PlanDetail.belongsTo(Plan, { foreignKey: 'planID' })
+
+Destination.hasOne(PlanDetail, { foreignKey: 'destinationID' })

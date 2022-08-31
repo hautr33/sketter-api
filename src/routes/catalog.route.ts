@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { deserializeUser } from "../middlewares/deserializeUser";
-import { requireUser } from "../middlewares/requireUser";
+import { deserializeUser } from "../middlewares/deserialize_user";
+import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { getAllCatalog } from "../controllers/app/catalog.controller";
 

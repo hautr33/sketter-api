@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { deserializeUser } from "../middlewares/deserializeUser";
-import { requireUser } from "../middlewares/requireUser";
+import { deserializeUser } from "../middlewares/deserialize_user";
+import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
-import { getAllPersonalityType } from "../controllers/app/personalityType.controller";
+import { getAllPersonalityType } from "../controllers/app/personality_type.controller";
 
 const router = Router();
 

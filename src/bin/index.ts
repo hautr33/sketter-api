@@ -8,6 +8,7 @@ import path from 'path';
 import app from '../app';
 import { PORT, ENVIRONMENT } from '../config/default';
 import db from '../db/init.db';
+import firebase_config from '../services/firebase/firebase_config';
 import logger from '../utils/logger'
 
 /**
@@ -21,6 +22,13 @@ app.set('port', port);
  * Connect to DB
  */
 db.connect();
+
+
+/**
+ * Firebase Config
+ */
+ firebase_config.initialize()
+
 
 /**
  * Create HTTP / HTTPS server.

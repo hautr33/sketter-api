@@ -1,7 +1,7 @@
 import { ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Plan } from './plan.model';
-import { TravelPersonalityType } from './personalityType.model';
+import { TravelPersonalityType } from './personality_type.model';
 
 export class Plan_TravelPersonalities extends Model<InferAttributes<Plan_TravelPersonalities>, InferCreationAttributes<Plan_TravelPersonalities>> {
     planID!: ForeignKey<Plan['id']>;

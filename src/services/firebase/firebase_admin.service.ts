@@ -1,6 +1,6 @@
 import { getAuth } from "firebase-admin/auth";
-import { Auth, Roles } from "../utils/constant";
-import { User } from "../models/user.model";
+import { Auth, Roles } from "../../utils/constant";
+import { User } from "../../models/user.model";
 
 export const signUpFirebase = async (email: string, password: string): Promise<any> => {
     let err = undefined;

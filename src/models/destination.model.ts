@@ -3,10 +3,10 @@ import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
 import { Destination_Catalog } from './destination_catalog.model';
-import { Destination_TravelPersonalityType } from './destination_personalityType.model';
-import { TravelPersonalityType } from './personalityType.model';
+import { Destination_TravelPersonalityType } from './destination_personality_type.model';
+import { TravelPersonalityType } from './personality_type.model';
 import { User } from './user.model';
-import { Destination_RecommendedTime } from './destination_recommendedTime.model';
+import { Destination_RecommendedTime } from './destination_recommended_time.model';
 import { Destination_Image } from './destination_image.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
@@ -25,6 +25,8 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     estimatedTimeStay!: number;
     status?: string;
     rating?: number;
+    view?: number;
+    comment?: number;
     supplierID!: ForeignKey<User['id']>;
     createdBy!: ForeignKey<User['id']>;
 
@@ -108,8 +110,8 @@ Destination.init({
             notEmpty: {
                 msg: 'Kinh độ không được trống'
             },
-            min: -90,
-            max: 90
+            min: -180,
+            max: 180
         }
     },
     latitude: {
@@ -118,8 +120,8 @@ Destination.init({
             notEmpty: {
                 msg: 'Vĩ độ không được trống'
             },
-            min: -180,
-            max: 180
+            min: -90,
+            max: 90
         }
     },
     lowestPrice: {
@@ -154,7 +156,16 @@ Destination.init({
         defaultValue: Status.unverified
     },
     rating: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    view: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    comment: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     },
     supplierID: {
         type: DataTypes.UUID,

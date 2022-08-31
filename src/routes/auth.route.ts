@@ -3,8 +3,8 @@ import { standardPipeline } from "../pipes";
 import { signup, login, logout } from "../controllers/app/auth.controller";
 import { addRoleMiddleware } from "../middlewares/field.middleware";
 import { Roles } from "../utils/constant";
-import { deserializeUser } from "../middlewares/deserializeUser";
-import { requireUser } from "../middlewares/requireUser";
+import { deserializeUser } from "../middlewares/deserialize_user";
+import { requireUser } from "../middlewares/require_user";
 
 const router = Router();
 //Signup route

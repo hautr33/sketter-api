@@ -2,6 +2,7 @@ import {
     DataTypes,
     ForeignKey,
     HasManyAddAssociationsMixin,
+    HasManyCreateAssociationMixin,
     HasManyGetAssociationsMixin,
     HasManySetAssociationsMixin,
     InferAttributes,
@@ -9,10 +10,9 @@ import {
     Model
 } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Destination } from './destination.model';
-import { TravelPersonalityType } from './personalityType.model';
-import { PlanDetail } from './planDetail.model';
-import { Plan_TravelPersonalities } from './plan_personalityType.model';
+import { TravelPersonalityType } from './personality_type.model';
+import { PlanDetail } from './plan_detail.model';
+import { Plan_TravelPersonalities } from './plan_personality_type.model';
 import { User } from './user.model';
 
 export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<Plan>> {
@@ -33,9 +33,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
     declare setTravelPersonalityTypes: HasManySetAssociationsMixin<TravelPersonalityType, string>;
 
-    declare getDestinations: HasManyGetAssociationsMixin<Destination>;
-    declare addDestinations: HasManyAddAssociationsMixin<Destination, PlanDetail>;
-    declare setDestinations: HasManySetAssociationsMixin<Destination, string>;
+    declare createPlanDetail: HasManyCreateAssociationMixin<PlanDetail, 'planID'>;
 }
 
 Plan.init({
@@ -106,11 +104,10 @@ Plan.init({
     modelName: 'Plan' // We need to choose the model name
 });
 
+
+
 Plan.belongsToMany(TravelPersonalityType, { through: Plan_TravelPersonalities, foreignKey: "planID" });
 TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, foreignKey: "personalityName" });
-
-Plan.belongsToMany(Destination, { through: PlanDetail, foreignKey: "planID" });
-Destination.belongsToMany(Plan, { through: PlanDetail, foreignKey: "destinationID" });
 
 User.hasMany(Plan, { foreignKey: "travelerID" });
 

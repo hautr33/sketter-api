@@ -3,13 +3,13 @@ import user from "./user.route";
 import auth from "./auth.route";
 import destination from "./destination.route";
 import catalog from "./catalog.route";
-import personalityType from "./personalityType.route";
+import personalityType from "./personality_type.route";
 import plan from "./plan.route";
 import { StatusCodes } from "http-status-codes";
-import catchAsync from "../utils/catchAsync";
+import catchAsync from "../utils/catch_async";
 import { Role } from "../models/role.model";
 import { Catalog } from "../models/catalog.model";
-import { TravelPersonalityType } from "../models/personalityType.model";
+import { TravelPersonalityType } from "../models/personality_type.model";
 import { Catalogs, PersonalityTypes, Roles } from "../utils/constant";
 
 const router = express.Router();

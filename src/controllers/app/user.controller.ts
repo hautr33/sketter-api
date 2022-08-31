@@ -1,8 +1,8 @@
 import { StatusCodes } from "http-status-codes";
 import { Roles } from "../../utils/constant";
-import catchAsync from "../../utils/catchAsync";
-import RESDocument from "../factory/RESDocument";
-import AppError from "../../utils/appError";
+import catchAsync from "../../utils/catch_async";
+import RESDocument from "../factory/res_document";
+import AppError from "../../utils/app_error";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
 
