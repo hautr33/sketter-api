@@ -90,7 +90,6 @@ export const getPlan = catchAsync(async (req, res, next) => {
             ]
         });
 
-
     if (!plan)
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
 
