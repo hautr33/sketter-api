@@ -32,5 +32,5 @@ Destination_Image.init({
 });
 
 Destination.hasMany(Destination_Image, {
-    foreignKey: "destinationID"
+    foreignKey: "destinationID", as:'images'
 });

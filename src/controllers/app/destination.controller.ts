@@ -14,7 +14,7 @@ import { omit } from "lodash";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const error = validate(req.body);
-    if (error)
+    if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
@@ -46,11 +46,11 @@ export const createDestination = catchAsync(async (req, res, next) => {
         next();
     } catch (error: any) {
         destination.destroy({ force: true })
-        if ((error.parent && error.parent.detail as string).includes('personalityName')) {
+        if (error.parent && (error.parent.detail as string).includes('personalityName')) {
             const personalityName = (error.parent.detail as string).split('(')[2].split(')')[0];
             return next(new AppError(`Tính cách du lịch "${personalityName}" không tồn tại`, StatusCodes.BAD_REQUEST))
         }
-        if ((error.parent && error.parent.detail as string).includes('catalogName')) {
+        if (error.parent && (error.parent.detail as string).includes('catalogName')) {
             const catalogName = (error.parent.detail as string).split('(')[2].split(')')[0];
             return next(new AppError(`Danh mục địa điểm "${catalogName}" không tồn tại`, StatusCodes.BAD_REQUEST))
         }
@@ -154,10 +154,10 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
         {
             attributes: { exclude: DestinationPrivateFields.default },
             include: [
-                { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID', 'id'] } },
-                { model: Destination_Image, attributes: { exclude: ['destinationID', 'id'] } }
+                { model: TravelPersonalityType, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+                { model: Catalog, as: 'destinationCatalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+                { model: Destination_RecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
+                { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
             ]
         });
 
@@ -191,31 +191,31 @@ const validate = (body: any) => {
     const images = body.images as Destination_Image[]
     const recommendedTimes = body.recommendedTimes as Destination_RecommendedTime[]
 
-    if (!name)
+    if (!name || name === '' || name === null)
         return 'Tên địa điểm không được trống'
 
-    if (!address)
+    if (!address || address === '' || address === null)
         return 'Địa chỉ địa điểm không được trống'
 
-    if (!phone)
+    if (!phone || phone === '' || phone === null)
         return 'Địa chỉ địa điểm không được trống'
 
-    if (!email)
+    if (!email || email === '' || email === null)
         return 'Email địa điểm không được trống'
 
-    if (!description)
+    if (!description || description === '' || description === null)
         return 'Mô tả địa điểm không được trống'
 
-    if (!catalogs || catalogs.length == 0)
+    if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
         return 'Danh mục địa điểm không được trống'
 
-    if (!personalityTypes || personalityTypes.length == 0)
+    if (!personalityTypes || personalityTypes === '' || personalityTypes === null || personalityTypes.length === 0)
         return 'Tính cách du lịch không được trống'
 
-    if (!images || images.length == 0)
+    if (!images || images === null || images.length === 0)
         return 'Ảnh địa điểm không được trống'
 
-    if (!recommendedTimes || recommendedTimes.length == 0)
+    if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
         return 'Khung thời gian đề xuất không được trống'
 
     if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
@@ -244,8 +244,7 @@ const validate = (body: any) => {
     if (!closingTime.match(regex) || closingTime <= openingTime)
         return 'Giờ đóng cửa không hợp lệ'
 
-    let isTime = true;
-    for (let i = 0; i < recommendedTimes.length && isTime; i++)
+    for (let i = 0; i < recommendedTimes.length; i++)
         if (!recommendedTimes[i].start.match(regex))
             return `Giờ bắt đầu "${recommendedTimes[i].start}" của khung thời gian đề xuất không hợp lệ. `
         else if (!recommendedTimes[i].end.match(regex) || recommendedTimes[i].end < recommendedTimes[i].start)

@@ -31,4 +31,3 @@ export const validateDestination = (lowestPrice: any, highestPrice: any, opening
     }
     return null;
 }
-

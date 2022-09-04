@@ -106,8 +106,8 @@ Plan.init({
 
 
 
-Plan.belongsToMany(TravelPersonalityType, { through: Plan_TravelPersonalities, foreignKey: "planID" });
-TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, foreignKey: "personalityName" });
+Plan.belongsToMany(TravelPersonalityType, { through: Plan_TravelPersonalities, foreignKey: "planID", as: "planPersonalities" });
+TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, foreignKey: "personalityName", as: "planPersonalities" });
 
 User.hasMany(Plan, { foreignKey: "travelerID" });
 

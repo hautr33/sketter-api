@@ -49,5 +49,5 @@ Destination_RecommendedTime.init({
 
 
 Destination.hasMany(Destination_RecommendedTime, {
-    foreignKey: "destinationID"
+    foreignKey: "destinationID", as: "recommendedTimes"
 });
