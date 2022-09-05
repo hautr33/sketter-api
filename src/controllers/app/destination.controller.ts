@@ -18,7 +18,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, personalityTypes
+        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
 
     const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
@@ -34,7 +34,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
 
     try {
         await destination.addCatalogs(catalogs);
-        await destination.addTravelPersonalityTypes(personalityTypes);
+        await destination.addTravelPersonalityTypes(destinationPersonalities);
         recommendedTimes.forEach(async time => {
             await destination.createDestination_RecommendedTime(time)
         });
@@ -70,7 +70,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, personalityTypes
+        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
 
     const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
@@ -89,7 +89,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     );
 
     await destination.setCatalogs(catalogs);
-    await destination.setTravelPersonalityTypes(personalityTypes);
+    await destination.setTravelPersonalityTypes(destinationPersonalities);
 
     await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id } })
     recommendedTimes.forEach(async time => {
@@ -155,7 +155,7 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
             attributes: { exclude: DestinationPrivateFields.default },
             include: [
                 { model: TravelPersonalityType, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Catalog, as: 'destinationCatalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
                 { model: Destination_RecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
                 { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
             ]
@@ -186,7 +186,7 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
 
 const validate = (body: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, personalityTypes
+        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = body;
     const images = body.images as Destination_Image[]
     const recommendedTimes = body.recommendedTimes as Destination_RecommendedTime[]
@@ -209,7 +209,7 @@ const validate = (body: any) => {
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
         return 'Danh mục địa điểm không được trống'
 
-    if (!personalityTypes || personalityTypes === '' || personalityTypes === null || personalityTypes.length === 0)
+    if (!destinationPersonalities || destinationPersonalities === '' || destinationPersonalities === null || destinationPersonalities.length === 0)
         return 'Tính cách du lịch không được trống'
 
     if (!images || images === null || images.length === 0)

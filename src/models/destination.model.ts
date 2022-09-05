@@ -180,8 +180,8 @@ Destination.init({
     modelName: 'Destination' // We need to choose the model name
 });
 
-Destination.belongsToMany(Catalog, { through: Destination_Catalog, foreignKey: "destinationID" , as: "destinationCatalogs" });
-Catalog.belongsToMany(Destination, { through: Destination_Catalog, foreignKey: "catalogName" , as: "destinationCatalogs" });
+Destination.belongsToMany(Catalog, { through: Destination_Catalog, foreignKey: "destinationID" , as: "catalogs" });
+Catalog.belongsToMany(Destination, { through: Destination_Catalog, foreignKey: "catalogName" , as: "catalogs" });
 
 Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType, foreignKey: "destinationID" , as: "destinationPersonalities" });
 TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType, foreignKey: "personalityName" , as: "destinationPersonalities" });
