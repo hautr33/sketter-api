@@ -22,7 +22,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
-        await plan.addTravelPersonalityTypes(planPersonalities, { transaction: create })
+        await plan.addPlanPersonalities(planPersonalities, { transaction: create })
         for (let i = 0; i < details.length; i++) {
             for (let j = 0; j < details[i].destinations.length; j++) {
                 const planDetail = new PlanDetail(details[i].destinations[j]);
@@ -57,7 +57,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const result = await sequelizeConnection.transaction(async (update) => {
             await plan.save({ transaction: update });
-            await plan.setTravelPersonalityTypes(planPersonalities, { transaction: update })
+            await plan.setPlanPersonalities(planPersonalities, { transaction: update })
             await PlanDetail.destroy({ where: { planID: plan.id }, transaction: update })
             for (let i = 0; i < details.length; i++) {
                 const detail = new PlanDetail(details[i])

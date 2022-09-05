@@ -11,6 +11,7 @@ import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/private_field";
 import { Destination_Image } from "../../models/destination_image.model";
 import { omit } from "lodash";
+import sequelizeConnection from "../../db/sequelize.db";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const error = validate(req.body);
@@ -25,39 +26,26 @@ export const createDestination = catchAsync(async (req, res, next) => {
     const images = req.body.images as Destination_Image[]
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
     const createdBy = res.locals.user.id;
-
-    const destination = await Destination.create({
-        name: name, address: address, phone: phone, email: email, description: description,
-        longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
-        openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
-    });
-
-    try {
-        await destination.addCatalogs(catalogs);
-        await destination.addTravelPersonalityTypes(destinationPersonalities);
-        recommendedTimes.forEach(async time => {
-            await destination.createDestination_RecommendedTime(time)
-        });
-        images.forEach(async img => {
-            await destination.createDestination_Image(img)
-        });
-
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', omit(destination.toJSON(), DestinationPrivateFields.default));
-        next();
-    } catch (error: any) {
-        destination.destroy({ force: true })
-        if (error.parent && (error.parent.detail as string).includes('personalityName')) {
-            const personalityName = (error.parent.detail as string).split('(')[2].split(')')[0];
-            return next(new AppError(`Tính cách du lịch "${personalityName}" không tồn tại`, StatusCodes.BAD_REQUEST))
+    const result = await sequelizeConnection.transaction(async (create) => {
+        const destination = await Destination.create({
+            name: name, address: address, phone: phone, email: email, description: description,
+            longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
+            openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
+        }, { transaction: create });
+        await destination.addCatalogs(catalogs, { transaction: create });
+        await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create });
+        for (let i = 0; i < recommendedTimes.length; i++) {
+            await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
         }
-        if (error.parent && (error.parent.detail as string).includes('catalogName')) {
-            const catalogName = (error.parent.detail as string).split('(')[2].split(')')[0];
-            return next(new AppError(`Danh mục địa điểm "${catalogName}" không tồn tại`, StatusCodes.BAD_REQUEST))
+        for (let i = 0; i < images.length; i++) {
+            await destination.createImage(images[i], { transaction: create })
         }
-        return next(new AppError(error, StatusCodes.BAD_REQUEST))
+        return destination
+    })
 
-    }
 
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', omit(result.toJSON(), DestinationPrivateFields.default));
+    next();
 });
 
 export const updateDestination = catchAsync(async (req, res, next) => {
@@ -89,16 +77,16 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     );
 
     await destination.setCatalogs(catalogs);
-    await destination.setTravelPersonalityTypes(destinationPersonalities);
+    await destination.setDestinationPersonalities(destinationPersonalities);
 
     await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id } })
     recommendedTimes.forEach(async time => {
-        await destination.createDestination_RecommendedTime(time);
+        await destination.createRecommendedTime(time);
     });
 
     await Destination_Image.destroy({ where: { destinationID: destination.id } })
     images.forEach(async img => {
-        await destination.createDestination_Image(img);
+        await destination.createImage(img);
     });
 
     const result = await Destination.findByPk(

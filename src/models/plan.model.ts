@@ -2,7 +2,6 @@ import {
     DataTypes,
     ForeignKey,
     HasManyAddAssociationsMixin,
-    HasManyCreateAssociationMixin,
     HasManyGetAssociationsMixin,
     HasManySetAssociationsMixin,
     InferAttributes,
@@ -29,11 +28,9 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
 
-    declare getTravelPersonalityTypes: HasManyGetAssociationsMixin<TravelPersonalityType>;
-    declare addTravelPersonalityTypes: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
-    declare setTravelPersonalityTypes: HasManySetAssociationsMixin<TravelPersonalityType, string>;
-
-    declare createPlanDetail: HasManyCreateAssociationMixin<PlanDetail, 'planID'>;
+    declare getPlanPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
+    declare addPlanPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
+    declare setPlanPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
 }
 
 Plan.init({
@@ -108,6 +105,9 @@ Plan.init({
 
 Plan.belongsToMany(TravelPersonalityType, { through: Plan_TravelPersonalities, foreignKey: "planID", as: "planPersonalities" });
 TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, foreignKey: "personalityName", as: "planPersonalities" });
+
+Plan.hasMany(PlanDetail, { foreignKey: 'planID', as: "details" })
+PlanDetail.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
 
 User.hasMany(Plan, { foreignKey: "travelerID" });
 

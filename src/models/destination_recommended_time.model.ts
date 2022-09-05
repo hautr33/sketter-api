@@ -46,8 +46,3 @@ Destination_RecommendedTime.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Destination_RecommendedTime' // We need to choose the model name
 });
-
-
-Destination.hasMany(Destination_RecommendedTime, {
-    foreignKey: "destinationID", as: "recommendedTimes"
-});

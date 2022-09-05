@@ -30,7 +30,3 @@ Destination_Image.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Destination_Image' // We need to choose the model name
 });
-
-Destination.hasMany(Destination_Image, {
-    foreignKey: "destinationID", as:'images'
-});
