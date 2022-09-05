@@ -10,6 +10,7 @@ import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
 import { DestinationPrivateFields } from "../../utils/private_field";
+import { Destination_Image } from "../../models/destination_image.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const error = await validate(req.body)
@@ -114,7 +115,10 @@ export const getPlan = catchAsync(async (req, res, next) => {
         const destination = await Destination.findByPk(
             details[i].destinationID,
             {
-                attributes: { exclude: DestinationPrivateFields.default }
+                attributes: { exclude: DestinationPrivateFields.default },
+                include: [
+                    { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
+                ]
             });
         // _.create(details[i], { 'destination': destination });
         _.update(details, `[${i}].destinationID`, function () { return destination; })
