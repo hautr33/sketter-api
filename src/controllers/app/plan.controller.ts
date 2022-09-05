@@ -17,12 +17,12 @@ export const createPlan = catchAsync(async (req, res, next) => {
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, isPublic, personalities, details } = req.body;
+    const { name, fromDate, toDate, isPublic, planPersonalities, details } = req.body;
     const result = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
-        await plan.addTravelPersonalityTypes(personalities, { transaction: create })
+        await plan.addTravelPersonalityTypes(planPersonalities, { transaction: create })
         for (let i = 0; i < details.length; i++) {
             for (let j = 0; j < details[i].destinations.length; j++) {
                 const planDetail = new PlanDetail(details[i].destinations[j]);
@@ -48,7 +48,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, isPublic, personalities, details } = req.body;
+    const { name, fromDate, toDate, isPublic, planPersonalities, details } = req.body;
     plan.name = name;
     plan.fromDate = fromDate;
     plan.toDate = toDate;
@@ -57,7 +57,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const result = await sequelizeConnection.transaction(async (update) => {
             await plan.save({ transaction: update });
-            await plan.setTravelPersonalityTypes(personalities, { transaction: update })
+            await plan.setTravelPersonalityTypes(planPersonalities, { transaction: update })
             await PlanDetail.destroy({ where: { planID: plan.id }, transaction: update })
             for (let i = 0; i < details.length; i++) {
                 const detail = new PlanDetail(details[i])
@@ -140,7 +140,7 @@ export const deletePlan = catchAsync(async (req, res, next) => {
 })
 
 const validate = async (body: any) => {
-    const { name, fromDate, toDate, isPublic, personalities, details } = body;
+    const { name, fromDate, toDate, isPublic, planPersonalities, details } = body;
 
     if (!name || name === '' || name === null)
         return 'Tên địa điểm không được trống'
@@ -151,12 +151,12 @@ const validate = async (body: any) => {
     if (!_.isBoolean(isPublic))
         return 'Tình trạng công khai không hợp lệ'
 
-    if (!personalities || personalities === '' || personalities === null || personalities.length === 0)
+    if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
         return 'Tính cách du lịch không được trống'
-    for (let i = 0; i < personalities.length; i++) {
-        const count = await TravelPersonalityType.count({ where: { name: personalities[i] } })
+    for (let i = 0; i < planPersonalities.length; i++) {
+        const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i] } })
         if (count !== 1)
-            return `Tính cách du lịch: ${personalities[i]} không hợp lệ`
+            return `Tính cách du lịch: ${planPersonalities[i]} không hợp lệ`
     }
 
     if (!details || details.length == 0)
