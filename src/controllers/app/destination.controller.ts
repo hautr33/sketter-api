@@ -123,7 +123,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             where: option,
             attributes: { exclude: DestinationPrivateFields.getAll },
             include: [{ model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }],
-            order: [['createdAt', 'DESC']],
+            order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
             limit: PAGE_LIMIT,
         }

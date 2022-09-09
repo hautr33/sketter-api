@@ -89,6 +89,7 @@ export class DestinationPrivateFields {
         "view",
         "comment",
         "supplierID",
+        "createdAt",
         "updatedAt",
         "deletedAt",
     ]
