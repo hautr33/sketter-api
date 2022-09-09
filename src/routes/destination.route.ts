@@ -12,7 +12,7 @@ router.use(deserializeUser, requireUser);
 
 router
     .route('/')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), getAllDestination))
+    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier, Roles.Traveler), getAllDestination))
     .post(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), createDestination));
 
 router

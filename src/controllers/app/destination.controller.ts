@@ -10,11 +10,11 @@ import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/private_field";
 import { Destination_Image } from "../../models/destination_image.model";
-import { omit } from "lodash";
 import sequelizeConnection from "../../db/sequelize.db";
+import _ from "lodash"
 
 export const createDestination = catchAsync(async (req, res, next) => {
-    const error = validate(req.body);
+    const error = validate(req.body)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -31,9 +31,9 @@ export const createDestination = catchAsync(async (req, res, next) => {
             name: name, address: address, phone: phone, email: email, description: description,
             longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
             openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
-        }, { transaction: create });
-        await destination.addCatalogs(catalogs, { transaction: create });
-        await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create });
+        }, { transaction: create })
+        await destination.addCatalogs(catalogs, { transaction: create })
+        await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
         for (let i = 0; i < recommendedTimes.length; i++) {
             await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
         }
@@ -43,17 +43,22 @@ export const createDestination = catchAsync(async (req, res, next) => {
         return destination
     })
 
-
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', omit(result.toJSON(), DestinationPrivateFields.default));
-    next();
-});
+    const document = await Destination.findByPk(
+        result.id,
+        {
+            attributes: { exclude: DestinationPrivateFields.default },
+            include: destinationInclude
+        })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', document)
+    next()
+})
 
 export const updateDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findOne({ where: { id: req.params.id } });
+    const destination = await Destination.findOne({ where: { id: req.params.id } })
     if (!destination || res.locals.user.roleID != Roles["Supplier Manager"] && destination.supplierID != res.locals.user.id)
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
+        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
 
-    const error = validate(req.body);
+    const error = validate(req.body)
     if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -64,112 +69,108 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
     const images = req.body.images as Destination_Image[]
 
+    destination.name = name
+    destination.address = address
+    destination.phone = phone
+    destination.email = email
+    destination.description = description
+    destination.longitude = longitude
+    destination.latitude = latitude
+    destination.lowestPrice = lowestPrice
+    destination.highestPrice = highestPrice
+    destination.openingTime = openingTime
+    destination.closingTime = closingTime
+    destination.estimatedTimeStay = estimatedTimeStay
 
-    await Destination.update(
-        {
-            name: name, address: address, phone: phone, email: email, description: description,
-            longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
-            openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay,
-        },
-        {
-            where: { id: req.params.id }
+    const result = await sequelizeConnection.transaction(async (update) => {
+        await destination.save({ transaction: update })
+        await destination.setCatalogs(catalogs, { transaction: update })
+        await destination.setDestinationPersonalities(destinationPersonalities, { transaction: update })
+
+        await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id }, transaction: update })
+        for (let i = 0; i < recommendedTimes.length; i++) {
+            await destination.createRecommendedTime(recommendedTimes[i], { transaction: update })
         }
-    );
 
-    await destination.setCatalogs(catalogs);
-    await destination.setDestinationPersonalities(destinationPersonalities);
+        await Destination_Image.destroy({ where: { destinationID: destination.id }, transaction: update })
+        for (let i = 0; i < images.length; i++) {
+            await destination.createImage(images[i], { transaction: update })
+        }
+        return destination
+    })
 
-    await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id } })
-    recommendedTimes.forEach(async time => {
-        await destination.createRecommendedTime(time);
-    });
-
-    await Destination_Image.destroy({ where: { destinationID: destination.id } })
-    images.forEach(async img => {
-        await destination.createImage(img);
-    });
-
-    const result = await Destination.findByPk(
-        destination.id,
+    const document = await Destination.findByPk(
+        result.id,
         {
             attributes: { exclude: DestinationPrivateFields.default },
-            include: [
-                { model: TravelPersonalityType, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Catalog, through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Destination_RecommendedTime, attributes: { exclude: ['destinationID', 'id'] } },
-                { model: Destination_Image, attributes: { exclude: ['destinationID', 'id'] } }
-            ]
+            include: destinationInclude
         })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
-    next();
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination: document })
+    next()
 })
 
 export const getAllDestination = catchAsync(async (req, res, next) => {
-    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page);
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const roleID = res.locals.user.roleID;
     let option = {}
     if (roleID == Roles.Supplier) {
         option = { supplierID: res.locals.user.id }
+    } else if (roleID == Roles.Traveler) {
+        option = { status: Status.verified }
     }
     const { count, rows } = await Destination.findAndCountAll(
         {
             where: option,
-            attributes: { exclude: DestinationPrivateFields.default },
+            attributes: { exclude: DestinationPrivateFields.getAll },
+            include: [{ model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }],
             order: [['createdAt', 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
-            limit: PAGE_LIMIT
+            limit: PAGE_LIMIT,
         }
-    );
+    )
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        rows
-    );
+        { destinations: rows }
+    )
     if (count != 0) {
-        const maxPage = Math.ceil(count / PAGE_LIMIT);
-        resDocument.setCurrentPage(page);
-        resDocument.setMaxPage(maxPage);
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
     }
     res.resDocument = resDocument;
 
-    next();
-});
+    next()
+})
 
 export const getOneDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findByPk(
-        req.params.id,
-        {
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: [
-                { model: TravelPersonalityType, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                { model: Destination_RecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
-                { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
-            ]
-        });
-
+    const destination = await Destination.findOne({
+        where: { id: req.params.id },
+        attributes: { exclude: DestinationPrivateFields.default },
+        include: destinationInclude
+    })
 
     if (!destination
         || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)
         || (res.locals.user.roleID == Roles.Traveler && destination.status != Status.verified)) {
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
+        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
     }
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', destination);
-    next();
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })
+    next()
 })
 
 export const deleteOneDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findByPk(req.params.id);
+    const destination = await Destination.findByPk(req.params.id)
 
     if (!destination
         || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)) {
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
+        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
     }
 
     await destination.destroy()
-    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'deleted', null);
-    next();
+    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'deleted', null)
+    next()
 })
 
 const validate = (body: any) => {
@@ -240,3 +241,10 @@ const validate = (body: any) => {
 
     return null
 }
+
+const destinationInclude = [
+    { model: TravelPersonalityType, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+    { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+    { model: Destination_RecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
+    { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
+]

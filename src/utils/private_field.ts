@@ -70,6 +70,26 @@ export class DestinationPrivateFields {
     static default = [
         "createdAt",
         "deletedAt",
-        "updatedAt"
+        "updatedAt",
+        "status"
     ];
+    static getAll = [
+        "phone",
+        "email",
+        "description",
+        "longitude",
+        "latitude",
+        "lowestPrice",
+        "highestPrice",
+        "openingTime",
+        "closingTime",
+        "estimatedTimeStay",
+        "status",
+        "rating",
+        "view",
+        "comment",
+        "supplierID",
+        "updatedAt",
+        "deletedAt",
+    ]
 }

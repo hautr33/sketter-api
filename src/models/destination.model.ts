@@ -37,6 +37,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
     declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
 
+    declare destinationPersonalities?: TravelPersonalityType[] | string[]
     declare getDestinationPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
     declare addDestinationPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
     declare setDestinationPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
