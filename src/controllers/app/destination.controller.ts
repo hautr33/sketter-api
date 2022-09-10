@@ -122,7 +122,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
         privatFields = DestinationPrivateFields.getAllTraveler
 
     }
-    const { count, rows } = await Destination.findAndCountAll(
+    const destinations = await Destination.findAll(
         {
             where: option,
             attributes: { exclude: privatFields },
@@ -132,11 +132,13 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             limit: PAGE_LIMIT,
         }
     )
+
+    const count = await Destination.count({ where: option })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { destinations: rows }
+        { destinations }
     )
     if (count != 0) {
         const maxPage = Math.ceil(count / PAGE_LIMIT)
