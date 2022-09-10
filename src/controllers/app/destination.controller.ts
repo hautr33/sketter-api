@@ -113,15 +113,19 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const roleID = res.locals.user.roleID;
     let option = {}
+    let privatFields = DestinationPrivateFields.default
     if (roleID == Roles.Supplier) {
         option = { supplierID: res.locals.user.id }
+        privatFields = DestinationPrivateFields.getAllSupplier
     } else if (roleID == Roles.Traveler) {
         option = { status: Status.verified }
+        privatFields = DestinationPrivateFields.getAllTraveler
+
     }
     const { count, rows } = await Destination.findAndCountAll(
         {
             where: option,
-            attributes: { exclude: DestinationPrivateFields.getAll },
+            attributes: { exclude: privatFields },
             include: [{ model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }],
             order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -145,15 +149,30 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
 })
 
 export const getOneDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findOne({
-        where: { id: req.params.id },
-        attributes: { exclude: DestinationPrivateFields.default },
-        include: destinationInclude
-    })
+    const role = res.locals.user.roleID;
 
-    if (!destination
-        || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)
-        || (res.locals.user.roleID == Roles.Traveler && destination.status != Status.verified)) {
+    let destination = null
+
+    if (role === Roles.Traveler) {
+        destination = await Destination.findOne({
+            where: { id: req.params.id, status: Status.verified },
+            attributes: { exclude: DestinationPrivateFields.default },
+            include: destinationInclude
+        })
+    } else if (role === Roles.Supplier) {
+        destination = await Destination.findOne({
+            where: { id: req.params.id, supplierID: res.locals.user.id },
+            attributes: { exclude: DestinationPrivateFields.default },
+            include: destinationInclude
+        })
+    } else if (role === Roles["Supplier Manager"]) {
+        destination = await Destination.findOne({
+            where: { id: req.params.id },
+            attributes: { exclude: DestinationPrivateFields.default },
+            include: destinationInclude
+        })
+    }
+    if (!destination || destination === null) {
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
     }
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })

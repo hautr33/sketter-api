@@ -71,9 +71,8 @@ export class DestinationPrivateFields {
         "createdAt",
         "deletedAt",
         "updatedAt",
-        "status"
     ];
-    static getAll = [
+    static getAllTraveler = [
         "phone",
         "email",
         "description",
@@ -86,6 +85,22 @@ export class DestinationPrivateFields {
         "estimatedTimeStay",
         "status",
         "rating",
+        "view",
+        "comment",
+        "supplierID",
+        "createdAt",
+        "updatedAt",
+        "deletedAt",
+    ]
+    static getAllSupplier = [
+        "phone",
+        "email",
+        "description",
+        "longitude",
+        "latitude",
+        "openingTime",
+        "closingTime",
+        "estimatedTimeStay",
         "view",
         "comment",
         "supplierID",
