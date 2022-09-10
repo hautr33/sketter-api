@@ -20,9 +20,16 @@ Destination_Image.init({
     },
     destinationID: {
         type: DataTypes.UUID,
+        allowNull: false
     },
     url: {
         type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'URL ảnh không được trống'
+            },
+        }
     },
 }, {
     // Other model options go here
