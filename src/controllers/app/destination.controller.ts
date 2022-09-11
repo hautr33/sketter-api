@@ -194,6 +194,49 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
+export const getPendingDestination = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const destinations = await Destination.findAll(
+        {
+            where: { status: Status.unverified },
+            include: destinationInclude,
+            order: [['createdAt', 'ASC']],
+            offset: (page - 1) * PAGE_LIMIT,
+            limit: PAGE_LIMIT,
+        }
+    )
+
+    const count = await Destination.count({ where: { status: Status.unverified } })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { destinations }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+
+    next()
+})
+
+export const approveDestination = catchAsync(async (req, res, next) => {
+    const destination = await Destination.findOne({ where: { id: req.params.id, status: Status.unverified } })
+
+    if (!destination
+        || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)) {
+        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
+    }
+
+    destination.status = Status.verified;
+    await destination.save();
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Địa điểm đã được phê duyệt")
+    next()
+})
+
 const validate = (body: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
