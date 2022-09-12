@@ -9,18 +9,20 @@ import { Roles } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
-import { DestinationPrivateFields } from "../../utils/private_field";
+import { DestinationPrivateFields, PlanDetailPrivateFields, PlanPrivateFields, UserPrivateFields } from "../../utils/private_field";
 import { Destination_Image } from "../../models/destination_image.model";
+import { User } from "../../models/user.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
-    const error = await validate(req.body)
+    const error = await validate(req.body, res.locals.user)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, isPublic, planPersonalities, details } = req.body;
+    const { name, fromDate, toDate, estimatedCost, isPublic, details } = req.body;
+    const planPersonalities = res.locals.user.travelerPersonalities
     const result = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
-            { name: name, fromDate: fromDate, toDate: toDate, isPublic: isPublic, travelerID: res.locals.user.id },
+            { name: name, fromDate: fromDate, toDate: toDate, estimatedCost: estimatedCost, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
         await plan.addPlanPersonalities(planPersonalities, { transaction: create })
         for (let i = 0; i < details.length; i++) {
@@ -44,15 +46,16 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     if (!plan || res.locals.user.roleID != Roles.Traveler && plan.travelerID != res.locals.user.id)
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
 
-    const error = await validate(req.body)
+    const error = await validate(req.body, res.locals.user)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, isPublic, planPersonalities, details } = req.body;
+    const { name, fromDate, toDate, estimatedCost, isPublic, planPersonalities, details } = req.body;
     plan.name = name;
     plan.fromDate = fromDate;
     plan.toDate = toDate;
     plan.isPublic = isPublic;
+    plan.estimatedCost = estimatedCost;
 
     try {
         const result = await sequelizeConnection.transaction(async (update) => {
@@ -82,12 +85,8 @@ export const getAllPlan = catchAsync(async (_req, res, next) => {
     const result = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id },
-            include: [
-                { model: TravelPersonalityType, as: 'planPersonalities', through: { attributes: [] }, attributes: { exclude: ['id', 'Plan_TravelPersonalities'] } },
-                {
-                    model: PlanDetail, as: 'details',
-                },
-            ]
+            attributes: { exclude: PlanPrivateFields.default },
+            include: [{ model: PlanDetail, as: 'details', attributes: { exclude: PlanDetailPrivateFields.default } }]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', result);
@@ -95,35 +94,18 @@ export const getAllPlan = catchAsync(async (_req, res, next) => {
 });
 
 export const getPlan = catchAsync(async (req, res, next) => {
-    const plan = await Plan.findOne(
+    const result = await Plan.findOne(
         {
             where: { id: req.params.id, travelerID: res.locals.user.id },
-            include: [
-                { model: TravelPersonalityType, as: 'planPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
-                {
-                    model: PlanDetail, as: 'details'
-                },
-            ]
+            attributes: { exclude: PlanPrivateFields.default },
+            include: planInclude
         });
 
-    if (!plan)
+    if (!result)
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
 
-    const details = _.get(plan, 'details')
-
-    for (let i = 0; i < details.length; i++) {
-        const destination = await Destination.findByPk(
-            details[i].destinationID,
-            {
-                attributes: { exclude: DestinationPrivateFields.default },
-                include: [
-                    { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
-                ]
-            });
-        // _.create(details[i], { 'destination': destination });
-        _.update(details, `[${i}].destinationID`, function () { return destination; })
-    }
-    _.update(plan, 'details', function () { return details; })
+    const plan = _.omit(result.toJSON(), []);
+    plan.planPersonalities = _.map(plan.planPersonalities, function (personality) { return personality.name; })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', plan);
     next();
 })
@@ -139,15 +121,18 @@ export const deletePlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-const validate = async (body: any) => {
-    const { name, fromDate, toDate, isPublic, planPersonalities, details } = body;
-
+const validate = async (body: any, user: any) => {
+    const { name, fromDate, toDate, estimatedCost, isPublic, details } = body;
+    const planPersonalities = user.travelerPersonalities
     if (!name || name === '' || name === null)
         return 'Tên địa điểm không được trống'
     if (!fromDate || fromDate === '' || fromDate === null)
         return 'Ngày bắt đầu không được trống'
     if (!toDate || toDate === '' || toDate === null)
         return 'Ngày kết thúc không được trống'
+    if (typeof estimatedCost !== 'number' || estimatedCost < 0)
+        return 'Chi phí dự tính không hợp lệ'
+
     if (!_.isBoolean(isPublic))
         return 'Tình trạng công khai không hợp lệ'
 
@@ -180,3 +165,17 @@ const validate = async (body: any) => {
     };
     return null
 }
+
+const planInclude = [
+    { model: TravelPersonalityType, as: 'planPersonalities', through: { attributes: [] }, attributes: { exclude: ['id', 'Plan_TravelPersonalities'] } },
+    { model: User, as: 'traveler', attributes: { exclude: UserPrivateFields[Roles.Traveler] } },
+    {
+        model: PlanDetail, as: 'details', attributes: { exclude: PlanDetailPrivateFields.default }, include: [
+            {
+                model: Destination, as: 'destination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
+                    { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
+                ]
+            }
+        ]
+    },
+]

@@ -132,7 +132,6 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             limit: PAGE_LIMIT,
         }
     )
-
     const count = await Destination.count({ where: option })
     // Create a response object
     const resDocument = new RESDocument(
@@ -153,30 +152,33 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
 export const getOneDestination = catchAsync(async (req, res, next) => {
     const role = res.locals.user.roleID;
 
-    let destination = null
+    let result = null
 
     if (role === Roles.Traveler) {
-        destination = await Destination.findOne({
+        result = await Destination.findOne({
             where: { id: req.params.id, status: Status.verified },
             attributes: { exclude: DestinationPrivateFields.default },
             include: destinationInclude
         })
     } else if (role === Roles.Supplier) {
-        destination = await Destination.findOne({
+        result = await Destination.findOne({
             where: { id: req.params.id, supplierID: res.locals.user.id },
             attributes: { exclude: DestinationPrivateFields.default },
             include: destinationInclude
         })
     } else if (role === Roles["Supplier Manager"]) {
-        destination = await Destination.findOne({
+        result = await Destination.findOne({
             where: { id: req.params.id },
             attributes: { exclude: DestinationPrivateFields.default },
             include: destinationInclude
         })
     }
-    if (!destination || destination === null) {
+    if (!result || result === null) {
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
     }
+    const destination = _.omit(result.toJSON(), []);
+    destination.destinationPersonalities = _.map(destination.destinationPersonalities, function (personality) { return personality.name; })
+    destination.catalogs = _.map(destination.catalogs, function (catalog) { return catalog.name; })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })
     next()
 })

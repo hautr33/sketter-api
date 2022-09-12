@@ -7,7 +7,7 @@ import { TravelPersonalityType } from './personality_type.model';
 import { User } from './user.model';
 import { Destination_RecommendedTime } from './destination_recommended_time.model';
 import { Destination_Image } from './destination_image.model';
-import { Destination_TravelPersonalityType } from './destination_personality_type.model';
+import { Destination_TravelPersonalityType } from './destination_personalities.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
@@ -37,7 +37,6 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
     declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
 
-    declare destinationPersonalities?: TravelPersonalityType[] | string[]
     declare getDestinationPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
     declare addDestinationPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
     declare setDestinationPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
@@ -47,6 +46,8 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
 
     declare getImages: HasManyGetAssociationsMixin<Destination_Image>;
     declare createImage: HasManyCreateAssociationMixin<Destination_Image, 'destinationID'>;
+    destinationPersonalities?: any[];
+    catalogs?: any[];
 }
 
 Destination.init({

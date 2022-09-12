@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
+import { TravelPersonalityType } from '../models/personality_type.model';
 import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import AppError from '../utils/app_error';
@@ -37,15 +38,21 @@ export const deserializeUser = async (
     if (!session)
       return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
 
-    const user = await User.findOne({ where: { id: decoded.id } });
+    const user = await User.findOne({
+      where: { id: decoded.id }
+      , include: [
+        { model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+      ]
+    });
     if (!user)
       return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND));
 
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
-    const excludedUser = _.omit(user.toJSON(), UserPrivateFields[user.roleID - 1]);
+    const excludedUser = _.omit(user.toJSON(), UserPrivateFields[user.roleID]);
     res.locals.user = excludedUser;
+    res.locals.user.travelerPersonalities = _.map(res.locals.user.travelerPersonalities, function (personality) { return personality.name; })
     res.locals.user.sessionID = session.id;
     next();
   } catch (err: any) {

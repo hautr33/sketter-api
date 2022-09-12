@@ -1,9 +1,11 @@
 import bcrypt from 'bcryptjs';
-import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
+import { TravelPersonalityType } from './personality_type.model';
+import { TravelerPersonalities } from './traveler_personalites.model';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare id: string;
@@ -27,6 +29,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     createResetPasswordToken!: () => Promise<string>;
     getavatarURL!: () => Promise<any>;
 
+    declare getTravelerPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
+    declare addTravelerPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
+    declare setTravelerPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
 }
 
 User.init({
@@ -128,9 +133,12 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
-Role.hasOne(User, {
-    foreignKey: "roleID"
-});
+Role.hasMany(User, { foreignKey: "roleID", as: 'role' });
+User.belongsTo(Role, { foreignKey: 'roleID', as: 'role' })
+
+User.belongsToMany(TravelPersonalityType, { through: TravelerPersonalities, foreignKey: "userID", as: 'travelerPersonalities' });
+TravelPersonalityType.belongsToMany(User, { through: TravelerPersonalities, foreignKey: "personality", as: 'travelerPersonalities' });
+
 
 User.beforeSave(async (user) => {
     if (user.roleID == Roles.Supplier) {

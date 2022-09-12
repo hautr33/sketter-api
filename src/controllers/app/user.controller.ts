@@ -5,6 +5,7 @@ import RESDocument from "../factory/res_document";
 import AppError from "../../utils/app_error";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
+import sequelizeConnection from "../../db/sequelize.db";
 
 export const getMe = catchAsync(async (_req, res, next) => {
     const user = res.locals.user;
@@ -13,16 +14,27 @@ export const getMe = catchAsync(async (_req, res, next) => {
 });
 
 export const updateMe = catchAsync(async (req, res, next) => {
-    const user = res.locals.user;
-    const { name, phone, address, avatar } = req.body;
+    const user = await User.findByPk(res.locals.user.id)
+    if (!user)
+        return next(new AppError('Không tìm thấy tài khoản này', StatusCodes.NOT_FOUND))
 
+    const { name, phone, address, avatar, travelerPersonalities } = req.body;
+    user.name = name
+    user.phone = phone
+    user.address = address
+    user.avatar = avatar
     if (user.roleID == Roles.Traveler) {
         const { gender, dob } = req.body;
-        await User.update({ name: name, phone: phone, address: address, gender: gender, dob: dob, avatar: avatar }, { where: { id: user.id } })
+        user.gender = gender
+        user.dob = dob
     } else if (user.roleID == Roles.Supplier) {
         const { owner } = req.body;
-        await User.update({ name: name, phone: phone, address: address, owner: owner, avatar: avatar }, { where: { id: user.id } })
+        user.owner = owner
     }
+    await sequelizeConnection.transaction(async (update) => {
+        await user.save({ transaction: update })
+        await user.setTravelerPersonalities(travelerPersonalities, { transaction: update })
+    })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
     next();
 });

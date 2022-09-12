@@ -11,7 +11,7 @@ import {
 import sequelize from '../db/sequelize.db';
 import { TravelPersonalityType } from './personality_type.model';
 import { PlanDetail } from './plan_detail.model';
-import { Plan_TravelPersonalities } from './plan_personality_type.model';
+import { Plan_TravelPersonalities } from './plan_personalities.model';
 import { User } from './user.model';
 
 export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<Plan>> {
@@ -20,7 +20,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     fromDate!: Date;
     toDate!: Date;
     place?: string;
-    estimatedCost?: number;
+    estimatedCost!: number;
     isPublic!: boolean;
     isActive?: boolean;
     travelerID!: ForeignKey<User['id']>;
@@ -31,6 +31,8 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     declare getPlanPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
     declare addPlanPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
     declare setPlanPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+    planPersonalities?: any[];
+
 }
 
 Plan.init({
@@ -109,7 +111,9 @@ TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, f
 Plan.hasMany(PlanDetail, { foreignKey: 'planID', as: "details" })
 PlanDetail.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
 
-User.hasMany(Plan, { foreignKey: "travelerID" });
+User.hasMany(Plan, { foreignKey: "travelerID", as: "traveler" });
+Plan.belongsTo(User, { foreignKey: 'travelerID', as: "traveler" })
+
 
 Plan.beforeSave(async (plan) => {
     if (plan.toDate < plan.fromDate)

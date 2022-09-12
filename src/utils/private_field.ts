@@ -1,4 +1,12 @@
 export const UserPrivateFields = [
+    [
+        "password",
+        "passwordResetToken",
+        "passwordResetExpires",
+        "passwordUpdatedAt",
+        "createdAt",
+        "updatedAt"
+    ],
     // Admin
     [
         "password",
@@ -10,8 +18,6 @@ export const UserPrivateFields = [
         "owner",
         "isActive",
         "authType",
-        "iat",
-        "exp",
         "firebaseID",
         "createdAt",
         "updatedAt"
@@ -27,8 +33,6 @@ export const UserPrivateFields = [
         "owner",
         "isActive",
         "authType",
-        "iat",
-        "exp",
         "firebaseID",
         "createdAt",
         "updatedAt"
@@ -43,8 +47,6 @@ export const UserPrivateFields = [
         "dob",
         "isActive",
         "authType",
-        "iat",
-        "exp",
         "firebaseID",
         "createdAt",
         "updatedAt"
@@ -58,8 +60,6 @@ export const UserPrivateFields = [
         "owner",
         "isActive",
         "authType",
-        "iat",
-        "exp",
         "firebaseID",
         "createdAt",
         "updatedAt"
@@ -108,4 +108,26 @@ export class DestinationPrivateFields {
         "updatedAt",
         "deletedAt",
     ]
+}
+
+
+export class PlanPrivateFields {
+    static default = [
+        "travelerID",
+        "createdAt",
+        "deletedAt",
+        "updatedAt",
+    ];
+}
+
+export class PlanDetailPrivateFields {
+    static default = [
+        "planID",
+        "destinationID",
+        "checkinTime",
+        "checkoutTime",
+        "createdAt",
+        "updatedAt",
+        "deletedAt",
+    ];
 }

@@ -21,9 +21,11 @@ Destination_RecommendedTime.init({
     },
     destinationID: {
         type: DataTypes.UUID,
+        allowNull: false
     },
     start: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
             is: {
                 msg: "Khung thời gian đề xuất không hợp lệ (HH:MM)",
@@ -33,6 +35,7 @@ Destination_RecommendedTime.init({
     },
     end: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
             is: {
                 msg: "Khung thời gian đề xuất không hợp lệ (HH:MM)",
