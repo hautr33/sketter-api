@@ -233,9 +233,19 @@ export const approveDestination = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
     }
 
-    destination.status = Status.verified;
+    const { isApprove } = req.body
+    let message = ''
+    if (typeof isApprove === "boolean" && isApprove) {
+        destination.status = Status.verified;
+        message = "Địa điểm đã được phê duyệt"
+    }
+    else{
+        destination.status = Status.reject;
+        message = "Địa điểm đã bị từ chối phê duyệt"
+    }
+
     await destination.save();
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Địa điểm đã được phê duyệt")
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', message)
     next()
 })
 

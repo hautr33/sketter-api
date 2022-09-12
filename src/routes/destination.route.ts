@@ -18,7 +18,7 @@ router
 router.route('/pending')
     .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getPendingDestination))
 
-router.route('/approve/:id')
+router.route('/pending/:id')
     .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), approveDestination))
 
 router
