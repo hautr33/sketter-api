@@ -50,7 +50,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, estimatedCost, isPublic, planPersonalities, details } = req.body;
+    const { name, fromDate, toDate, estimatedCost, isPublic, details } = req.body;
     plan.name = name;
     plan.fromDate = fromDate;
     plan.toDate = toDate;
@@ -60,12 +60,14 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     try {
         const result = await sequelizeConnection.transaction(async (update) => {
             await plan.save({ transaction: update });
-            await plan.setPlanPersonalities(planPersonalities, { transaction: update })
             await PlanDetail.destroy({ where: { planID: plan.id }, transaction: update })
             for (let i = 0; i < details.length; i++) {
-                const detail = new PlanDetail(details[i])
-                detail.planID = plan.id;
-                await detail.save({ transaction: update })
+                for (let j = 0; j < details[i].destinations.length; j++) {
+                    const planDetail = new PlanDetail(details[i].destinations[j]);
+                    planDetail.date = details[i].date;
+                    planDetail.planID = plan.id;
+                    await planDetail.save({ transaction: update })
+                }
             }
             return plan;
         });
