@@ -46,7 +46,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     if (!plan || res.locals.user.roleID != Roles.Traveler && plan.travelerID != res.locals.user.id)
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND));
 
-    const error = await validate(req.body, res.locals.user)
+    const error = await validate(req.body)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -123,11 +123,10 @@ export const deletePlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-const validate = async (body: any, user: any) => {
+const validate = async (body: any, user?: any) => {
     const { name, fromDate, toDate, estimatedCost, isPublic, details } = body;
-    const planPersonalities = user.travelerPersonalities
     if (!name || name === '' || name === null)
-        return 'Tên địa điểm không được trống'
+        return 'Tên lịch trình không được trống'
     if (!fromDate || fromDate === '' || fromDate === null)
         return 'Ngày bắt đầu không được trống'
     if (!toDate || toDate === '' || toDate === null)
@@ -138,12 +137,16 @@ const validate = async (body: any, user: any) => {
     if (!_.isBoolean(isPublic))
         return 'Tình trạng công khai không hợp lệ'
 
-    if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
-        return 'Tính cách du lịch không được trống'
-    for (let i = 0; i < planPersonalities.length; i++) {
-        const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i] } })
-        if (count !== 1)
-            return `Tính cách du lịch: ${planPersonalities[i]} không hợp lệ`
+    if (user) {
+        const planPersonalities = user.travelerPersonalities
+
+        if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
+            return 'Tính cách du lịch không được trống'
+        for (let i = 0; i < planPersonalities.length; i++) {
+            const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i] } })
+            if (count !== 1)
+                return `Tính cách du lịch: ${planPersonalities[i]} không hợp lệ`
+        }
     }
 
     if (!details || details.length == 0)
