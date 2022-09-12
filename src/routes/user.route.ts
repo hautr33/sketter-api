@@ -15,7 +15,7 @@ router.patch('/reset_password/:token', standardPipeline(resetPassword));
 router.use(deserializeUser, requireUser);
 router
     .route('/me')
-    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), getMe))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles["Supplier Manager"], Roles.Admin), getMe))
     .patch(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), updateMe))
 
 router.patch('/update_password', standardPipeline(updatePassword));
