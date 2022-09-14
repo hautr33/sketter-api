@@ -84,7 +84,7 @@ export class DestinationPrivateFields {
     static default = [
         "createdAt",
         "deletedAt",
-        "updatedAt",
+        "updatedAt"
     ];
     static getAllTraveler = [
         "phone",
@@ -104,7 +104,7 @@ export class DestinationPrivateFields {
         "supplierID",
         "createdAt",
         "updatedAt",
-        "deletedAt",
+        "deletedAt"
     ]
     static getAllSupplier = [
         "phone",
@@ -120,28 +120,46 @@ export class DestinationPrivateFields {
         "supplierID",
         "createdAt",
         "updatedAt",
-        "deletedAt",
+        "deletedAt"
     ]
 }
 
+export class DestinationImagePrivateFields {
+    static default = [
+        "id",
+        "destinationID"
+    ];
+}
 
 export class PlanPrivateFields {
     static default = [
+        "isActive",
         "travelerID",
         "createdAt",
         "deletedAt",
-        "updatedAt",
+        "updatedAt"
     ];
 }
 
 export class PlanDetailPrivateFields {
     static default = [
-        "planID",
+        "id",
+        "planID"
+    ];
+}
+
+export class PlanDestinationPrivateFields {
+    static default = [
+        "id",
+        "planDetailID",
+        "checkinTime",
+        "checkoutTime"
+    ];
+    static getOne = [
+        "id",
+        "planDetailID",
         "destinationID",
         "checkinTime",
-        "checkoutTime",
-        "createdAt",
-        "updatedAt",
-        "deletedAt",
+        "checkoutTime"
     ];
 }

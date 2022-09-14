@@ -9,7 +9,7 @@ import sequelizeConnection from "../../db/sequelize.db";
 
 export const getMe = catchAsync(async (_req, res, next) => {
     const user = res.locals.user;
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', user);
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { profile: user });
     next();
 });
 
@@ -35,7 +35,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
         await user.save({ transaction: update })
         await user.setTravelerPersonalities(travelerPersonalities, { transaction: update })
     })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Đã cập nhật thông tin của bạn');
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Thông tin tài khoản đã được cập nhật');
     next();
 });
 
@@ -44,7 +44,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
 
     if (currentPassword == newPassword) {
         return next(
-            new AppError('Mật khẩu mới không được giống mật khẩu hiện tại', StatusCodes.BAD_REQUEST)
+            new AppError('Vui lòng nhập mật khẩu mới khác với mật khẩu hiện tại', StatusCodes.BAD_REQUEST)
         );
     }
 

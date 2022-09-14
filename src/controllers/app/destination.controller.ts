@@ -43,27 +43,21 @@ export const createDestination = catchAsync(async (req, res, next) => {
         return destination
     })
 
-    const document = await Destination.findByPk(
-        result.id,
-        {
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: destinationInclude
-        })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', document)
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination: result })
     next()
 })
 
 export const updateDestination = catchAsync(async (req, res, next) => {
     const destination = await Destination.findOne({ where: { id: req.params.id } })
     if (!destination || res.locals.user.roleID != Roles["Supplier Manager"] && destination.supplierID != res.locals.user.id)
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
     const error = validate(req.body)
     if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
+        openingTime, closingTime, estimatedTimeStay, catalogs
     } = req.body;
 
     const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
@@ -85,7 +79,6 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
-        await destination.setDestinationPersonalities(destinationPersonalities, { transaction: update })
 
         await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < recommendedTimes.length; i++) {
@@ -99,13 +92,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         return destination
     })
 
-    const document = await Destination.findByPk(
-        result.id,
-        {
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: destinationInclude
-        })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination: document })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination: result })
     next()
 })
 
@@ -174,7 +161,7 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
         })
     }
     if (!result || result === null) {
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
     }
     const destination = _.omit(result.toJSON(), []);
     destination.destinationPersonalities = _.map(destination.destinationPersonalities, function (personality) { return personality.name; })
@@ -192,7 +179,7 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
     }
 
     await destination.destroy()
-    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'deleted', null)
+    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'success', null)
     next()
 })
 
@@ -228,10 +215,8 @@ export const getPendingDestination = catchAsync(async (req, res, next) => {
 export const approveDestination = catchAsync(async (req, res, next) => {
     const destination = await Destination.findOne({ where: { id: req.params.id, status: Status.unverified } })
 
-    if (!destination
-        || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)) {
-        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
-    }
+    if (!destination)
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
     const { isApprove } = req.body
     let message = ''
@@ -239,9 +224,9 @@ export const approveDestination = catchAsync(async (req, res, next) => {
         destination.status = Status.verified;
         message = "Địa điểm đã được phê duyệt"
     }
-    else{
+    else {
         destination.status = Status.reject;
-        message = "Địa điểm đã bị từ chối phê duyệt"
+        message = "Địa điểm đã bị từ chối"
     }
 
     await destination.save();
@@ -251,7 +236,7 @@ export const approveDestination = catchAsync(async (req, res, next) => {
 
 const validate = (body: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
+        openingTime, closingTime, estimatedTimeStay, catalogs
     } = body;
     const images = body.images as Destination_Image[]
     const recommendedTimes = body.recommendedTimes as Destination_RecommendedTime[]
@@ -263,7 +248,7 @@ const validate = (body: any) => {
         return 'Địa chỉ địa điểm không được trống'
 
     if (!phone || phone === '' || phone === null)
-        return 'Địa chỉ địa điểm không được trống'
+        return 'Số điện thoại không được trống'
 
     if (!email || email === '' || email === null)
         return 'Email địa điểm không được trống'
@@ -272,10 +257,7 @@ const validate = (body: any) => {
         return 'Mô tả địa điểm không được trống'
 
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
-        return 'Danh mục địa điểm không được trống'
-
-    if (!destinationPersonalities || destinationPersonalities === '' || destinationPersonalities === null || destinationPersonalities.length === 0)
-        return 'Tính cách du lịch không được trống'
+        return 'Loại địa điểm không được trống'
 
     if (!images || images === null || images.length === 0)
         return 'Ảnh địa điểm không được trống'
