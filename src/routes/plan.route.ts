@@ -10,9 +10,13 @@ const router = Router();
 
 router.use(deserializeUser, requireUser);
 
+
+router
+    .route('/')
+    .post(standardPipeline(restrictTo(Roles.Traveler), createPlan))
+
 router
     .route('/me')
-    .post(standardPipeline(restrictTo(Roles.Traveler), createPlan))
     .get(standardPipeline(restrictTo(Roles.Traveler), getAllCreatedPlan))
 
 router
