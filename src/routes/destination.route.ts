@@ -19,13 +19,13 @@ router.route('/pending')
     .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getPendingDestination))
 
 router.route('/pending/reject')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getRejectDestination))
+    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), getRejectDestination))
 
 router.route('/pending/approve')
     .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), approveDestination))
 
 router.route('/pending/close')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getRejectDestination))
+    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), getRejectDestination))
 
 router
     .route('/:id')
