@@ -43,7 +43,7 @@ export class Status {
 
     public static readonly verified = 'Verified';
 
-    public static readonly reject = 'Reject';
+    public static readonly rejected = 'Rejected';
 
     public static readonly closed = 'Closed';
 }

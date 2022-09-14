@@ -12,6 +12,7 @@ import { DestinationPrivateFields } from "../../utils/private_field";
 import { Destination_Image } from "../../models/destination_image.model";
 import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
+import { Op } from "sequelize";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const error = validate(req.body)
@@ -212,25 +213,71 @@ export const getPendingDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
+export const getRejectDestination = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const destinations = await Destination.findAll(
+        {
+            where: { status: Status.rejected },
+            include: destinationInclude,
+            order: [['createdAt', 'ASC']],
+            offset: (page - 1) * PAGE_LIMIT,
+            limit: PAGE_LIMIT,
+        }
+    )
+
+    const count = await Destination.count({ where: { status: Status.rejected } })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { destinations }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+
+    next()
+})
+
 export const approveDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findOne({ where: { id: req.params.id, status: Status.unverified } })
+    const id = req.query.id as string;
+    const destination = await Destination.findOne({ where: { id: id, status: { [Op.or]: [Status.unverified, Status.rejected] } } })
 
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    const { isApprove } = req.body
-    let message = ''
-    if (typeof isApprove === "boolean" && isApprove) {
-        destination.status = Status.verified;
-        message = "Địa điểm đã được phê duyệt"
-    }
-    else {
-        destination.status = Status.reject;
-        message = "Địa điểm đã bị từ chối"
-    }
-
+    destination.status = Status.verified;
     await destination.save();
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', message)
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Địa điểm đã được phê duyệt")
+    next()
+})
+
+export const rejectDestination = catchAsync(async (req, res, next) => {
+    const id = req.query.id as string;
+    const destination = await Destination.findOne({ where: { id: id, status: Status.unverified } })
+
+    if (!destination)
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
+
+    destination.status = Status.rejected;
+    await destination.save();
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Địa điểm đã bị từ chối")
+    next()
+})
+
+export const closeDestination = catchAsync(async (req, res, next) => {
+    const id = req.query.id as string;
+    const destination = await Destination.findOne({ where: { id: id, status: Status.verified } })
+
+    if (!destination)
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
+
+    destination.status = Status.closed;
+    await destination.save();
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đóng cửa địa điểm thành công")
     next()
 })
 
