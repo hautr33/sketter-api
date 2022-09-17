@@ -1,4 +1,4 @@
-import { DataTypes, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 
 //     'Quán ăn',
@@ -12,6 +12,7 @@ import sequelize from '../db/sequelize.db';
 
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare name: string;
+    declare parent: ForeignKey<Catalog['name']>;
 }
 
 Catalog.init({
@@ -20,6 +21,9 @@ Catalog.init({
         type: DataTypes.STRING,
         allowNull: false,
         primaryKey: true
+    },
+    parent: {
+        type: DataTypes.STRING
     }
 }, {
     // Other model options go here
@@ -27,3 +31,5 @@ Catalog.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Catalog' // We need to choose the model name
 });
+
+Catalog.hasMany(Catalog, { foreignKey: 'parent' });

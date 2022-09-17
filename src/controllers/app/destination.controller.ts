@@ -97,6 +97,17 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
+export const searchDestination = catchAsync(async (req, res, next) => {
+    const name = req.query.name as string;
+    const results = await Destination.findAll({
+        where: {
+            name: { [Op.regexp]: `${name.split(' ').join('|')}` }
+        },
+    });
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { name, results })
+    next()
+})
+
 export const getAllDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const roleID = res.locals.user.roleID;
@@ -114,7 +125,10 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
         {
             where: option,
             attributes: { exclude: privatFields },
-            include: [{ model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }],
+            include: [
+                { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] }}
+            ],
             order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
             limit: PAGE_LIMIT,

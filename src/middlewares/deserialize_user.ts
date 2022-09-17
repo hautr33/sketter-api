@@ -1,15 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
-import { Roles } from '../utils/constant';
-import { TravelPersonalityType } from '../models/personality_type.model';
 import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import AppError from '../utils/app_error';
 import { verifyJwt } from '../utils/jwt';
-import { UserPrivateFields } from '../utils/private_field';
-// import { getDownloadURL, getStorage, ref } from "firebase/storage";
-// import { USER_DEFAULT_IMG_URL } from '../config/default';
 
 export const deserializeUser = async (
   req: Request,
@@ -40,7 +35,7 @@ export const deserializeUser = async (
       return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
 
     let user = await User.findOne({
-      where: { id: decoded.id }
+      where: { id: decoded.id }, attributes: ['id', 'roleID']
     });
     if (!user)
       return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND));
@@ -48,18 +43,19 @@ export const deserializeUser = async (
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
-    if (user.roleID === Roles.Traveler)
-      user = await User.findOne({
-        where: { id: decoded.id }
-        , include: [
-          { model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
-        ]
-      });
-    const excludedUser = _.omit(user?.toJSON(), UserPrivateFields[user?.roleID ?? 0]);
-    res.locals.user = excludedUser;
+    // if (user.roleID === Roles.Traveler)
+    //   user = await User.findOne({
+    //     where: { id: decoded.id }
+    //     , include: [
+    //       { model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+    //       { model: Role, as: 'role' },
+    //     ]
+    //   });
+    // const excludedUser = _.omit(user?.toJSON(), UserPrivateFields[user?.role.id ?? 0]);
+    res.locals.user = user;
     res.locals.user.sessionID = session.id;
-    if (res.locals.user.roleID === Roles.Traveler)
-      res.locals.user.travelerPersonalities = _.map(res.locals.user.travelerPersonalities, function (personality) { return personality.name; })
+    // if (res.locals.user.roleID === Roles.Traveler)
+    //   res.locals.user.travelerPersonalities = _.map(res.locals.user.travelerPersonalities, function (personality) { return personality.name; })
     next();
   } catch (err: any) {
     next(err);

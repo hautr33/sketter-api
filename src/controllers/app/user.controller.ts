@@ -6,9 +6,33 @@ import AppError from "../../utils/app_error";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
 import sequelizeConnection from "../../db/sequelize.db";
+import { TravelPersonalityType } from "../../models/personality_type.model";
+import { Role } from "../../models/role.model";
+import _ from "lodash"
+import { UserPrivateFields } from "../../utils/private_field";
 
 export const getMe = catchAsync(async (_req, res, next) => {
-    const user = res.locals.user;
+    let includes = []
+    if (res.locals.user.roleID === Roles.Traveler)
+        includes = [
+            { model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+            { model: Role, as: 'role', attributes: { exclude: ['id'] } }
+        ]
+    else
+        includes = [
+            { model: Role, as: 'role', attributes: { exclude: ['id'] } }
+        ]
+
+    const user = await User.findByPk(
+        res.locals.user.id,
+        {
+            attributes: { exclude: UserPrivateFields[res.locals.user.roleID ?? 0] },
+            include: includes
+        }
+    )
+    if (!user)
+        return next(new AppError('Không tìm thấy tài khoản này', StatusCodes.NOT_FOUND))
+
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { profile: user });
     next();
 });

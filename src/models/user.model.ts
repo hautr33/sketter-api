@@ -32,6 +32,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     declare getTravelerPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
     declare addTravelerPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
     declare setTravelerPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+    role?: any
+    travelerPersonalities?: any
 }
 
 User.init({

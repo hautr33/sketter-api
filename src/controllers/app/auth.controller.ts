@@ -238,7 +238,7 @@ export const restrictTo = (...roles: Role['id'][]): RequestHandler => (_req, res
       whitelist of permissions
     */
 
-    if (!roles.includes(res.locals.user?.roleID as Role['id'])) {
+    if (!roles.includes(res.locals.user.roleID as Role['id'])) {
         return next(
             new AppError(
                 'Bạn không có quyền để sử dụng tính năng này',
