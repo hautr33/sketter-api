@@ -100,3 +100,9 @@ export const updatePassword = catchAsync(async (req, res, next) => {
             return next(new AppError(error.message, StatusCodes.BAD_GATEWAY));
         });
 });
+
+export const getAllSupplier = catchAsync(async (_req, res, next) => {
+    const suppliers = await User.findAll()
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { suppliers });
+    next();
+});

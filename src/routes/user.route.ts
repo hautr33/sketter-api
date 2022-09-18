@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { deserializeUser } from "../middlewares/deserialize_user";
 import { requireUser } from "../middlewares/require_user";
-import { getMe, updateMe, updatePassword } from "../controllers/app/user.controller";
+import { getAllSupplier, getMe, updateMe, updatePassword } from "../controllers/app/user.controller";
 import { standardPipeline } from "../pipes";
 import { forgotPassword, resetPassword, restrictTo } from "../controllers/app/auth.controller";
 import { Roles } from "../utils/constant";
@@ -20,5 +20,6 @@ router
 
 router.patch('/update_password', standardPipeline(updatePassword));
 
+router.get('/supplier', standardPipeline(restrictTo(Roles["Supplier Manager"]), getAllSupplier));
 
 export default router;

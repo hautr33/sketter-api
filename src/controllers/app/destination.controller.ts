@@ -98,13 +98,13 @@ export const updateDestination = catchAsync(async (req, res, next) => {
 })
 
 export const searchDestination = catchAsync(async (req, res, next) => {
-    const name = req.query.name as string;
-    const results = await Destination.findAll({
+    const search = req.query.name as string;
+    const destinations = await Destination.findAll({
         where: {
-            name: { [Op.regexp]: `${name.split(' ').join('|')}` }
+            name: { [Op.regexp]: `${search.split(' ').join('|')}` }
         },
     });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { name, results })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { search, destinations })
     next()
 })
 
@@ -127,7 +127,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             attributes: { exclude: privatFields },
             include: [
                 { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
-                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] }}
+                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
             ],
             order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
