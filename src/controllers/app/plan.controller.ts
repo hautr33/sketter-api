@@ -116,7 +116,8 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
         {
             where: { travelerID: res.locals.user.id, isActive: false },
             attributes: { exclude: PlanPrivateFields.default },
-            include: [includeDetailGetAll]
+            include: [includeDetailGetAll],
+            order:[['fromDate', 'DESC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
