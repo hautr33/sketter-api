@@ -4,12 +4,12 @@ import { Catalog } from "../../models/catalog.model";
 import { Destination } from "../../models/destination.model";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
-import { Personalities } from "../../models/personalites.model";
 import { DestinationRecommendedTime } from "../../models/destination_recommended_time.model";
 import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/private_field";
 import { DestinationImage } from "../../models/destination_image.model";
+import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
@@ -23,7 +23,6 @@ export const createDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
 
-    const recommendedTimes = req.body.recommendedTimes as DestinationRecommendedTime[]
     const images = req.body.images as DestinationImage[]
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
     const createdBy = res.locals.user.id;
@@ -35,9 +34,6 @@ export const createDestination = catchAsync(async (req, res, next) => {
         }, { transaction: create })
         await destination.addCatalogs(catalogs, { transaction: create })
         await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
-        for (let i = 0; i < recommendedTimes.length; i++) {
-            await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
-        }
         for (let i = 0; i < images.length; i++) {
             await destination.createImage(images[i], { transaction: create })
         }
@@ -57,11 +53,10 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs
+    const { name, address, phone, email, description, lowestPrice, highestPrice,
+        openingTime, closingTime, catalogs
     } = req.body;
 
-    const recommendedTimes = req.body.recommendedTimes as DestinationRecommendedTime[]
     const images = req.body.images as DestinationImage[]
 
     destination.name = name
@@ -69,22 +64,14 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     destination.phone = phone
     destination.email = email
     destination.description = description
-    destination.longitude = longitude
-    destination.latitude = latitude
     destination.lowestPrice = lowestPrice
     destination.highestPrice = highestPrice
     destination.openingTime = openingTime
     destination.closingTime = closingTime
-    destination.estimatedTimeStay = estimatedTimeStay
 
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
-
-        await DestinationRecommendedTime.destroy({ where: { destinationID: destination.id }, transaction: update })
-        for (let i = 0; i < recommendedTimes.length; i++) {
-            await destination.createRecommendedTime(recommendedTimes[i], { transaction: update })
-        }
 
         await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < images.length; i++) {
@@ -123,7 +110,19 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT,
     });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destinations })
+    const count = await Destination.count({ where: option })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { destinations }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
     next()
 })
 
@@ -220,9 +219,17 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
     if (!result || result === null) {
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
     }
+    const personality = await DestinationPersonalites.
+        findAll({
+            where: { destinationID: result.id },
+            attributes: { exclude: ['destinationID'] },
+            order: [['visitCount', 'DESC'], ['planCount', 'DESC']]
+        })
     const destination = _.omit(result.toJSON(), []);
-    destination.destinationPersonalities = _.map(destination.destinationPersonalities, function (personality) { return personality.name; })
     destination.catalogs = _.map(destination.catalogs, function (catalog) { return catalog.name; })
+    destination.destinationPersonalities = personality
+    if (role === Roles.Traveler)
+        await Destination.increment({ view: 1 }, { where: { id: destination.id } })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })
     next()
 })
@@ -339,7 +346,7 @@ export const closeDestination = catchAsync(async (req, res, next) => {
 
 const validate = (body: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs
+        openingTime, closingTime, catalogs
     } = body;
     const images = body.images as DestinationImage[]
     const recommendedTimes = body.recommendedTimes as DestinationRecommendedTime[]
@@ -368,13 +375,10 @@ const validate = (body: any) => {
     if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
         return 'Khung thời gian đề xuất không được trống'
 
-    if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
-        return 'Thời gian tham quan dự kiến không hợp lệ'
-
-    if (typeof longitude !== 'number' || longitude < -180 || longitude > 180)
+    if (longitude != null && (typeof longitude !== 'number' || longitude < -180 || longitude > 180))
         return 'Kinh độ không hợp lệ'
 
-    if (typeof latitude !== 'number' || latitude < -90 || latitude > 90)
+    if (latitude != null && (typeof latitude !== 'number' || latitude < -90 || latitude > 90))
         return 'Vĩ độ không hợp lệ'
 
     if (typeof highestPrice !== 'number' || highestPrice < lowestPrice)
@@ -404,7 +408,6 @@ const validate = (body: any) => {
 }
 
 const destinationInclude = [
-    { model: Personalities, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
     { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
     { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }

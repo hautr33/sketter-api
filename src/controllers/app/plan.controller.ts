@@ -44,13 +44,14 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 planDestination.planDetailID = planDetail.id;
                 await planDestination.save({ transaction: create })
                 for (let i = 0; i < planPersonalities.length; i++) {
-                    const [desPersonality, created] = await DestinationPersonalites.findOrCreate({
-                        where: { destinationID: planDestination.destinationID, personalityName: planPersonalities[i] }
+                    await DestinationPersonalites.findOrCreate({
+                        where: { destinationID: planDestination.destinationID, personalityName: planPersonalities[i].name }
                     })
-                    if (created)
-                        desPersonality.planCount = 1
-                    else
-                        desPersonality.planCount++;
+                    await DestinationPersonalites.
+                        increment(
+                            { planCount: 1 },
+                            { where: { destinationID: planDestination.destinationID, personalityName: planPersonalities[i].name } }
+                        )
                 }
             }
         }
