@@ -1,5 +1,6 @@
 import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
+import { Destination } from './destination.model';
 import { Plan } from './plan.model';
 import { PlanDestination } from './plan_destination.model';
 
@@ -7,6 +8,7 @@ export class PlanDetail extends Model<InferAttributes<PlanDetail>, InferCreation
     declare id?: string;
     planID!: ForeignKey<Plan['id']>;
     date!: Date;
+    stayDestinationID?: ForeignKey<Destination['id']>;
 }
 
 PlanDetail.init({
@@ -27,6 +29,9 @@ PlanDetail.init({
         type: DataTypes.DATEONLY,
         allowNull: false,
     },
+    stayDestinationID: {
+        type: DataTypes.UUID,
+    }
 }, {
     // Other model options go here
     timestamps: false,
@@ -37,3 +42,6 @@ PlanDetail.init({
 
 PlanDetail.hasMany(PlanDestination, { foreignKey: 'planDetailID', as: "destinations" })
 PlanDestination.belongsTo(PlanDetail, { foreignKey: 'planDetailID', as: "destinations" })
+
+Destination.hasMany(PlanDetail, { foreignKey: 'stayDestinationID', as: "stayDestination" })
+PlanDetail.belongsTo(Destination, { foreignKey: 'stayDestinationID', as: "stayDestination" })

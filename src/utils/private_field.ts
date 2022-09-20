@@ -149,7 +149,8 @@ export class PlanPrivateFields {
 export class PlanDetailPrivateFields {
     static default = [
         "id",
-        "planID"
+        "planID",
+        "stayDestinationID"
     ];
 }
 

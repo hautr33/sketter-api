@@ -5,7 +5,7 @@ import catchAsync from "../../utils/catch_async";
 import { Plan } from "../../models/plan.model";
 import RESDocument from "../factory/res_document";
 import { TravelPersonalityType } from "../../models/personality_type.model";
-import { Roles } from "../../utils/constant";
+import { Catalogs, Roles } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
@@ -14,14 +14,21 @@ import { Destination_Image } from "../../models/destination_image.model";
 import { User } from "../../models/user.model";
 import { PlanDetail } from "../../models/plan_detail.model";
 import { Op } from "sequelize";
+import { Catalog } from "../../models/catalog.model";
+import { Destination_Catalog } from "../../models/destination_catalog.model";
+import { Destination_TravelPersonalityType } from "../../models/destination_personalities.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
-    const error = await validate(req.body, res.locals.user)
+    const user = await User.findByPk(res.locals.user.id, {
+        attributes: ['id'],
+        include: [{ model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
+    })
+    const error = await validate(req.body, user)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, fromDate, toDate, estimatedCost, isPublic, details } = req.body;
-    const planPersonalities = res.locals.user.travelerPersonalities
+    const planPersonalities = user?.travelerPersonalities as any[]
     const result = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, estimatedCost: estimatedCost, isPublic: isPublic, travelerID: res.locals.user.id },
@@ -29,13 +36,22 @@ export const createPlan = catchAsync(async (req, res, next) => {
         await plan.addPlanPersonalities(planPersonalities, { transaction: create })
         for (let i = 0; i < details.length; i++) {
             const planDetail = await PlanDetail.create(
-                { date: details[i].date, planID: plan.id },
+                { date: details[i].date, planID: plan.id, stayDestinationID: details[i].stayDestinationID },
                 { transaction: create }
             )
             for (let j = 0; j < details[i].destinations.length; j++) {
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planDetailID = planDetail.id;
                 await planDestination.save({ transaction: create })
+                for (let i = 0; i < planPersonalities.length; i++) {
+                    const [desPersonality, created] = await Destination_TravelPersonalityType.findOrCreate({
+                        where: { destinationID: planDestination.destinationID, personalityName: planPersonalities[i] }
+                    })
+                    if (created)
+                        desPersonality.planCount = 1
+                    else
+                        desPersonality.planCount++;
+                }
             }
         }
         return plan
@@ -166,9 +182,9 @@ const validate = async (body: any, user?: any) => {
         if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
             return 'Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này'
         for (let i = 0; i < planPersonalities.length; i++) {
-            const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i] } })
+            const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i].name } })
             if (count !== 1)
-                return `Tính cách du lịch: ${planPersonalities[i]} không hợp lệ`
+                return `Tính cách du lịch: ${planPersonalities[i].name} không hợp lệ`
         }
     }
 
@@ -178,6 +194,22 @@ const validate = async (body: any, user?: any) => {
     for (let i = 0; i < details.length; i++) {
         if (!details[i].date)
             return `Ngày thứ ${i + 1} không được trống`
+        if (details[i].stayDestinationID || details[i].stayDestinationID != null) {
+            let stayCatalog = [Catalogs.stay];
+            let index = 0;
+            do {
+                const catalogs = await Catalog.findAll({ where: { parent: stayCatalog[index] } })
+                if (catalogs.length > 0) {
+                    catalogs.forEach(catalog => {
+                        stayCatalog.push(catalog.name)
+                    });
+                }
+                index++;
+            } while (index < stayCatalog.length)
+            const count = await Destination_Catalog.count({ where: { destinationID: details[i].stayDestinationID, catalogName: { [Op.or]: stayCatalog } } })
+            if (count < 1)
+                return `Địa điểm lưu trú của ngày ${details[i].date} không hợp lệ`
+        }
         if (!details[i].destinations || details[i].destinations.length == 0)
             return 'Địa điểm không được trống'
         for (let j = 0; j < details[i].destinations.length; j++) {
@@ -207,6 +239,13 @@ const includeDetailGetAll = {
 
 const includeDetailGetOne = {
     model: PlanDetail, as: 'details', attributes: { exclude: PlanDetailPrivateFields.default }, include: [
+        {
+            model: Destination, as: 'stayDestination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
+                {
+                    model: Destination_Image, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
+                }
+            ]
+        },
         {
             model: PlanDestination, as: 'destinations', attributes: { exclude: PlanDestinationPrivateFields.getOne }, include: [
                 {
