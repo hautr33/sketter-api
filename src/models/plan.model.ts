@@ -1,17 +1,8 @@
-import {
-    DataTypes,
-    ForeignKey,
-    HasManyAddAssociationsMixin,
-    HasManyGetAssociationsMixin,
-    HasManySetAssociationsMixin,
-    InferAttributes,
-    InferCreationAttributes,
-    Model
-} from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { TravelPersonalityType } from './personality_type.model';
+import { Personalities } from './personalites.model';
 import { PlanDetail } from './plan_detail.model';
-import { Plan_TravelPersonalities } from './plan_personalities.model';
+import { PlanPersonalities } from './plan_personalities.model';
 import { User } from './user.model';
 
 export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<Plan>> {
@@ -28,9 +19,9 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
 
-    declare getPlanPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
-    declare addPlanPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
-    declare setPlanPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+    declare getPlanPersonalities: HasManyGetAssociationsMixin<Personalities>;
+    declare addPlanPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
+    declare setPlanPersonalities: HasManySetAssociationsMixin<Personalities, string>;
     planPersonalities?: any[];
 
 }
@@ -105,8 +96,8 @@ Plan.init({
 
 
 
-Plan.belongsToMany(TravelPersonalityType, { through: Plan_TravelPersonalities, foreignKey: "planID", as: "planPersonalities" });
-TravelPersonalityType.belongsToMany(Plan, { through: Plan_TravelPersonalities, foreignKey: "personalityName", as: "planPersonalities" });
+Plan.belongsToMany(Personalities, { through: PlanPersonalities, foreignKey: "planID", as: "planPersonalities" });
+Personalities.belongsToMany(Plan, { through: PlanPersonalities, foreignKey: "personalityName", as: "planPersonalities" });
 
 Plan.hasMany(PlanDetail, { foreignKey: 'planID', as: "details" })
 PlanDetail.belongsTo(Plan, { foreignKey: 'planID', as: "details" })

@@ -4,7 +4,7 @@ import sequelize from '../db/sequelize.db';
 import { Roles } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
-import { TravelPersonalityType } from './personality_type.model';
+import { Personalities } from './personalites.model';
 import { TravelerPersonalities } from './traveler_personalites.model';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
@@ -29,9 +29,9 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     createResetPasswordToken!: () => Promise<string>;
     getavatarURL!: () => Promise<any>;
 
-    declare getTravelerPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
-    declare addTravelerPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
-    declare setTravelerPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+    declare getTravelerPersonalities: HasManyGetAssociationsMixin<Personalities>;
+    declare addTravelerPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
+    declare setTravelerPersonalities: HasManySetAssociationsMixin<Personalities, string>;
     role?: any
     travelerPersonalities?: any
 }
@@ -138,8 +138,8 @@ User.init({
 Role.hasMany(User, { foreignKey: "roleID", as: 'role' });
 User.belongsTo(Role, { foreignKey: 'roleID', as: 'role' })
 
-User.belongsToMany(TravelPersonalityType, { through: TravelerPersonalities, foreignKey: "userID", as: 'travelerPersonalities' });
-TravelPersonalityType.belongsToMany(User, { through: TravelerPersonalities, foreignKey: "personality", as: 'travelerPersonalities' });
+User.belongsToMany(Personalities, { through: TravelerPersonalities, foreignKey: "userID", as: 'travelerPersonalities' });
+Personalities.belongsToMany(User, { through: TravelerPersonalities, foreignKey: "personality", as: 'travelerPersonalities' });
 
 
 User.beforeSave(async (user) => {

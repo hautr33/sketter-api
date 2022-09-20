@@ -1,16 +1,16 @@
 import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
-import { TravelPersonalityType } from './personality_type.model';
+import { Personalities } from './personalites.model';
 
-export class Destination_TravelPersonalityType extends Model<InferAttributes<Destination_TravelPersonalityType>, InferCreationAttributes<Destination_TravelPersonalityType>> {
+export class DestinationPersonalites extends Model<InferAttributes<DestinationPersonalites>, InferCreationAttributes<DestinationPersonalites>> {
     destinationID!: ForeignKey<Destination['id']>;
-    personalityName!: ForeignKey<TravelPersonalityType['name']>;
+    personalityName!: ForeignKey<Personalities['name']>;
     planCount!: number | 0;
     visitCount!: number | 0;
 }
 
-Destination_TravelPersonalityType.init({
+DestinationPersonalites.init({
     // Model attributes are defined here
     destinationID: {
         type: DataTypes.UUID,
@@ -32,5 +32,5 @@ Destination_TravelPersonalityType.init({
     // Other model options go here
     timestamps: false,
     sequelize: sequelize, // We need to pass the connection instance
-    modelName: 'Destination_TravelPersonalityType' // We need to choose the model name
+    modelName: 'DestinationPersonalites' // We need to choose the model name
 });

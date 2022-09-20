@@ -4,24 +4,24 @@ import { PlanDestination } from "../../models/plan_destination.model";
 import catchAsync from "../../utils/catch_async";
 import { Plan } from "../../models/plan.model";
 import RESDocument from "../factory/res_document";
-import { TravelPersonalityType } from "../../models/personality_type.model";
+import { Personalities } from "../../models/personalites.model";
 import { Catalogs, Roles } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
 import { DestinationImagePrivateFields, DestinationPrivateFields, PlanDestinationPrivateFields, PlanDetailPrivateFields, PlanPrivateFields, UserPrivateFields } from "../../utils/private_field";
-import { Destination_Image } from "../../models/destination_image.model";
+import { DestinationImage } from "../../models/destination_image.model";
 import { User } from "../../models/user.model";
 import { PlanDetail } from "../../models/plan_detail.model";
 import { Op } from "sequelize";
 import { Catalog } from "../../models/catalog.model";
-import { Destination_Catalog } from "../../models/destination_catalog.model";
-import { Destination_TravelPersonalityType } from "../../models/destination_personalities.model";
+import { DestinationCatalog } from "../../models/destination_catalog.model";
+import { DestinationPersonalites } from "../../models/destination_personalities.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
         attributes: ['id'],
-        include: [{ model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
+        include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     const error = await validate(req.body, user)
     if (error != null)
@@ -44,7 +44,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 planDestination.planDetailID = planDetail.id;
                 await planDestination.save({ transaction: create })
                 for (let i = 0; i < planPersonalities.length; i++) {
-                    const [desPersonality, created] = await Destination_TravelPersonalityType.findOrCreate({
+                    const [desPersonality, created] = await DestinationPersonalites.findOrCreate({
                         where: { destinationID: planDestination.destinationID, personalityName: planPersonalities[i] }
                     })
                     if (created)
@@ -182,7 +182,7 @@ const validate = async (body: any, user?: any) => {
         if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
             return 'Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này'
         for (let i = 0; i < planPersonalities.length; i++) {
-            const count = await TravelPersonalityType.count({ where: { name: planPersonalities[i].name } })
+            const count = await Personalities.count({ where: { name: planPersonalities[i].name } })
             if (count !== 1)
                 return `Tính cách du lịch: ${planPersonalities[i].name} không hợp lệ`
         }
@@ -206,7 +206,7 @@ const validate = async (body: any, user?: any) => {
                 }
                 index++;
             } while (index < stayCatalog.length)
-            const count = await Destination_Catalog.count({ where: { destinationID: details[i].stayDestinationID, catalogName: { [Op.or]: stayCatalog } } })
+            const count = await DestinationCatalog.count({ where: { destinationID: details[i].stayDestinationID, catalogName: { [Op.or]: stayCatalog } } })
             if (count < 1)
                 return `Địa điểm lưu trú của ngày ${details[i].date} không hợp lệ`
         }
@@ -242,7 +242,7 @@ const includeDetailGetOne = {
         {
             model: Destination, as: 'stayDestination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
                 {
-                    model: Destination_Image, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
+                    model: DestinationImage, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
                 }
             ]
         },
@@ -251,7 +251,7 @@ const includeDetailGetOne = {
                 {
                     model: Destination, as: 'destination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
                         {
-                            model: Destination_Image, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
+                            model: DestinationImage, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
                         }
                     ]
                 }

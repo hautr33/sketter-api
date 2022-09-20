@@ -2,12 +2,12 @@ import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssoci
 import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
-import { Destination_Catalog } from './destination_catalog.model';
-import { TravelPersonalityType } from './personality_type.model';
+import { DestinationCatalog } from './destination_catalog.model';
+import { Personalities } from './personalites.model';
 import { User } from './user.model';
-import { Destination_RecommendedTime } from './destination_recommended_time.model';
-import { Destination_Image } from './destination_image.model';
-import { Destination_TravelPersonalityType } from './destination_personalities.model';
+import { DestinationRecommendedTime } from './destination_recommended_time.model';
+import { DestinationImage } from './destination_image.model';
+import { DestinationPersonalites } from './destination_personalities.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
@@ -37,15 +37,15 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
     declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
 
-    declare getDestinationPersonalities: HasManyGetAssociationsMixin<TravelPersonalityType>;
-    declare addDestinationPersonalities: HasManyAddAssociationsMixin<TravelPersonalityType, string>;
-    declare setDestinationPersonalities: HasManySetAssociationsMixin<TravelPersonalityType, string>;
+    declare getDestinationPersonalities: HasManyGetAssociationsMixin<Personalities>;
+    declare addDestinationPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
+    declare setDestinationPersonalities: HasManySetAssociationsMixin<Personalities, string>;
 
-    declare getRecommendedTimes: HasManyGetAssociationsMixin<Destination_RecommendedTime>;
-    declare createRecommendedTime: HasManyCreateAssociationMixin<Destination_RecommendedTime, 'destinationID'>;
+    declare getRecommendedTimes: HasManyGetAssociationsMixin<DestinationRecommendedTime>;
+    declare createRecommendedTime: HasManyCreateAssociationMixin<DestinationRecommendedTime, 'destinationID'>;
 
-    declare getImages: HasManyGetAssociationsMixin<Destination_Image>;
-    declare createImage: HasManyCreateAssociationMixin<Destination_Image, 'destinationID'>;
+    declare getImages: HasManyGetAssociationsMixin<DestinationImage>;
+    declare createImage: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
     catalogs?: any[];
 }
@@ -182,17 +182,17 @@ Destination.init({
     modelName: 'Destination' // We need to choose the model name
 });
 
-Destination.belongsToMany(Catalog, { through: Destination_Catalog, foreignKey: "destinationID", as: 'catalogs' });
-Catalog.belongsToMany(Destination, { through: Destination_Catalog, foreignKey: "catalogName", as: 'catalogs' });
+Destination.belongsToMany(Catalog, { through: DestinationCatalog, foreignKey: "destinationID", as: 'catalogs' });
+Catalog.belongsToMany(Destination, { through: DestinationCatalog, foreignKey: "catalogName", as: 'catalogs' });
 
-Destination.belongsToMany(TravelPersonalityType, { through: Destination_TravelPersonalityType, foreignKey: "destinationID", as: 'destinationPersonalities' });
-TravelPersonalityType.belongsToMany(Destination, { through: Destination_TravelPersonalityType, foreignKey: "personalityName", as: 'destinationPersonalities' });
+Destination.belongsToMany(Personalities, { through: DestinationPersonalites, foreignKey: "destinationID", as: 'destinationPersonalities' });
+Personalities.belongsToMany(Destination, { through: DestinationPersonalites, foreignKey: "personalityName", as: 'destinationPersonalities' });
 
-Destination.hasMany(Destination_RecommendedTime, {
+Destination.hasMany(DestinationRecommendedTime, {
     foreignKey: "destinationID", as: 'recommendedTimes'
 });
 
-Destination.hasMany(Destination_Image, {
+Destination.hasMany(DestinationImage, {
     foreignKey: "destinationID", as: 'images'
 });
 

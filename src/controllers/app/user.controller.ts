@@ -6,7 +6,7 @@ import AppError from "../../utils/app_error";
 import { User } from "../../models/user.model";
 import { getAuth } from "firebase-admin/auth";
 import sequelizeConnection from "../../db/sequelize.db";
-import { TravelPersonalityType } from "../../models/personality_type.model";
+import { Personalities } from "../../models/personalites.model";
 import { Role } from "../../models/role.model";
 import _ from "lodash"
 import { UserPrivateFields } from "../../utils/private_field";
@@ -15,7 +15,7 @@ export const getMe = catchAsync(async (_req, res, next) => {
     let includes = []
     if (res.locals.user.roleID === Roles.Traveler)
         includes = [
-            { model: TravelPersonalityType, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+            { model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
             { model: Role, as: 'role', attributes: { exclude: ['id'] } }
         ]
     else

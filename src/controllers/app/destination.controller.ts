@@ -4,15 +4,15 @@ import { Catalog } from "../../models/catalog.model";
 import { Destination } from "../../models/destination.model";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
-import { TravelPersonalityType } from "../../models/personality_type.model";
-import { Destination_RecommendedTime } from "../../models/destination_recommended_time.model";
+import { Personalities } from "../../models/personalites.model";
+import { DestinationRecommendedTime } from "../../models/destination_recommended_time.model";
 import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields } from "../../utils/private_field";
-import { Destination_Image } from "../../models/destination_image.model";
+import { DestinationImage } from "../../models/destination_image.model";
 import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const error = validate(req.body)
@@ -23,8 +23,8 @@ export const createDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
 
-    const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
-    const images = req.body.images as Destination_Image[]
+    const recommendedTimes = req.body.recommendedTimes as DestinationRecommendedTime[]
+    const images = req.body.images as DestinationImage[]
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
@@ -61,8 +61,8 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, estimatedTimeStay, catalogs
     } = req.body;
 
-    const recommendedTimes = req.body.recommendedTimes as Destination_RecommendedTime[]
-    const images = req.body.images as Destination_Image[]
+    const recommendedTimes = req.body.recommendedTimes as DestinationRecommendedTime[]
+    const images = req.body.images as DestinationImage[]
 
     destination.name = name
     destination.address = address
@@ -81,12 +81,12 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
 
-        await Destination_RecommendedTime.destroy({ where: { destinationID: destination.id }, transaction: update })
+        await DestinationRecommendedTime.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < recommendedTimes.length; i++) {
             await destination.createRecommendedTime(recommendedTimes[i], { transaction: update })
         }
 
-        await Destination_Image.destroy({ where: { destinationID: destination.id }, transaction: update })
+        await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < images.length; i++) {
             await destination.createImage(images[i], { transaction: update })
         }
@@ -98,13 +98,55 @@ export const updateDestination = catchAsync(async (req, res, next) => {
 })
 
 export const searchDestination = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const search = req.query.name as string;
+    const roleID = res.locals.user.roleID;
+    let option = {}
+    let privatFields = DestinationPrivateFields.default
+    if (roleID == Roles.Supplier) {
+        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` }, supplierID: res.locals.user.id }
+        privatFields = DestinationPrivateFields.getAllSupplier
+    } else if (roleID == Roles.Traveler) {
+        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` }, status: Status.verified }
+        privatFields = DestinationPrivateFields.getAllTraveler
+    } else {
+        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` } }
+    }
     const destinations = await Destination.findAll({
-        where: {
-            name: { [Op.regexp]: `${search.split(' ').join('|')}` }
-        },
+        where: option,
+        attributes: { exclude: privatFields },
+        include: [
+            { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
+        ],
+        order: [['name', 'ASC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT,
     });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { search, destinations })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destinations })
+    next()
+})
+
+export const queryDestination = catchAsync(async (req, res, next) => {
+    const catalog = req.query.catalog as string;
+    const destinations = await Destination.findAll({
+        attributes: {
+            include: [
+                [
+                    Sequelize.literal(`(
+                    SELECT COUNT(*)
+                    FROM catalogs, destination
+                    WHERE
+                        reaction.postId = post.id
+                        AND
+                        reaction.type = "Laugh"
+                )`),
+                    'laughReactionsCount'
+                ]
+            ]
+        }
+    });
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { catalog, destinations })
     next()
 })
 
@@ -126,7 +168,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             where: option,
             attributes: { exclude: privatFields },
             include: [
-                { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+                { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
                 { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
             ],
             order: [['name', 'ASC']],
@@ -299,8 +341,8 @@ const validate = (body: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs
     } = body;
-    const images = body.images as Destination_Image[]
-    const recommendedTimes = body.recommendedTimes as Destination_RecommendedTime[]
+    const images = body.images as DestinationImage[]
+    const recommendedTimes = body.recommendedTimes as DestinationRecommendedTime[]
 
     if (!name || name === '' || name === null)
         return 'Tên địa điểm không được trống'
@@ -362,8 +404,8 @@ const validate = (body: any) => {
 }
 
 const destinationInclude = [
-    { model: TravelPersonalityType, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+    { model: Personalities, as: 'destinationPersonalities', through: { attributes: [] }, attributes: { exclude: ['id'] } },
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
-    { model: Destination_RecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
-    { model: Destination_Image, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
+    { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
+    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
 ]

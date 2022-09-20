@@ -3,7 +3,7 @@ import user from "./user.route";
 import auth from "./auth.route";
 import destination from "./destination.route";
 import catalog from "./catalog.route";
-import personalityType from "./personality_type.route";
+import personalities from "./personalities.route";
 import plan from "./plan.route";
 import { StatusCodes } from "http-status-codes";
 
@@ -15,7 +15,7 @@ router.use('/api/v1/auth', auth);
 router.use('/api/v1/user', user);
 router.use('/api/v1/destination', destination);
 router.use('/api/v1/catalog', catalog);
-router.use('/api/v1/travel_personality_type', personalityType);
+router.use('/api/v1/personalities', personalities);
 router.use('/api/v1/plan', plan);
 
 export default router;
