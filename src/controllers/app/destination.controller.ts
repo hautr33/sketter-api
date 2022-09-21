@@ -14,6 +14,7 @@ import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
 import { User } from "../../models/user.model";
+import { DestinationBookmark } from "../../models/destination_bookmark.model";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
@@ -176,7 +177,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             limit: PAGE_LIMIT,
         }
     )
-    const count = await Destination.count({ where: option })
+    const count = destinations.length
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
@@ -345,6 +346,80 @@ export const closeDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
+export const bookmarkDestination = catchAsync(async (req, res, next) => {
+    const id = req.query.id as string;
+    const destination = await Destination.findOne({ where: { id: id, status: Status.verified } })
+    if (!destination)
+        return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
+
+    const [bookmark, created] = await DestinationBookmark.findOrCreate({ where: { destinationID: destination.id, travelerID: res.locals.user.id } })
+    if (created) {
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đã thêm địa điểm vào mục yêu thích")
+    } else {
+        bookmark.isBookmark = bookmark.isBookmark === true ? false : true
+        await bookmark.save()
+        if (bookmark.isBookmark) {
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đã thêm địa điểm vào mục yêu thích")
+        } else {
+            res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đã xóa địa điểm khỏi mục yêu thích")
+        }
+    }
+    next()
+})
+
+export const getBookmarkDestination = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const destinations = await Destination.findAll({
+        where: {
+            id: {
+                [Op.in]: Sequelize.literal(`(
+                SELECT "destinationID"
+                FROM public."DestinationBookmarks" AS bookmark
+                WHERE
+                    bookmark."isBookmark" = true
+                    AND
+                    bookmark."travelerID" = '${res.locals.user.id}'
+        )`)
+            }
+        },
+        attributes: { exclude: DestinationPrivateFields.getAllTraveler },
+        include: [
+            { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
+        ],
+        order: [['name', 'ASC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT,
+    })
+    const count = await Destination.count({
+        where: {
+            id: {
+                [Op.in]: Sequelize.literal(`(
+                SELECT "destinationID"
+                FROM public."DestinationBookmarks" AS bookmark
+                WHERE
+                    bookmark."isBookmark" = true
+                    AND
+                    bookmark."travelerID" = '${res.locals.user.id}'
+        )`)
+            }
+        }
+    })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { destinations }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+
+    next()
+})
 const validate = async (body: any, supplierID: string) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, catalogs
