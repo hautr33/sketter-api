@@ -87,6 +87,7 @@ export const UserPrivateFields = [
 
 export class DestinationPrivateFields {
     static default = [
+        "supplierID",
         "createdAt",
         "deletedAt",
         "updatedAt"
