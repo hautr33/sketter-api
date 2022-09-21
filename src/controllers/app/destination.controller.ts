@@ -7,15 +7,17 @@ import RESDocument from "../factory/res_document";
 import { DestinationRecommendedTime } from "../../models/destination_recommended_time.model";
 import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
-import { DestinationPrivateFields } from "../../utils/private_field";
+import { DestinationPrivateFields, UserPrivateFields } from "../../utils/private_field";
 import { DestinationImage } from "../../models/destination_image.model";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
+import { User } from "../../models/user.model";
 
 export const createDestination = catchAsync(async (req, res, next) => {
-    const error = validate(req.body)
+    const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
+    const error = await validate(req.body, supplierID)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -24,7 +26,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
     } = req.body;
 
     const images = req.body.images as DestinationImage[]
-    const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
+
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
         const destination = await Destination.create({
@@ -49,7 +51,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     if (!destination || res.locals.user.roleID != Roles["Supplier Manager"] && destination.supplierID != res.locals.user.id)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    const error = validate(req.body)
+    const error = await validate(req.body, destination.supplierID)
     if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -72,7 +74,6 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
-
         await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < images.length; i++) {
             await destination.createImage(images[i], { transaction: update })
@@ -344,36 +345,35 @@ export const closeDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
-const validate = (body: any) => {
+const validate = async (body: any, supplierID: string) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, catalogs
     } = body;
+
+    if (supplierID == null || supplierID == '')
+        return 'Vui lòng nhập ID của đối tác'
     const images = body.images as DestinationImage[]
-    const recommendedTimes = body.recommendedTimes as DestinationRecommendedTime[]
 
     if (!name || name === '' || name === null)
-        return 'Tên địa điểm không được trống'
+        return 'Vui lòng nhập tên địa điểm'
 
     if (!address || address === '' || address === null)
-        return 'Địa chỉ địa điểm không được trống'
+        return 'Vui lòng nhập địa chỉ địa điểm'
 
     if (!phone || phone === '' || phone === null)
-        return 'Số điện thoại không được trống'
+        return 'Vui lòng nhập số điện thoại địa điểm'
 
     if (!email || email === '' || email === null)
-        return 'Email địa điểm không được trống'
+        return 'Vui lòng nhập email địa điểm'
 
     if (!description || description === '' || description === null)
-        return 'Mô tả địa điểm không được trống'
+        return 'Vui lòng nhập mô tả địa điểm'
 
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
-        return 'Loại địa điểm không được trống'
+        return 'Vui lòng nhập loại địa điểm'
 
     if (!images || images === null || images.length === 0)
-        return 'Ảnh địa điểm không được trống'
-
-    if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
-        return 'Khung thời gian đề xuất không được trống'
+        return 'Vui lòng thêm ảnh vào địa điểm'
 
     if (longitude != null && (typeof longitude !== 'number' || longitude < -180 || longitude > 180))
         return 'Kinh độ không hợp lệ'
@@ -387,9 +387,6 @@ const validate = (body: any) => {
     if (typeof lowestPrice !== 'number')
         return 'Giá thấp nhất không hợp lệ'
 
-    if (typeof highestPrice !== 'number' || highestPrice < lowestPrice)
-        return 'Giá cao nhất không hợp lệ'
-
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
 
     if (!openingTime.match(regex))
@@ -397,12 +394,9 @@ const validate = (body: any) => {
 
     if (!closingTime.match(regex) || closingTime <= openingTime)
         return 'Giờ đóng cửa không hợp lệ'
-
-    for (let i = 0; i < recommendedTimes.length; i++)
-        if (!recommendedTimes[i].start.match(regex))
-            return `Giờ bắt đầu "${recommendedTimes[i].start}" của khung thời gian đề xuất không hợp lệ. `
-        else if (!recommendedTimes[i].end.match(regex) || recommendedTimes[i].end < recommendedTimes[i].start)
-            return `Giờ kết thúc "${recommendedTimes[i].end}" của khung thời gian đề xuất không hợp lệ. `
+    const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID } } })
+    if (count > 0)
+        return 'Email đã được sử dụng bởi địa điểm của đối tác khác'
 
     return null
 }
@@ -410,5 +404,6 @@ const validate = (body: any) => {
 const destinationInclude = [
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
     { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
-    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } }
+    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+    { model: User, as: 'supplier', attributes: { exclude: UserPrivateFields[Roles.Supplier] } }
 ]

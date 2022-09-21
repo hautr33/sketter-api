@@ -196,7 +196,8 @@ Destination.hasMany(DestinationImage, {
     foreignKey: "destinationID", as: 'images'
 });
 
-User.hasOne(Destination, { foreignKey: "supplierID" });
+User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
+Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" })
 
 Destination.beforeSave(async (destination) => {
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g

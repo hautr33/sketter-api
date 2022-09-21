@@ -102,7 +102,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
 });
 
 export const getAllSupplier = catchAsync(async (_req, res, next) => {
-    const suppliers = await User.findAll()
+    const suppliers = await User.findAll({ where: { roleID: Roles.Supplier }, attributes: { exclude: UserPrivateFields[Roles.Supplier] } })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { suppliers });
     next();
 });
