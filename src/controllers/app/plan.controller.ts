@@ -117,7 +117,7 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
             where: { travelerID: res.locals.user.id, isActive: false },
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeDetailGetAll],
-            order:[['fromDate', 'DESC']]
+            order: [['fromDate', 'ASC'], ['details', 'date', 'ASC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
@@ -131,7 +131,8 @@ export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
         {
             where: { isPublic: true },
             attributes: { exclude: PlanPrivateFields.default },
-            include: [includeTraveler, includeDetailGetAll]
+            include: [includeTraveler, includeDetailGetAll],
+            order: [['fromDate', 'ASC'], ['details', 'date', 'ASC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
@@ -143,7 +144,8 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
         {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
-            include: [includeTraveler, includeDetailGetOne]
+            include: [includeTraveler, includeDetailGetOne],
+            order: [['details', 'date', 'ASC'], ['details', 'destinations', 'fromTime', 'ASC']]
         });
 
     if (!plan)

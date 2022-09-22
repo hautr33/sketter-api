@@ -88,6 +88,7 @@ export const UserPrivateFields = [
 export class DestinationPrivateFields {
     static default = [
         "supplierID",
+        "createdBy",
         "createdAt",
         "deletedAt",
         "updatedAt"
@@ -108,6 +109,7 @@ export class DestinationPrivateFields {
         "view",
         "comment",
         "supplierID",
+        "createdBy",
         "createdAt",
         "updatedAt",
         "deletedAt"
@@ -124,6 +126,7 @@ export class DestinationPrivateFields {
         "view",
         "comment",
         "supplierID",
+        "createdBy",
         "createdAt",
         "updatedAt",
         "deletedAt"

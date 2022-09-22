@@ -172,6 +172,9 @@ Destination.init({
     supplierID: {
         type: DataTypes.UUID,
     },
+    createdBy: {
+        type: DataTypes.UUID,
+    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
 }, {
@@ -197,7 +200,10 @@ Destination.hasMany(DestinationImage, {
 });
 
 User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
-Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" })
+Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
+
+User.hasMany(Destination, { foreignKey: "createdBy", as: "creater" });
+Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
 
 Destination.beforeSave(async (destination) => {
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g

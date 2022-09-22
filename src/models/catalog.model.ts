@@ -12,7 +12,7 @@ import sequelize from '../db/sequelize.db';
 
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare name: string;
-    declare parent: ForeignKey<Catalog['name']>;
+    declare parent: ForeignKey<Catalog['name']> | null;
 }
 
 Catalog.init({
@@ -32,4 +32,4 @@ Catalog.init({
     modelName: 'Catalog' // We need to choose the model name
 });
 
-Catalog.hasMany(Catalog, { foreignKey: 'parent' });
+Catalog.hasMany(Catalog, { foreignKey: 'parent', as: 'sub' });
