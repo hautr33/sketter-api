@@ -16,7 +16,7 @@ router
     .post(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), createDestination));
 
 router.route('/search')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Traveler, Roles.Supplier), searchDestination))
+    .get(standardPipeline(restrictTo(Roles.Traveler), searchDestination))
 
 router.route('/bookmark')
     .get(standardPipeline(restrictTo(Roles.Traveler), getBookmarkDestination))

@@ -88,22 +88,25 @@ export const updateDestination = catchAsync(async (req, res, next) => {
 
 export const searchDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
-    const search = req.query.name as string;
-    const roleID = res.locals.user.roleID;
-    let option = {}
-    let privatFields = DestinationPrivateFields.default
-    if (roleID == Roles.Supplier) {
-        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` }, supplierID: res.locals.user.id }
-        privatFields = DestinationPrivateFields.getAllSupplier
-    } else if (roleID == Roles.Traveler) {
-        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` }, status: Status.verified }
-        privatFields = DestinationPrivateFields.getAllTraveler
-    } else {
-        option = { name: { [Op.regexp]: `${search.split(' ').join('|')}` } }
-    }
+    const name = req.query.name as string ?? '';
+    const catalog = req.query.catalog as string;
+    const catalogQuery = `WHERE desCata."catalogName" IN (SELECT "name"
+        FROM public."Catalogs" as cata
+        WHERE cata."name" = '${catalog}'
+        OR cata."parent" = '${catalog}')`
     const destinations = await Destination.findAll({
-        where: option,
-        attributes: { exclude: privatFields },
+        where: {
+            name: { [Op.iLike]: `%${name}%` },
+            status: Status.verified,
+            id: {
+                [Op.in]: Sequelize.literal(`(
+                    SELECT "destinationID"
+                    FROM public."DestinationCatalogs" as desCata
+                    ${catalog ? catalogQuery : ''}
+            )`)
+            }
+        },
+        attributes: { exclude: DestinationPrivateFields.getAllTraveler },
         include: [
             { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
             { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
@@ -111,8 +114,20 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT,
-    });
-    const count = await Destination.count({ where: option })
+    })
+
+    const count = await Destination.count({
+        where: {
+            name: { [Op.iLike]: `%${name}%` },
+            id: {
+                [Op.in]: Sequelize.literal(`(
+                    SELECT "destinationID"
+                    FROM public."DestinationCatalogs" as desCata
+                    ${catalog ? catalogQuery : ''}
+            )`)
+            }
+        }
+    })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
@@ -125,29 +140,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         resDocument.setMaxPage(maxPage)
     }
     res.resDocument = resDocument;
-    next()
-})
 
-export const queryDestination = catchAsync(async (req, res, next) => {
-    const catalog = req.query.catalog as string;
-    const destinations = await Destination.findAll({
-        attributes: {
-            include: [
-                [
-                    Sequelize.literal(`(
-                    SELECT COUNT(*)
-                    FROM catalogs, destination
-                    WHERE
-                        reaction.postId = post.id
-                        AND
-                        reaction.type = "Laugh"
-                )`),
-                    'laughReactionsCount'
-                ]
-            ]
-        }
-    });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { catalog, destinations })
     next()
 })
 
@@ -177,7 +170,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             limit: PAGE_LIMIT,
         }
     )
-    const count = destinations.length
+    const count = await Destination.count({ where: option })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,

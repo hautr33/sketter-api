@@ -80,7 +80,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
             new AppError('Nhập lại mật khẩu mới không khớp', StatusCodes.BAD_REQUEST)
         );
     }
-    const user = await User.findOne({ where: { email: res.locals.user.email } });
+    const user = await User.findOne({ where: { id: res.locals.user.id } });
     if (!user || !(await user.comparePassword(currentPassword as string))) {
         return next(
             new AppError('Mật khẩu hiện tại không đúng', StatusCodes.BAD_REQUEST)
