@@ -115,7 +115,7 @@ User.init({
     },
     status: {
         type: DataTypes.STRING,
-        defaultValue: Status.deactivated
+        defaultValue: Status.unverified
     },
     roleID: {
         type: DataTypes.INTEGER,

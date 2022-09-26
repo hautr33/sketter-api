@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import _ from 'lodash';
+import { Status } from '../utils/constant';
 import { Session } from '../models/session.model';
 import { User } from '../models/user.model';
 import AppError from '../utils/app_error';
 import { verifyJwt } from '../utils/jwt';
+import { Op } from 'sequelize';
 
 export const deserializeUser = async (
   req: Request,
@@ -34,8 +36,8 @@ export const deserializeUser = async (
     if (!session)
       return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
 
-    let user = await User.findOne({
-      where: { id: decoded.id }, attributes: ['id', 'roleID']
+    const user = await User.findOne({
+      where: { id: decoded.id, status: { [Op.ne]: Status.deactivated } }, attributes: ['id', 'roleID', 'status']
     });
     if (!user)
       return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND));

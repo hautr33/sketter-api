@@ -34,6 +34,7 @@ export class Auth {
 
     public static readonly google = 'Google';
 }
+
 export class Status {
     public static readonly unverified = 'Unverified';
 
@@ -45,3 +46,5 @@ export class Status {
 
     public static readonly closed = 'Closed';
 }
+
+export const listStatus = ['Unverified', 'Verified', 'Inactivated', 'Deactivated', 'Closed']

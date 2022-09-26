@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { Roles, Status } from "../../utils/constant";
+import { listStatus, Roles } from "../../utils/constant";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import AppError from "../../utils/app_error";
@@ -11,6 +11,7 @@ import { Role } from "../../models/role.model";
 import _ from "lodash"
 import { UserPrivateFields } from "../../utils/private_field";
 import { Op } from "sequelize";
+import { signUpFirebase } from "../../services/firebase/firebase_admin.service";
 
 export const getMe = catchAsync(async (_req, res, next) => {
     let includes = []
@@ -109,15 +110,36 @@ export const getAllSupplier = catchAsync(async (_req, res, next) => {
 });
 
 export const createUser = catchAsync(async (req, res, next) => {
-    const { name, email, roleName } = req.body;
-    const role = await Role.findOne({ where: { name: { [Op.eq]: roleName, [Op.ne]: Roles.Admin } } });
+    const { name, email, password, confirmPassword, roleName } = req.body;
+    const role = await Role.findOne({ where: { description: { [Op.eq]: roleName }, id: { [Op.ne]: Roles.Admin } } });
     if (!role)
         return next(new AppError("Vai trò không hợp lệ", StatusCodes.BAD_REQUEST));
+
+    if (!password || password.length < 6 || password.length > 16)
+        return next(new AppError('Mật khẩu phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST));
+
+    if (password !== confirmPassword)
+        return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
+
     const user = new User();
     user.name = name;
     user.email = email;
+    user.password = password;
     user.roleID = role.id
     await user.save()
+        .then(async () => {
+            // Add user to firebase
+            const err = await signUpFirebase(email, password)
+            if (err)
+                return next(new AppError(err, StatusCodes.BAD_REQUEST));
+            else {
+                res.resDocument = new RESDocument(StatusCodes.OK, 'success', "Đăng kí thành công");
+                next();
+            }
+        })
+        .catch((error) => {
+            return next(new AppError(error.errors[0].message, StatusCodes.BAD_REQUEST));
+        });
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Tạo tài khoản thành công');
     next();
 });
@@ -128,19 +150,45 @@ export const updateUser = catchAsync(async (req, res, next) => {
     if (count != 1)
         return next(new AppError("Không tìm thấy thông tin tài khoản", StatusCodes.BAD_REQUEST));
 
-    const { name } = req.body;
-    await User.update({ name: name }, { where: { id: id } })
+    const { name, avatar, status } = req.body;
+
+    if (status && !listStatus.includes(status))
+        return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
+
+    await User.update({ name: name, avatar: avatar, status: status }, { where: { id: id } })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Cập nhật tài khoản thành công');
     next();
 });
 
-export const deactivateUser = catchAsync(async (req, res, next) => {
+export const getAllUser = catchAsync(async (req, res, next) => {
+    const status = req.query.status as string;
+
+    if (status && !listStatus.includes(status))
+        return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
+
+    const users = await User.findAll(
+        {
+            where: status ? { status: status, id: { [Op.ne]: res.locals.user.id } } : { id: { [Op.ne]: res.locals.user.id } },
+            attributes: { exclude: UserPrivateFields[0] },
+            include: [{ model: Role, as: 'role', attributes: { exclude: ['id'] } }]
+        }
+    )
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', users);
+    next();
+});
+
+export const getOneUser = catchAsync(async (req, res, next) => {
     const id = req.params.id;
-    const count = await User.count({ where: { id: id, status: Status.verified } });
+    const count = await User.count({ where: { id: id } });
     if (count != 1)
         return next(new AppError("Không tìm thấy thông tin tài khoản", StatusCodes.BAD_REQUEST));
-
-    await User.update({ status: Status.deactivated }, { where: { id: id } })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Hủy kích hoạt tài khoản thành công');
+    const user = await User.findOne(
+        {
+            where: { id: id },
+            attributes: { exclude: UserPrivateFields[0] },
+            include: [{ model: Role, as: 'role', attributes: { exclude: ['id'] } }]
+        }
+    )
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', user);
     next();
 });

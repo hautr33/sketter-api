@@ -9,7 +9,7 @@ import { User } from '../../models/user.model';
 import { sendEmail } from '../../services/mail.service';
 import AppError from '../../utils/app_error';
 import catchAsync from '../../utils/catch_async';
-import { Roles } from '../../utils/constant';
+import { Roles, Status } from '../../utils/constant';
 import { Role } from '../../models/role.model';
 import { Session } from '../../models/session.model';
 import { createSendToken } from '../../utils/jwt';
@@ -18,7 +18,7 @@ import { loginViaGoogle, signUpFirebase, updateUserPassword } from '../../servic
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body
     const { email, password, confirmPassword, role } = req.body;
-    if (!password || password.length < 6 || password.length > 15)
+    if (!password || password.length < 6 || password.length > 16)
         return next(new AppError('Mật khẩu phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST));
 
     if (password !== confirmPassword)
@@ -245,6 +245,48 @@ export const restrictTo = (...roles: Role['id'][]): RequestHandler => (_req, res
                 StatusCodes.FORBIDDEN
             )
         );
+    }
+    next();
+};
+
+export const requireStatus = (...status: string[]): RequestHandler => (_req, res, next) => {
+    /* 
+    We check if the attached User with the "role" is in the 
+      whitelist of permissions
+    */
+
+    const userStatus = res.locals.user.status
+    console.log(userStatus)
+    if (!status.includes(userStatus)) {
+        if (userStatus == Status.unverified) {
+            return next(
+                new AppError(
+                    'Vui lòng xác thực tài khoản của bạn để sử dụng tính năng này',
+                    StatusCodes.FORBIDDEN
+                )
+            );
+        } else if (userStatus == Status.deactivated) {
+            return next(
+                new AppError(
+                    'Không thể sử dụng tính năng này do tài khoản của bạn đã bị ngưng hoạt động',
+                    StatusCodes.FORBIDDEN
+                )
+            );
+        } else if (userStatus == Status.inactivated) {
+            return next(
+                new AppError(
+                    'Vui lòng kích hoạt lại tài khoản của bạn để sử dụng tính năng này',
+                    StatusCodes.FORBIDDEN
+                )
+            );
+        } else {
+            return next(
+                new AppError(
+                    'Bạn không thẻ sử dụng tính năng này',
+                    StatusCodes.FORBIDDEN
+                )
+            );
+        }
     }
     next();
 };
