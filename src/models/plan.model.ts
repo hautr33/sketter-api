@@ -1,6 +1,6 @@
 import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Personalities } from './personalites.model';
+import { Personalities } from './personalities.model';
 import { PlanDetail } from './plan_detail.model';
 import { PlanPersonalities } from './plan_personalities.model';
 import { User } from './user.model';

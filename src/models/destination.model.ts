@@ -3,7 +3,7 @@ import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
 import { DestinationCatalog } from './destination_catalog.model';
-import { Personalities } from './personalites.model';
+import { Personalities } from './personalities.model';
 import { User } from './user.model';
 import { DestinationRecommendedTime } from './destination_recommended_time.model';
 import { DestinationImage } from './destination_image.model';

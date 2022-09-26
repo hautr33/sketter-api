@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Roles } from '../utils/constant';
+import { Roles, Status } from '../utils/constant';
 import crypto from 'crypto';
 import { Role } from './role.model';
-import { Personalities } from './personalites.model';
+import { Personalities } from './personalities.model';
 import { TravelerPersonalities } from './traveler_personalites.model';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
@@ -24,6 +24,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     isActive!: boolean;
     roleID!: ForeignKey<Role['id']>;
     authType!: string;
+    status?: string;
     firebaseID!: string;
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
@@ -111,6 +112,10 @@ User.init({
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    status: {
+        type: DataTypes.STRING,
+        defaultValue: Status.deactivated
     },
     roleID: {
         type: DataTypes.INTEGER,

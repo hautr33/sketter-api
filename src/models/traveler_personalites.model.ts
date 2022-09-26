@@ -1,6 +1,6 @@
 import { ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Personalities } from './personalites.model';
+import { Personalities } from './personalities.model';
 import { User } from './user.model';
 
 export class TravelerPersonalities extends Model<InferAttributes<TravelerPersonalities>, InferCreationAttributes<TravelerPersonalities>> {

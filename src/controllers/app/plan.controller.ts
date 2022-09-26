@@ -4,7 +4,7 @@ import { PlanDestination } from "../../models/plan_destination.model";
 import catchAsync from "../../utils/catch_async";
 import { Plan } from "../../models/plan.model";
 import RESDocument from "../factory/res_document";
-import { Personalities } from "../../models/personalites.model";
+import { Personalities } from "../../models/personalities.model";
 import { Catalogs, Roles } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";

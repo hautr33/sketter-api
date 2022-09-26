@@ -16,7 +16,7 @@ export enum PersonalityTypes {
     'Có nhu cầu vui chơi, giải trí cao'
 }
 
-export class Catalogs{
+export class Catalogs {
     public static readonly stay = 'Lưu trú';
     public static readonly food = 'Ẩm thực';
     public static readonly exploration = 'Khám phá';
@@ -39,7 +39,9 @@ export class Status {
 
     public static readonly verified = 'Verified';
 
-    public static readonly rejected = 'Rejected';
+    public static readonly inactivated = 'Inactivated';
+
+    public static readonly deactivated = 'Deactivated';
 
     public static readonly closed = 'Closed';
 }

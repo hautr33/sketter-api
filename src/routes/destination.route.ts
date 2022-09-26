@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { restrictTo } from "../controllers/app/auth.controller";
 import { Roles } from "../utils/constant";
-import { approveDestination, bookmarkDestination, closeDestination, createDestination, deleteOneDestination, getAllDestination, getBookmarkDestination, getOneDestination, getPendingDestination, getRejectDestination, rejectDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
+import { bookmarkDestination, createDestination, deleteOneDestination, getAllDestination, getBookmarkDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
 
 const router = Router();
 
@@ -21,22 +21,6 @@ router.route('/search')
 router.route('/bookmark')
     .get(standardPipeline(restrictTo(Roles.Traveler), getBookmarkDestination))
     .post(standardPipeline(restrictTo(Roles.Traveler), bookmarkDestination))
-
-router.route('/pending')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getPendingDestination))
-
-
-router.route('/reject')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"]), getRejectDestination))
-
-router.route('/pending/reject')
-    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), rejectDestination))
-
-router.route('/pending/approve')
-    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), approveDestination))
-
-router.route('/pending/close')
-    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), closeDestination))
 
 router
     .route('/:id')
