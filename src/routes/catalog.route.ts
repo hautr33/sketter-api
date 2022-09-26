@@ -2,11 +2,17 @@ import { Router } from "express";
 import { deserializeUser } from "../middlewares/deserialize_user";
 import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
-import { getAllCatalog } from "../controllers/app/catalog.controller";
+import { createCatalog, getAllCatalog } from "../controllers/app/catalog.controller";
+import { restrictTo } from "../controllers/app/auth.controller";
+import { Roles } from "../utils/constant";
 
 const router = Router();
 
 router.use(deserializeUser, requireUser);
-router.get('/', standardPipeline(getAllCatalog));
+
+router
+    .route('/')
+    .get(standardPipeline(getAllCatalog))
+    .post(standardPipeline(restrictTo(Roles.Admin), createCatalog));
 
 export default router;

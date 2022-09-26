@@ -107,7 +107,7 @@ Destination.init({
         }
     },
     longitude: {
-        type: DataTypes.REAL,
+        type: DataTypes.DOUBLE,
         validate: {
             notEmpty: {
                 msg: 'Kinh độ không được trống'
@@ -117,7 +117,7 @@ Destination.init({
         }
     },
     latitude: {
-        type: DataTypes.REAL,
+        type: DataTypes.DOUBLE,
         validate: {
             notEmpty: {
                 msg: 'Vĩ độ không được trống'
