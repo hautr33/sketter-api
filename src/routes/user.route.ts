@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { deserializeUser } from "../middlewares/deserialize_user";
 import { requireUser } from "../middlewares/require_user";
-import { createUser, getAllSupplier, getAllUser, getMe, getOneUser, updateMe, updatePassword, updateUser, sendVerifyEmail, verifyEmail } from "../controllers/app/user.controller";
+import { createUser, getAllSupplier, getAllUser, getMe, getOneUser, updateMe, updatePassword, updateUser, sendVerifyEmail, verifyEmail, deactivateUser } from "../controllers/app/user.controller";
 import { standardPipeline } from "../pipes";
 import { forgotPassword, resetPassword, restrictTo } from "../controllers/app/auth.controller";
 import { Roles } from "../utils/constant";
@@ -36,5 +36,6 @@ router
     .route('/:id')
     .get(standardPipeline(restrictTo(Roles.Admin), getOneUser))
     .patch(standardPipeline(restrictTo(Roles.Admin), updateUser))
+    .delete(standardPipeline(restrictTo(Roles.Admin), deactivateUser))
 
 export default router;

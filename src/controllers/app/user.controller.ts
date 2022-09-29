@@ -206,6 +206,17 @@ export const updateUser = catchAsync(async (req, res, next) => {
     next();
 });
 
+export const deactivateUser = catchAsync(async (req, res, next) => {
+    const id = req.params.id;
+    const count = await User.count({ where: { id: id, status: { [Op.ne]: Status.deactivated } } });
+    if (count != 1)
+        return next(new AppError("Không tìm thấy thông tin tài khoản", StatusCodes.BAD_REQUEST));
+
+    await User.update({ status: Status.deactivated }, { where: { id: id } })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', 'Huỷ kích hoạt tài khoản thành công');
+    next();
+});
+
 export const getAllUser = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = req.query.status as string;
