@@ -14,6 +14,8 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     passwordUpdatedAt!: Date;
     passwordResetToken!: string | null;
     passwordResetExpires!: number | null;
+    verifyCode!: string | null;
+    verifyCodeExpires!: number | null;
     name!: string;
     avatar!: string | null;
     gender!: string;
@@ -28,6 +30,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     firebaseID!: string;
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
+    createVerifyCode!: () => Promise<string>;
     getavatarURL!: () => Promise<any>;
 
     declare getTravelerPersonalities: HasManyGetAssociationsMixin<Personalities>;
@@ -73,6 +76,12 @@ User.init({
         type: DataTypes.STRING
     },
     passwordResetExpires: {
+        type: DataTypes.DATE
+    },
+    verifyCode: {
+        type: DataTypes.STRING
+    },
+    verifyCodeExpires: {
         type: DataTypes.DATE
     },
     name: {
@@ -196,3 +205,14 @@ User.prototype.createResetPasswordToken = async function () {
     // Return the UNHASHED token, we need to hash and compare when have this
     return resetToken;
 };
+
+User.prototype.createVerifyCode = async function () {
+    this.verifyCode = ''
+    for (let i = 0; i < 6; i++)
+        this.verifyCode += Math.floor(Math.random() * 10)
+
+    // 5 min
+    this.verifyCodeExpires = Date.now() + 5 * 60 * 1000;
+
+    return this.verifyCode
+}

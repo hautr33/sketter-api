@@ -13,6 +13,10 @@ import sequelize from '../db/sequelize.db';
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare name: string;
     declare parent: ForeignKey<Catalog['name']> | null;
+    
+    readonly createdAt?: Date;
+    readonly updatedAt?: Date;
+    readonly deletedAt?: Date | null;
 }
 
 Catalog.init({
@@ -24,10 +28,20 @@ Catalog.init({
     },
     parent: {
         type: DataTypes.STRING
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        defaultValue: Date.now()
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        defaultValue: Date.now()
     }
+
 }, {
     // Other model options go here
-    timestamps: false,
+    timestamps: true,
+    paranoid: true,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Catalog' // We need to choose the model name
 });

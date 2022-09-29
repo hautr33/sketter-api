@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { listStatus, Roles } from "../../utils/constant";
+import { listStatus, Roles, Status } from "../../utils/constant";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import AppError from "../../utils/app_error";
@@ -12,24 +12,69 @@ import _ from "lodash"
 import { UserPrivateFields } from "../../utils/private_field";
 import { Op } from "sequelize";
 import { signUpFirebase } from "../../services/firebase/firebase_admin.service";
+import { sendEmail } from "../../services/mail.service";
+
+export const sendVerifyEmail = catchAsync(async (_req, res, next) => {
+    const user = await User.findOne({ where: { id: res.locals.user.id, status: Status.unverified }, attributes: ['id', 'email', 'name'] })
+    if (!user)
+        return next(new AppError('Không tìm thấy tài khoản này', StatusCodes.NOT_FOUND))
+
+    await sequelizeConnection.transaction(async (verify) => {
+        const code = await user.createVerifyCode();
+        await user.save({ transaction: verify });
+        const message = `Xin chào ${user.name},\nVui lòng nhập code dưới đây vào thiết bị của bạn để xác thực email của bạn:
+        \n${code}`;
+
+        // Send Email
+        await sendEmail({
+            email: user.email,
+            subject: 'Sketter - Xác thực tài khoản (hết hạn sau 5 phút)',
+            message
+        });
+    })
+
+    res.resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        `Mã xác thực đã được gửi đến ${user.email}`
+    );
+    next();
+});
+
+export const verifyEmail = catchAsync(async (req, res, next) => {
+    const count = await User.count({
+        where: {
+            id: res.locals.user.id,
+            verifyCode: req.body.code,
+            verifyCodeExpires: { [Op.gt]: Date.now() }
+        }
+    })
+    if (count !== 1)
+        return next(new AppError('Mã xác thực của bạn đã hết hạn', StatusCodes.BAD_REQUEST))
+
+    await User.update({ verifyCode: null, verifyCodeExpires: null, status: Status.verified }, { where: { id: res.locals.user.id } })
+
+    res.resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        `Xác thực email thành công`
+    );
+    next();
+});
+
 
 export const getMe = catchAsync(async (_req, res, next) => {
-    let includes = []
-    if (res.locals.user.roleID === Roles.Traveler)
-        includes = [
-            { model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
-            { model: Role, as: 'role', attributes: { exclude: ['id'] } }
-        ]
-    else
-        includes = [
-            { model: Role, as: 'role', attributes: { exclude: ['id'] } }
-        ]
 
     const user = await User.findByPk(
         res.locals.user.id,
         {
             attributes: { exclude: UserPrivateFields[res.locals.user.roleID ?? 0] },
-            include: includes
+            include: res.locals.user.roleID === Roles.Traveler ? [
+                { model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+                { model: Role, as: 'role', attributes: { exclude: ['id'] } }
+            ] : [
+                { model: Role, as: 'role', attributes: { exclude: ['id'] } }
+            ]
         }
     )
     if (!user)

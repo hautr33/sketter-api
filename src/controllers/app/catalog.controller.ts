@@ -3,15 +3,16 @@ import { Catalog } from "../../models/catalog.model";
 import RESDocument from "../factory/res_document";
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../utils/app_error";
+import { Op } from "sequelize";
 
 export const getAllCatalog = catch_async(async (_req, res, next) => {
     const catalogs = await Catalog.findAll(
         {
             where: { parent: null },
-            attributes: { exclude: ['parent'] },
+            attributes: ['name'],
             include: [
                 {
-                    model: Catalog, as: 'sub', attributes: { exclude: ['parent'] }
+                    model: Catalog, as: 'sub', attributes: ['name']
                 }
             ]
         }
@@ -37,5 +38,26 @@ export const createCatalog = catch_async(async (req, res, next) => {
     await Catalog.create({ name: name, parent: parent })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', `Đã thêm loại địa điểm "${name}" vào "${parent}"`);
 
+    next()
+})
+
+
+
+export const disableCatalog = catch_async(async (req, res, next) => {
+    const action = req.query.action ? (req.query.action as string).toLowerCase() : null;
+
+    const count = await Catalog.count({ where: { name: req.params.name, deletedAt: action === 'enable' ? { [Op.ne]: null } : null }, paranoid: action === 'enable' ? false : true })
+    if (count !== 1)
+        return next(new AppError(`Không tìm thấy loại địa điểm "${req.params.name}"`, StatusCodes.BAD_REQUEST));
+
+    if (action === 'disable')
+        await Catalog.destroy({ where: { name: req.params.name } })
+    else if (action === 'enable')
+        await Catalog.restore({ where: { name: req.params.name } })
+    else
+        return next(new AppError(`Hành động không hợp lệ`, StatusCodes.BAD_REQUEST));
+
+    const message = action === 'disable' ? `Vô hiệu hoá loại địa điểm "${req.params.name}" thành công` : `Kích hoạt loại địa điểm "${req.params.name}" thành công`
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', message);
     next()
 })
