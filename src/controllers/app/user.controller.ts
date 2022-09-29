@@ -13,6 +13,7 @@ import { UserPrivateFields } from "../../utils/private_field";
 import { Op } from "sequelize";
 import { signUpFirebase } from "../../services/firebase/firebase_admin.service";
 import { sendEmail } from "../../services/mail.service";
+import { PAGE_LIMIT } from "../../config/default";
 
 export const sendVerifyEmail = catchAsync(async (_req, res, next) => {
     const user = await User.findOne({ where: { id: res.locals.user.id, status: Status.unverified }, attributes: ['id', 'email', 'name'] })
@@ -206,6 +207,7 @@ export const updateUser = catchAsync(async (req, res, next) => {
 });
 
 export const getAllUser = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = req.query.status as string;
 
     if (status && !listStatus.includes(status))
@@ -215,10 +217,25 @@ export const getAllUser = catchAsync(async (req, res, next) => {
         {
             where: status ? { status: status, id: { [Op.ne]: res.locals.user.id } } : { id: { [Op.ne]: res.locals.user.id } },
             attributes: { exclude: UserPrivateFields[0] },
-            include: [{ model: Role, as: 'role', attributes: { exclude: ['id'] } }]
+            include: [{ model: Role, as: 'role', attributes: { exclude: ['id'] } }],
+            order: [['name', 'ASC']],
+            offset: (page - 1) * PAGE_LIMIT,
+            limit: PAGE_LIMIT,
         }
     )
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', users);
+    const count = await User.count({ where: status ? { status: status, id: { [Op.ne]: res.locals.user.id } } : { id: { [Op.ne]: res.locals.user.id } } })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { users }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
     next();
 });
 

@@ -119,6 +119,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const count = await Destination.count({
         where: {
             name: { [Op.iLike]: `%${name}%` },
+            status: Status.verified,
             id: {
                 [Op.in]: Sequelize.literal(`(
                     SELECT "destinationID"
