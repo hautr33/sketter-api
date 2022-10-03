@@ -27,7 +27,7 @@ db.connect();
 /**
  * Firebase Config
  */
- firebase_config.initialize()
+firebase_config.initialize()
 
 
 /**
@@ -35,17 +35,18 @@ db.connect();
  */
 let server: http.Server | https.Server;
 if (ENVIRONMENT === 'production') {
-    const privateKey = fs.readFileSync(
-        path.join(__dirname, '../../security/creator.thetravels.io.key'),
-        'utf8'
-    );
-    const certificate = fs.readFileSync(
-        path.join(__dirname, '../../security/creator.thetravels.io.pem'),
-        'utf8'
-    );
-    const credentials = { key: privateKey, cert: certificate };
+    server = http.createServer(app)
+    // const privateKey = fs.readFileSync(
+    //     path.join(__dirname, '../../security/creator.thetravels.io.key'),
+    //     'utf8'
+    // );
+    // const certificate = fs.readFileSync(
+    //     path.join(__dirname, '../../security/creator.thetravels.io.pem'),
+    //     'utf8'
+    // );
+    // const credentials = { key: privateKey, cert: certificate };
 
-    server = https.createServer(credentials, app);
+    // server = https.createServer(credentials, app);
 } else server = http.createServer(app);
 
 /**
