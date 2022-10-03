@@ -7,7 +7,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import { StatusCodes } from 'http-status-codes';
-import morganProd from 'morgan';
+// import morganProd from 'morgan';
 import morganDev from 'morgan-body';
 import path from 'path';
 import xss from 'xss-clean';
@@ -92,7 +92,8 @@ app.use(
 );
 
 if (ENVIRONMENT === 'production' || ENVIRONMENT === 'test')
-	app.use(morganProd('common'));
+	morganDev(app);
+// app.use(morganProd('common'));
 else morganDev(app);
 
 // App Route
