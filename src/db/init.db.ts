@@ -15,7 +15,7 @@ export default {
                 logger.info('DB connection successful')
             })
             .catch((e) => {
-                logger.error('Could not establish db connection', e);
+                logger.error('Could not establish db connection\n', e);
                 process.exit(1);
             });
     }
