@@ -3,7 +3,6 @@ import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 
 export class DestinationRecommendedTime extends Model<InferAttributes<DestinationRecommendedTime>, InferCreationAttributes<DestinationRecommendedTime>> {
-    declare id?: string;
     destinationID!: ForeignKey<Destination['id']>;
     start!: string;
     end!: string;
@@ -11,21 +10,14 @@ export class DestinationRecommendedTime extends Model<InferAttributes<Destinatio
 
 DestinationRecommendedTime.init({
     // Model attributes are defined here
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-        validate: {
-            isUUID: 4
-        }
-    },
     destinationID: {
-        type: DataTypes.UUID,
-        allowNull: false
+        type: DataTypes.UUID, 
+        primaryKey: true,
+
     },
     start: {
         type: DataTypes.STRING,
-        allowNull: false,
+        primaryKey: true,
         validate: {
             is: {
                 msg: "Khung thời gian đề xuất không hợp lệ (HH:MM)",
@@ -35,7 +27,7 @@ DestinationRecommendedTime.init({
     },
     end: {
         type: DataTypes.STRING,
-        allowNull: false,
+        primaryKey: true,
         validate: {
             is: {
                 msg: "Khung thời gian đề xuất không hợp lệ (HH:MM)",

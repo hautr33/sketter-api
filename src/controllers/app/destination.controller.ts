@@ -23,7 +23,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
+        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities, recommendedTimes
     } = req.body;
 
     const images = req.body.images as DestinationImage[]
@@ -37,6 +37,9 @@ export const createDestination = catchAsync(async (req, res, next) => {
         }, { transaction: create })
         await destination.addCatalogs(catalogs, { transaction: create })
         await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
+        for (let i = 0; i < recommendedTimes.length; i++) {
+            await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
+        }
         for (let i = 0; i < images.length; i++) {
             await destination.createImage(images[i], { transaction: create })
         }
@@ -57,10 +60,16 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { name, address, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs
+        openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
 
     const images = req.body.images as DestinationImage[]
+
+    if (res.locals.user.roleID == Roles["Supplier Manager"]) {
+        const { longitude, latitude } = req.body;
+        destination.longitude = longitude
+        destination.latitude = latitude
+    }
 
     destination.name = name
     destination.address = address
@@ -71,6 +80,9 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     destination.highestPrice = highestPrice
     destination.openingTime = openingTime
     destination.closingTime = closingTime
+    destination.estimatedTimeStay = estimatedTimeStay
+    destination.status = status
+
 
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
@@ -109,7 +121,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         attributes: { exclude: DestinationPrivateFields.getAllTraveler },
         include: [
             { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
-            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
+            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
         ],
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
@@ -164,7 +176,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             attributes: { exclude: privatFields },
             include: [
                 { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
-                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
+                { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
             ],
             order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -222,7 +234,6 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
             order: [['visitCount', 'DESC'], ['planCount', 'DESC']]
         })
     const destination = _.omit(result.toJSON(), []);
-    destination.catalogs = _.map(destination.catalogs, function (catalog) { return catalog.name; })
     destination.destinationPersonalities = personality
     if (role === Roles.Traveler)
         await Destination.increment({ view: 1 }, { where: { id: destination.id } })
@@ -282,7 +293,7 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
         attributes: { exclude: DestinationPrivateFields.getAllTraveler },
         include: [
             { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
-            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: [] } }
+            { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
         ],
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
@@ -319,7 +330,7 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
 })
 const validate = async (body: any, supplierID: string) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs
+        openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes
     } = body;
 
     if (supplierID == null || supplierID == '')
@@ -347,6 +358,9 @@ const validate = async (body: any, supplierID: string) => {
     if (!images || images === null || images.length === 0)
         return 'Vui lòng thêm ảnh vào địa điểm'
 
+    if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
+        return 'Vui lòng thêm khung giờ lý tưởng vào địa điểm'
+
     if (longitude != null && (typeof longitude !== 'number' || longitude < -180 || longitude > 180))
         return 'Kinh độ không hợp lệ'
 
@@ -358,6 +372,10 @@ const validate = async (body: any, supplierID: string) => {
 
     if (typeof lowestPrice !== 'number')
         return 'Giá thấp nhất không hợp lệ'
+
+    if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
+        return 'Thời gian ở lại không hợp lệ'
+
 
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
 
@@ -374,7 +392,7 @@ const validate = async (body: any, supplierID: string) => {
 }
 
 const destinationInclude = [
-    { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: { exclude: ['id'] } },
+    { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] },
     { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
     { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
     { model: User, as: 'supplier', attributes: { exclude: UserPrivateFields[Roles.Supplier] } }
