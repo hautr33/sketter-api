@@ -155,7 +155,7 @@ Destination.init({
     },
     status: {
         type: DataTypes.STRING,
-        defaultValue: Status.unverified
+        defaultValue: Status.verified
     },
     rating: {
         type: DataTypes.INTEGER,

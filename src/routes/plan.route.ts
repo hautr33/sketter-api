@@ -14,14 +14,11 @@ router.use(deserializeUser, requireUser);
 router
     .route('/')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), createPlan))
+    .get(standardPipeline(restrictTo(Roles.Traveler), getAllPublicPlan))
 
 router
     .route('/me')
     .get(standardPipeline(restrictTo(Roles.Traveler), getAllCreatedPlan))
-
-router
-    .route('/public')
-    .get(standardPipeline(restrictTo(Roles.Traveler), getAllPublicPlan))
 
 router
     .route('/:id')

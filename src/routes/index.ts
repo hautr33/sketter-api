@@ -12,10 +12,10 @@ const router = express.Router();
 router.get("/healthcheck", (_, res) => res.status(StatusCodes.OK).send({ "status": "success", "message": "Welcome to Sketter" }));
 
 router.use('/api/v1/auth', auth);
-router.use('/api/v1/user', user);
-router.use('/api/v1/destination', destination);
-router.use('/api/v1/catalog', catalog);
+router.use('/api/v1/users', user);
+router.use('/api/v1/destinations', destination);
+router.use('/api/v1/catalogs', catalog);
 router.use('/api/v1/personalities', personalities);
-router.use('/api/v1/plan', plan);
+router.use('/api/v1/plans', plan);
 
 export default router;

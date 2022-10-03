@@ -195,7 +195,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 
     if (password !== confirmPassword)
         return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
-
+        
     const hashedToken = crypto
         .createHash('sha256')
         .update(req.params.token)
@@ -256,7 +256,6 @@ export const requireStatus = (...status: string[]): RequestHandler => (_req, res
     */
 
     const userStatus = res.locals.user.status
-    console.log(userStatus)
     if (!status.includes(userStatus)) {
         if (userStatus == Status.unverified) {
             return next(

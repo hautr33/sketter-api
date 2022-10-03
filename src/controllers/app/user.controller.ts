@@ -16,9 +16,9 @@ import { sendEmail } from "../../services/mail.service";
 import { PAGE_LIMIT } from "../../config/default";
 
 export const sendVerifyEmail = catchAsync(async (_req, res, next) => {
-    const user = await User.findOne({ where: { id: res.locals.user.id, status: Status.unverified }, attributes: ['id', 'email', 'name'] })
-    if (!user)
-        return next(new AppError('Không tìm thấy tài khoản này', StatusCodes.NOT_FOUND))
+    const user = await User.findOne({ where: { id: res.locals.user.id }, attributes: ['id', 'email', 'name', 'status'] })
+    if (user?.status !== Status.unverified)
+        return next(new AppError('Tài khoản đã được xác thực', StatusCodes.NOT_FOUND))
 
     await sequelizeConnection.transaction(async (verify) => {
         const code = await user.createVerifyCode();
