@@ -330,8 +330,11 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
 })
 const validate = async (body: any, supplierID: string) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes
+        openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes, status
     } = body;
+
+    if ((status != undefined && status != null) && (status !== Status.verified && status !== Status.closed))
+        return 'Trạng thái không hợp lệ'
 
     if (supplierID == null || supplierID == '')
         return 'Vui lòng nhập ID của đối tác'
