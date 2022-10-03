@@ -33,9 +33,11 @@ app.set('view engine', 'pug');
 if (ENVIRONMENT === 'production') {
 	const whitelistOrg = [
 		'localhost',
-		'localhost:443',
+		'localhost:3123',
+		'sketter-smart-planner.herokuapp.com',
 		'https://localhost',
-		'https://localhost:443'
+		'https://localhost:3123',
+		'https://sketter-smart-planner.herokuapp.com'
 	];
 	// Only same origin and localhost
 	const corsOptions: CorsOptions = {
