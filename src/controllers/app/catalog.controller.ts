@@ -18,7 +18,6 @@ export const getAllCatalog = catch_async(async (_req, res, next) => {
         }
     )
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { catalogs });
-
     next()
 })
 
