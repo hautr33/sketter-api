@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { deserializeUser } from "../middlewares/deserialize_user";
 import { requireUser } from "../middlewares/require_user";
-import { createUser, getAllSupplier, getAllUser, getMe, getOneUser, updateMe, updatePassword, updateUser, sendVerifyEmail, verifyEmail, deactivateUser } from "../controllers/app/user.controller";
+import { getMe, updateMe, updatePassword, sendVerifyEmail, verifyEmail, forgotPassword, resetPassword, } from "../controllers/app/user.controller";
 import { standardPipeline } from "../pipes";
-import { forgotPassword, resetPassword, restrictTo } from "../controllers/app/auth.controller";
+import { restrictTo } from "../controllers/app/auth.controller";
 import { Roles } from "../utils/constant";
+import { getAllSupplier } from "../controllers/app/user_supplier_manager.controller";
+import { createUser, deactivateUser, getAllUser, getOneUser, updateUser } from "../controllers/app/user_admin.controller";
 
 const router = Router();
 

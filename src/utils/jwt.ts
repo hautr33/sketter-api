@@ -91,10 +91,10 @@ export const createSendToken = (
         Session.create({ userID: userID, iat: decoded.iat, exp: decoded.exp })
         // Send the JWT Token as cookie
         res.cookie('jwt', token, cookieOptions);
-        res.resDocument = new RESDocument(statusCode, 'success', { token });
+        res.resDocument = new RESDocument(statusCode, 'Đăng nhập thành công', { token });
         next();
     } else {
-        return next(new AppError('Fail to send token', StatusCodes.BAD_GATEWAY))
+        return next(new AppError('Có lỗi xảy ra khi đăng nhập', StatusCodes.BAD_GATEWAY))
     }
 
 };

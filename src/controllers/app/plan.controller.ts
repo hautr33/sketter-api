@@ -63,7 +63,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeDetailGetOne]
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan });
     next();
 });
 
@@ -106,7 +106,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeDetailGetOne]
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan: result });
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: result });
     next();
 });
 
@@ -162,7 +162,7 @@ export const deletePlan = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
     await plan.destroy()
-    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'success', null);
+    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Xoá lịch trình thành công', null);
     next();
 })
 
