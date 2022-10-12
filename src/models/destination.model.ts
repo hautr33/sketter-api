@@ -24,9 +24,9 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     closingTime!: string;
     estimatedTimeStay!: number;
     status?: string;
-    rating?: number;
+    avgRating?: number;
     view?: number;
-    comment?: number;
+    totalRating?: number;
     supplierID!: ForeignKey<User['id']>;
     createdBy!: ForeignKey<User['id']>;
 
@@ -48,6 +48,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare createImage: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
     catalogs?: any[];
+    ratings?: any[];
 }
 
 Destination.init({
@@ -155,17 +156,23 @@ Destination.init({
     },
     status: {
         type: DataTypes.STRING,
-        defaultValue: Status.verified
+        defaultValue: Status.activated,
+        validate: {
+            isIn: {
+                args: [[Status.activated, Status.inactivated, Status.deactivated, Status.closed]],
+                msg: 'Trạng thái không hợp lệ'
+            }
+        }
     },
-    rating: {
-        type: DataTypes.INTEGER,
+    avgRating: {
+        type: DataTypes.DOUBLE(2, 1),
         defaultValue: 0
     },
     view: {
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
-    comment: {
+    totalRating: {
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
@@ -204,6 +211,8 @@ Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
 
 User.hasMany(Destination, { foreignKey: "createdBy", as: "creater" });
 Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
+
+
 
 Destination.beforeSave(async (destination) => {
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g

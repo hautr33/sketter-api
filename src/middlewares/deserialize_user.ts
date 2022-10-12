@@ -32,16 +32,15 @@ export const deserializeUser = async (
     if (!decoded)
       return next(new AppError(`Token không hợp lệ hoặc tài khoản không tồn tại`, 401));
 
-    const session = await Session.findOne({ where: { userID: decoded.id, iat: decoded.iat, exp: decoded.exp } });
-    if (!session)
-      return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
-
     const user = await User.findOne({
-      where: { id: decoded.id, status: { [Op.ne]: Status.deactivated } }, attributes: ['id', 'roleID', 'status']
+      where: { id: decoded.id, status: { [Op.ne]: Status.deactivated } }, attributes: ['id', 'roleID', 'status'],
+      include: { model: Session, as: 'session', where: { iat: decoded.iat, exp: decoded.exp }, attributes: ['id'] }
     });
     if (!user)
       return next(new AppError('Không tìm thấy tài khoản của bạn', StatusCodes.NOT_FOUND));
 
+    if (user.session.length != 1)
+      return next(new AppError('Phiên đăng nhập đã hết hạn', StatusCodes.UNAUTHORIZED))
     // This is really important (Helps us know if the user is logged in from other controllers)
     // You can do: (req.user or res.locals.user)
 
@@ -55,7 +54,6 @@ export const deserializeUser = async (
     //   });
     // const excludedUser = _.omit(user?.toJSON(), UserPrivateFields[user?.role.id ?? 0]);
     res.locals.user = user;
-    res.locals.user.sessionID = session.id;
     // if (res.locals.user.roleID === Roles.Traveler)
     //   res.locals.user.travelerPersonalities = _.map(res.locals.user.travelerPersonalities, function (personality) { return personality.name; })
     next();

@@ -48,18 +48,3 @@ export const loginViaGoogle = async (token: string): Promise<any> => {
 
     return result;
 }
-
-export const updateUserPassword = async (user: User): Promise<any> => {
-    let err = undefined;
-    await getAuth()
-        .updateUser(user.firebaseID, {
-            password: user.password,
-        })
-        .then(async () => {
-            await user.save();
-        })
-        .catch((error: any) => {
-            err = error.message
-        });
-    return err;
-}

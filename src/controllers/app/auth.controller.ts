@@ -108,7 +108,7 @@ export const login = catchAsync(async (req, res, next) => {
 
 export const logout = catchAsync(async (req, res, next) => {
     const user = res.locals.user;
-    await Session.destroy({ where: { userID: user.id, id: user.sessionID } });
+    await Session.destroy({ where: { userID: user.id, id: user.session[0].id } });
     res.clearCookie('jwt');
     req.headers.authorization = undefined;
     res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Đăng xuất thành công', null);

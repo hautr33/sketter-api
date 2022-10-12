@@ -13,7 +13,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     place?: string;
     estimatedCost!: number;
     isPublic!: boolean;
-    isActive?: boolean;
+    stastus?: string;
     travelerID!: ForeignKey<User['id']>;
 
     readonly createdAt?: Date;
@@ -79,9 +79,15 @@ Plan.init({
     isPublic: {
         type: DataTypes.BOOLEAN
     },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
+    stastus: {
+        type: DataTypes.STRING,
+        defaultValue: 'Planning',
+        validate: {
+            isIn: {
+                args: [['Planning', 'Not Started', 'Active', 'Complete']],
+                msg: 'Trạng thái không hợp lệ'
+            }
+        }
     },
     travelerID: {
         type: DataTypes.UUID

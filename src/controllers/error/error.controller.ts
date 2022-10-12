@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import logger from '../../utils/logger';
 import { ENVIRONMENT } from '../../config/default';
 import AppError from '../../utils/app_error';
 
@@ -126,11 +127,11 @@ const sendErrorProd = (err: AppError, res: Response) => {
 		// Programming or other unknown error
 	} else {
 		// Log to the console, but not to the client
-		console.error('*****ERROR*****\n', err);
+		logger.error('*****ERROR*****\n', err);
 
 		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
 			status: 'error',
-			message: 'Có lổi xảy ra!'
+			message: 'Có lỗi xảy ra!'
 		});
 	}
 };

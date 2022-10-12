@@ -34,7 +34,3 @@ Session.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Session' // We need to choose the model name
 });
-
-User.hasMany(Session, {
-    foreignKey: "userID"
-});

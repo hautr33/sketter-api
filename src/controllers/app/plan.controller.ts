@@ -17,6 +17,7 @@ import { Op } from "sequelize";
 import { Catalog } from "../../models/catalog.model";
 import { DestinationCatalog } from "../../models/destination_catalog.model";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
+// import { TravelerPersonalities } from "../../models/traveler_personalites.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
@@ -67,7 +68,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
     next();
 });
 
-
 export const updatePlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id } });
     if (!plan)
@@ -114,7 +114,7 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
 
     const plans = await Plan.findAll(
         {
-            where: { travelerID: res.locals.user.id, isActive: false },
+            where: { travelerID: res.locals.user.id, stastus: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeDetailGetAll],
             order: [['fromDate', 'ASC'], ['details', 'date', 'ASC']]

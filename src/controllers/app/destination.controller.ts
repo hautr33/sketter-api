@@ -81,7 +81,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     destination.highestPrice = highestPrice
     destination.openingTime = openingTime
     destination.closingTime = closingTime
-    destination.estimatedTimeStay = estimatedTimeStay
+    estimatedTimeStay ? destination.estimatedTimeStay = estimatedTimeStay : 0
     destination.status = status
 
     const result = await sequelizeConnection.transaction(async (update) => {
@@ -249,7 +249,7 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
 })
 
 export const bookmarkDestination = catchAsync(async (req, res, next) => {
-    const id = req.query.id as string;
+    const id = req.params.id as string;
     const destination = await Destination.findOne({ where: { id: id, status: Status.verified } })
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
@@ -327,8 +327,6 @@ const validate = async (body: any, supplierID: string) => {
     if ((status != undefined && status != null) && (status !== Status.verified && status !== Status.closed))
         return 'Trạng thái không hợp lệ'
 
-    if (supplierID == null || supplierID == '')
-        return 'Vui lòng nhập ID của đối tác'
     const images = body.images as DestinationImage[]
 
     if (!name || name === '' || name === null)
@@ -369,7 +367,6 @@ const validate = async (body: any, supplierID: string) => {
 
     if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
         return 'Thời gian ở lại không hợp lệ'
-
 
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
 

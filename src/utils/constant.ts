@@ -40,6 +40,8 @@ export class Status {
 
     public static readonly verified = 'Verified';
 
+    public static readonly activated = 'Activated';
+
     public static readonly inactivated = 'Inactivated';
 
     public static readonly deactivated = 'Deactivated';

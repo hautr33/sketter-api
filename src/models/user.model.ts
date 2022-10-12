@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { Role } from './role.model';
 import { Personalities } from './personalities.model';
 import { TravelerPersonalities } from './traveler_personalites.model';
+import { Session } from './session.model';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare id: string;
@@ -38,6 +39,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     declare setTravelerPersonalities: HasManySetAssociationsMixin<Personalities, string>;
     role?: any
     travelerPersonalities?: any
+    session?: any
 }
 
 User.init({
@@ -155,6 +157,8 @@ User.belongsTo(Role, { foreignKey: 'roleID', as: 'role' })
 User.belongsToMany(Personalities, { through: TravelerPersonalities, foreignKey: "userID", as: 'travelerPersonalities' });
 Personalities.belongsToMany(User, { through: TravelerPersonalities, foreignKey: "personality", as: 'travelerPersonalities' });
 
+User.hasMany(Session, { foreignKey: "userID", as: 'session' });
+Session.belongsTo(User, { foreignKey: "userID", as: 'session' })
 
 User.beforeSave(async (user) => {
     if (user.roleID == Roles.Supplier) {

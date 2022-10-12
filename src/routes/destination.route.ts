@@ -5,6 +5,7 @@ import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
 import { bookmarkDestination, createDestination, deleteOneDestination, getAllDestination, getBookmarkDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
+import { deleteRating, getAllRating, ratingDestination, updateRating } from "../controllers/app/destination_rating.controller";
 
 const router = Router();
 
@@ -20,7 +21,15 @@ router.route('/search')
 
 router.route('/bookmark')
     .get(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), getBookmarkDestination))
+
+router.route('/:id/bookmark')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), bookmarkDestination))
+
+router.route('/:id/rating')
+    .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), ratingDestination))
+    .patch(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), updateRating))
+    .delete(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), deleteRating))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles["Supplier Manager"]), requireStatus(Status.verified), getAllRating))
 
 router
     .route('/:id')
