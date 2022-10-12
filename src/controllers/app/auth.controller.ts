@@ -10,6 +10,7 @@ import { Role } from '../../models/role.model';
 import { Session } from '../../models/session.model';
 import { createSendToken } from '../../utils/jwt';
 import { loginViaGoogle, signUpFirebase } from '../../services/firebase/firebase_admin.service';
+import { Op } from 'sequelize/types';
 
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body
@@ -74,7 +75,7 @@ export const login = catchAsync(async (req, res, next) => {
             return next(new AppError('Email hoặc mật khẩu không đúng', StatusCodes.BAD_REQUEST));
 
         // Check password
-        const user = await User.findOne({ where: { email: email } });
+        const user = await User.findOne({ where: { email: email, status: { [Op.ne]: Status.deactivated } } });
         if (!user || !(await user.comparePassword(password as string)))
             return next(new AppError('Email hoặc mật khẩu không đúng', StatusCodes.BAD_REQUEST));
 
