@@ -10,7 +10,7 @@ import { Role } from '../../models/role.model';
 import { Session } from '../../models/session.model';
 import { createSendToken } from '../../utils/jwt';
 import { loginViaGoogle, signUpFirebase } from '../../services/firebase/firebase_admin.service';
-import { Op } from 'sequelize/types';
+import { Op } from 'sequelize';
 
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body
