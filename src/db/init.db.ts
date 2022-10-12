@@ -1,16 +1,16 @@
 import sequelizeConnection from './sequelize.db'
-import { ENVIRONMENT } from '../config/default'
+// import { ENVIRONMENT } from '../config/default'
 import logger from '../utils/logger'
 
 /**
  * DB Connection related actions
  */
 
-const isDev = ENVIRONMENT === 'development'
+// const isDev = ENVIRONMENT === 'development'
 
 export default {
     connect(): Promise<void> {
-        return sequelizeConnection.sync({ alter: isDev, logging: false })
+        return sequelizeConnection.sync({ alter: true, logging: false })
             .then(() => {
                 logger.info('DB connection successful')
             })
