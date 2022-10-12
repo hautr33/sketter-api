@@ -21,7 +21,7 @@ export const ratingDestination = catch_async(async (req, res, next) => {
             { transaction: create })
         const sum = await DestinationRating.sum("star", { where: { destinationID: req.params.id }, transaction: create })
         const count = await DestinationRating.count({ where: { destinationID: req.params.id }, transaction: create })
-        await Destination.update({ avgRating: sum / count, totalRating: count }, { where: { id: req.params.id }, transaction: create })
+        await Destination.update({ avgRating: count ? sum / count : 0, totalRating: count ? count : 0 }, { where: { id: req.params.id }, transaction: create })
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'Đánh giá địa điểm thành công', null)
     next()
@@ -45,7 +45,7 @@ export const updateRating = catch_async(async (req, res, next) => {
         })
         const sum = await DestinationRating.sum("star", { where: { destinationID: req.params.id }, transaction: update })
         const count = await DestinationRating.count({ where: { destinationID: req.params.id }, transaction: update })
-        await Destination.update({ avgRating: sum / count, totalRating: count }, { where: { id: req.params.id }, transaction: update })
+        await Destination.update({ avgRating: count ? sum / count : 0, totalRating: count ? count : 0 }, { where: { id: req.params.id }, transaction: update })
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'Chỉnh sửa đánh giá thành công', null)
     next()
@@ -61,7 +61,7 @@ export const deleteRating = catch_async(async (req, res, next) => {
         await DestinationRating.destroy({ where: { destinationID: req.params.id, userID: res.locals.user.id }, transaction: update })
         const sum = await DestinationRating.sum("star", { where: { destinationID: req.params.id }, transaction: update })
         const count = await DestinationRating.count({ where: { destinationID: req.params.id }, transaction: update })
-        await Destination.update({ avgRating: sum / count, totalRating: count }, { where: { id: req.params.id }, transaction: update })
+        await Destination.update({ avgRating: count ? sum / count : 0, totalRating: count ? count : 0 }, { where: { id: req.params.id }, transaction: update })
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'Đánh giá của bạn đã được xoá', null)
     next()
@@ -70,20 +70,16 @@ export const deleteRating = catch_async(async (req, res, next) => {
 export const getAllRating = catch_async(async (req, res, next) => {
     const rating = await Destination.findOne({
         where: { id: req.params.id },
-        include: [
-            {
-                model: DestinationRating, //including ratings array
-                where: { userID: { [Op.ne]: res.locals.user.id } },
-                as: 'ratings',
-                attributes: ['userID', 'star', 'description'], //but making it empty
-
-            },
-        ],
         attributes: ['avgRating', 'totalRating']
     })
 
     if (!rating)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
+
+    const otherRating = await DestinationRating.findAll({
+        where: { destinationID: req.params.id, userID: { [Op.ne]: res.locals.user.id } },
+        attributes: ['userID', 'star', 'description']
+    })
 
     const myRating = await DestinationRating.findOne({
         where: { destinationID: req.params.id, userID: res.locals.user.id },
@@ -93,7 +89,7 @@ export const getAllRating = catch_async(async (req, res, next) => {
         'avgRating': rating.avgRating,
         'totalRating': rating.totalRating,
         'myRating': myRating,
-        'otherRating': rating.ratings
+        'otherRating': otherRating
     })
     next()
 })

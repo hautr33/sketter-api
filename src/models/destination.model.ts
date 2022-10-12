@@ -48,7 +48,6 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare createImage: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
     catalogs?: any[];
-    ratings?: any[];
 }
 
 Destination.init({
