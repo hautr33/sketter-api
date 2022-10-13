@@ -128,7 +128,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const count = await Destination.count({
         where: {
             name: { [Op.iLike]: `%${name}%` },
-            status: Status.verified,
+            status: Status.activated,
             id: {
                 [Op.in]: Sequelize.literal(`(
                     SELECT "destinationID"
@@ -163,7 +163,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
         option = { supplierID: res.locals.user.id }
         privatFields = DestinationPrivateFields.getAllSupplier
     } else if (roleID == Roles.Traveler) {
-        option = { status: Status.verified }
+        option = { status: Status.activated }
         privatFields = DestinationPrivateFields.getAllTraveler
 
     }
@@ -201,7 +201,7 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
 
     if (role === Roles.Traveler) {
         result = await Destination.findOne({
-            where: { id: req.params.id, status: Status.verified },
+            where: { id: req.params.id, status: Status.activated },
             attributes: { exclude: DestinationPrivateFields.default },
             include: destinationInclude
         })
@@ -250,7 +250,7 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
 
 export const bookmarkDestination = catchAsync(async (req, res, next) => {
     const id = req.params.id as string;
-    const destination = await Destination.findOne({ where: { id: id, status: Status.verified } })
+    const destination = await Destination.findOne({ where: { id: id, status: Status.activated } })
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
@@ -324,7 +324,7 @@ const validate = async (body: any, supplierID: string) => {
         openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes, status
     } = body;
 
-    if ((status != undefined && status != null) && (status !== Status.verified && status !== Status.closed))
+    if ((status != undefined && status != null) && (status !== Status.activated && status !== Status.closed))
         return 'Trạng thái không hợp lệ'
 
     const images = body.images as DestinationImage[]
