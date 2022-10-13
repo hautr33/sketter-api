@@ -86,10 +86,12 @@ export const getAllRating = catch_async(async (req, res, next) => {
         attributes: ['userID', 'star', 'description']
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
-        'avgRating': rating.avgRating,
-        'totalRating': rating.totalRating,
-        'myRating': myRating,
-        'otherRating': otherRating
+        rating: {
+            'avgRating': rating.avgRating,
+            'totalRating': rating.totalRating,
+            'myRating': myRating,
+            'otherRating': otherRating
+        }
     })
     next()
 })
