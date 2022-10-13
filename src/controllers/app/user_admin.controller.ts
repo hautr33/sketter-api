@@ -23,6 +23,13 @@ export const createUser = catchAsync(async (req, res, next) => {
     if (password !== confirmPassword)
         return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
 
+    if (password !== confirmPassword)
+        return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
+
+    const count = await User.count({ where: { email: email } })
+    if (count > 0)
+        return next(new AppError('Email đã được sử dụng bởi tài khoản khác', StatusCodes.BAD_REQUEST));
+
     const user = new User();
     user.name = name;
     user.email = email;

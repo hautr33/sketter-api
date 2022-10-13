@@ -51,3 +51,4 @@ export class Status {
 
 export const listStatusDestination = [Status.activated, Status.inactivated, Status.deactivated, Status.closed];
 export const listStatusUser = [Status.unverified, Status.verified, Status.inactivated, Status.deactivated];
+export const listRole = ['Admin', 'Supplier Manager', 'Supplier', 'Traveler'];
