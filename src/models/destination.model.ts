@@ -164,7 +164,7 @@ Destination.init({
         }
     },
     avgRating: {
-        type: DataTypes.DOUBLE(2, 1),
+        type: DataTypes.DECIMAL,
         defaultValue: 0
     },
     view: {

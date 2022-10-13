@@ -49,4 +49,5 @@ export class Status {
     public static readonly closed = 'Closed';
 }
 
-export const listStatus = ['Unverified', 'Verified', 'Inactivated', 'Deactivated', 'Closed']
+export const listStatusDestination = [Status.activated, Status.inactivated, Status.deactivated, Status.closed];
+export const listStatusUser = [Status.unverified, Status.verified, Status.inactivated, Status.deactivated];

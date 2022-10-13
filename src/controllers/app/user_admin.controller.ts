@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { listStatus, Roles, Status } from "../../utils/constant";
+import { listStatusUser, Roles, Status } from "../../utils/constant";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import AppError from "../../utils/app_error";
@@ -52,7 +52,7 @@ export const updateUser = catchAsync(async (req, res, next) => {
 
     const { name, avatar, status } = req.body;
 
-    if (status && !listStatus.includes(status))
+    if (status && !listStatusUser.includes(status))
         return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
 
     await User.update({ name: name, avatar: avatar, status: status }, { where: { id: id } })
@@ -75,7 +75,7 @@ export const getAllUser = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = req.query.status as string;
 
-    if (status && !listStatus.includes(status))
+    if (status && !listStatusUser.includes(status))
         return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
 
     const users = await User.findAll(

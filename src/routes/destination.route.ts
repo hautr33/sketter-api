@@ -4,8 +4,9 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { bookmarkDestination, createDestination, deleteOneDestination, getAllDestination, getBookmarkDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
+import { createDestination, deleteOneDestination, getAllDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
 import { deleteRating, getAllRating, ratingDestination, updateRating } from "../controllers/app/destination_rating.controller";
+import { bookmarkDestination, getBookmarkDestination } from "../controllers/app/destination_bookmark.controller";
 
 const router = Router();
 
