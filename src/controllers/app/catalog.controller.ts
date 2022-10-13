@@ -6,6 +6,10 @@ import AppError from "../../utils/app_error";
 import { Op } from "sequelize";
 import { Roles } from "../../utils/constant";
 
+/**
+ * This controller is getAllCatalog that get all catalogs
+ *
+ */
 export const getAllCatalog = catch_async(async (_req, res, next) => {
     const catalogs = await Catalog.findAll(
         {
@@ -23,6 +27,10 @@ export const getAllCatalog = catch_async(async (_req, res, next) => {
     next()
 })
 
+/**
+ * This controller is createCatalog that get all catalogs
+ *
+ */
 export const createCatalog = catch_async(async (req, res, next) => {
     const { name, parent } = req.body;
     if (!name)

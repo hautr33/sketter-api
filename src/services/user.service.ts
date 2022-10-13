@@ -7,11 +7,18 @@ import sequelizeConnection from "../db/sequelize.db"
 import _ from "lodash"
 import { getAuth } from "firebase-admin/auth"
 import { sendEmail } from "./mail.service"
+import { PAGE_LIMIT } from "../config/default"
+import { Op } from "sequelize"
+import RESDocument from "../controllers/factory/res_document"
+import { StatusCodes } from "http-status-codes"
 
 /**
  * This method get User's information
  *
  * @param {*} id ID of User
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const getUserService = async (id: string) => {
     const user = await User.findByPk(
@@ -29,18 +36,61 @@ export const getUserService = async (id: string) => {
 }
 
 /**
+ * This method get all user
+ *
+ * @param {*} page number of current page
+ * @param {*} status status of user
+ * @author HauTr
+ * @version 0.0.1
+ *
+ */
+export const getAllUserService = async (page: number, status: string) => {
+    const query = status ? { status: status, roleID: { [Op.ne]: Roles.Admin } } : { roleID: { [Op.ne]: Roles.Admin } }
+    const users = await User.findAll(
+        {
+            where: query,
+            attributes: { exclude: UserPrivateFields[0] },
+            include: [{ model: Role, as: 'role', attributes: { exclude: ['id'] } }],
+            order: [['name', 'ASC']],
+            offset: (page - 1) * PAGE_LIMIT,
+            limit: PAGE_LIMIT,
+        }
+    )
+    const count = await User.count(
+        {
+            where: query
+        })
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { users }
+    )
+    if (count != 0) {
+        const maxPage = Math.ceil(count / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    return resDocument
+}
+
+/**
  * This method update User's information
  *
  * @param {*} id ID of User
  * @param {*} body Body is some field to be update
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
-export const updateUserService = async (id: string, body: any) => {
+export const updateUserService = async (id: string, body: any, isAdmin?: boolean) => {
     const user = await User.findByPk(id)
     if (!user)
         return null
-    const { name, avatar, travelerPersonalities } = body;
+    const { name, avatar, travelerPersonalities, status } = body;
     name ? user.name = name : 0
     avatar ? user.avatar = avatar : 0
+    isAdmin ? status ? user.status = status : 0 : 0
     if (user.roleID == Roles.Traveler) {
         const { gender, dob, phone, address } = body;
         phone ? user.phone = phone : 0
@@ -55,7 +105,8 @@ export const updateUserService = async (id: string, body: any) => {
     }
     await sequelizeConnection.transaction(async (update) => {
         await user.save({ transaction: update })
-        travelerPersonalities ? await user.setTravelerPersonalities(travelerPersonalities, { transaction: update }) : 0
+        if (user.roleID === Roles.Traveler && travelerPersonalities)
+            await user.setTravelerPersonalities(travelerPersonalities, { transaction: update })
     })
     return user
 }
@@ -65,6 +116,9 @@ export const updateUserService = async (id: string, body: any) => {
  *
  * @param {*} user User that change password
  * @param {*} newPassword New Password of User
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const updateUserPasswordService = async (user: User, newPassword: string) => {
     await sequelizeConnection.transaction(async (update) => {
@@ -80,6 +134,9 @@ export const updateUserPasswordService = async (user: User, newPassword: string)
  * This method send email to verify User's account
  *
  * @param {*} user User that verify account
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const sendVerifyEmailService = async (user: User) => {
     await sequelizeConnection.transaction(async (verify) => {
@@ -100,9 +157,35 @@ export const sendVerifyEmailService = async (user: User) => {
  * This method verify User account
  *
  * @param {*} id ID of User
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const verifyEmailService = async (id: string) => {
     await sequelizeConnection.transaction(async (verify) => {
         await User.update({ verifyCode: null, verifyCodeExpires: null, status: Status.verified }, { where: { id: id }, transaction: verify })
     })
+}
+
+/**
+ * This method check password
+ *
+ * @param {*} password
+ * @param {*} confirmPassword
+ * @param {*} oldPassword
+ * @author HauTr
+ * @version 0.0.1
+ *
+ */
+export const checkPassword = (password: string, confirmPassword: string, oldPassword?: string) => {
+    if (oldPassword && (password === oldPassword))
+        return 'Vui lòng nhập mật khẩu mới khác với mật khẩu hiện tại'
+
+    if (!password || password.length < 6 || password.length > 16)
+        return 'Mật khẩu phải có từ 6 đến 16 kí tự'
+
+    if (password !== confirmPassword)
+        return 'Nhập lại mật khẩu không khớp'
+
+    return null
 }

@@ -117,7 +117,7 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
             where: { travelerID: res.locals.user.id, stastus: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeDetailGetAll],
-            order: [['fromDate', 'ASC'], ['details', 'date', 'ASC']]
+            order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
@@ -132,7 +132,7 @@ export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
             where: { isPublic: true },
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeTraveler, includeDetailGetAll],
-            order: [['fromDate', 'ASC'], ['details', 'date', 'ASC']]
+            order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
@@ -246,7 +246,7 @@ const includeDetailGetOne = {
         {
             model: Destination, as: 'stayDestination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
                 {
-                    model: DestinationImage, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
+                    model: DestinationImage, as: 'gallery', attributes: { exclude: DestinationImagePrivateFields.default }
                 }
             ]
         },
@@ -255,7 +255,7 @@ const includeDetailGetOne = {
                 {
                     model: Destination, as: 'destination', attributes: { exclude: DestinationPrivateFields.getAllTraveler }, include: [
                         {
-                            model: DestinationImage, as: 'images', attributes: { exclude: DestinationImagePrivateFields.default }
+                            model: DestinationImage, as: 'gallery', attributes: { exclude: DestinationImagePrivateFields.default }
                         }
                     ]
                 }

@@ -10,10 +10,13 @@ import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
 import { Op } from "sequelize";
 import { sendEmail } from "../../services/mail.service";
-import { getUserService, sendVerifyEmailService, updateUserPasswordService, updateUserService, verifyEmailService } from '../../services/user.service';
+import { checkPassword, getUserService, sendVerifyEmailService, updateUserPasswordService, updateUserService, verifyEmailService } from '../../services/user.service';
 
 /**
  * This controller is getMe that get profile of logged in User
+ *
+ * @author HauTr
+ * @version 0.0.1
  *
  */
 export const getMe = catchAsync(async (_req, res, next) => {
@@ -29,6 +32,9 @@ export const getMe = catchAsync(async (_req, res, next) => {
 /**
  * This controller is updateMe that update profile of logged in User
  *
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const updateMe = catchAsync(async (req, res, next) => {
 
@@ -43,19 +49,17 @@ export const updateMe = catchAsync(async (req, res, next) => {
 /**
  * This controller is updatePassword that update password of logged in User
  *
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const updatePassword = catchAsync(async (req, res, next) => {
 
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
-    if (currentPassword == newPassword)
-        return next(new AppError('Vui lòng nhập mật khẩu mới khác với mật khẩu hiện tại', StatusCodes.BAD_REQUEST))
-
-    if (!newPassword || newPassword.length < 6 || newPassword.length > 15)
-        return next(new AppError('Mật khẩu mới phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST))
-
-    if (newPassword !== confirmNewPassword)
-        return next(new AppError('Nhập lại mật khẩu mới không khớp', StatusCodes.BAD_REQUEST))
+    const err = checkPassword(newPassword, confirmNewPassword, currentPassword)
+    if (err !== null)
+        return next(new AppError(err, StatusCodes.BAD_REQUEST))
 
     const user = await User.findOne({ where: { id: res.locals.user.id } })
     if (!user || !(await user.comparePassword(currentPassword)))
@@ -68,8 +72,11 @@ export const updatePassword = catchAsync(async (req, res, next) => {
 });
 
 /**
- * This controller is forgotPassword that send an email
+ * This controller is forgotPassword that send an email 
  * to reset user password when they forgot
+ *
+ * @author HauTr
+ * @version 0.0.1
  *
  */
 export const forgotPassword = catchAsync(async (req, res, next) => {
@@ -99,19 +106,20 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 /**
- * This controller is resetPassword that set new password
+ * This controller is resetPassword that set new password 
  * after click on reset password url in forgot password email
+ *
+ * @author HauTr
+ * @version 0.0.1
  *
  */
 export const resetPassword = catchAsync(async (req, res, next) => {
 
     const { password, confirmPassword } = req.body;
 
-    if (!password || password.length < 6 || password.length > 15)
-        return next(new AppError('Mật khẩu phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST));
-
-    if (password !== confirmPassword)
-        return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
+    const err = checkPassword(password, confirmPassword)
+    if (err)
+        return next(new AppError(err, StatusCodes.BAD_REQUEST));
 
     const hashedToken = crypto
         .createHash('sha256')
@@ -137,6 +145,9 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 /**
  * This controller is sendVerifyEmail that send a email to verify user's account
  *
+ * @author HauTr
+ * @version 0.0.1
+ *
  */
 export const sendVerifyEmail = catchAsync(async (_req, res, next) => {
 
@@ -156,6 +167,9 @@ export const sendVerifyEmail = catchAsync(async (_req, res, next) => {
 
 /**
  * This controller is verifyEmail that enter code from email to verify user's account
+ *
+ * @author HauTr
+ * @version 0.0.1
  *
  */
 export const verifyEmail = catchAsync(async (req, res, next) => {

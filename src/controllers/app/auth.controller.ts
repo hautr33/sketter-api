@@ -11,15 +11,18 @@ import { Session } from '../../models/session.model';
 import { createSendToken } from '../../utils/jwt';
 import { loginViaGoogle, signUpFirebase } from '../../services/firebase/firebase_admin.service';
 import { Op } from 'sequelize';
+import { checkPassword } from '../../services/user.service';
 
+/**
+ * This controller is signup that user can sign up with traveler or supplier role
+ *
+ */
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body
     const { email, password, confirmPassword, role } = req.body;
-    if (!password || password.length < 6 || password.length > 16)
-        return next(new AppError('Mật khẩu phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST));
-
-    if (password !== confirmPassword)
-        return next(new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST));
+    const err = checkPassword(password, confirmPassword)
+    if (err)
+        return next(new AppError(err, StatusCodes.BAD_REQUEST));
 
     // Check user exist
     const count = await User.count({ where: { email: email } });
@@ -41,27 +44,19 @@ export const signup = catchAsync(async (req, res, next) => {
         user.phone = phone;
         user.address = address;
     } else
-        return next(new AppError('Có lỗi xảy ra khi đăng kí', StatusCodes.BAD_GATEWAY));
+        return next(new AppError('Không thể đăng kí', StatusCodes.BAD_GATEWAY));
 
-    // Add user to db
-    await user.save()
-        .then(async () => {
-            // Add user to firebase
-            const err = await signUpFirebase(email, password)
-            if (err)
-                return next(new AppError(err, StatusCodes.BAD_REQUEST));
-            else {
-                res.resDocument = new RESDocument(StatusCodes.OK, 'Đăng kí thành công', null);
-                next();
-            }
-        })
-        .catch((error) => {
-            return next(new AppError(error.errors[0].message, StatusCodes.BAD_REQUEST));
-        });
+    await signUpFirebase(user)
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Đăng kí thành công', null);
+    next();
 
 
 });
 
+/**
+ * This controller is login that enter email and password to login to Sketter
+ *
+ */
 export const login = catchAsync(async (req, res, next) => {
     // Check auth type
     const authType = req.query.auth as string;
@@ -98,15 +93,17 @@ export const login = catchAsync(async (req, res, next) => {
         if (!token)
             return next(new AppError('Token không hợp lệ', StatusCodes.BAD_REQUEST));
 
-        const result: any = await loginViaGoogle(token)
-        if (typeof result === 'string')
-            return next(new AppError(result, StatusCodes.BAD_REQUEST));
-        else {
-            createSendToken(result.id, StatusCodes.OK, res, next);
-        }
+        const user = await loginViaGoogle(token)
+        if (!user)
+            return next(new AppError('Không thể đăng nhập', StatusCodes.BAD_REQUEST));
+        createSendToken(user.id, StatusCodes.OK, res, next);
     }
 });
 
+/**
+ * This controller is logout that will destroy the current session
+ *
+ */
 export const logout = catchAsync(async (req, res, next) => {
     const user = res.locals.user;
     await Session.destroy({ where: { userID: user.id, id: user.session[0].id } });
@@ -116,8 +113,6 @@ export const logout = catchAsync(async (req, res, next) => {
 
     next();
 });
-
-
 
 export const restrictTo = (...roles: Role['id'][]): RequestHandler => (_req, res, next) => {
     /* 
@@ -141,7 +136,6 @@ export const requireStatus = (...status: string[]): RequestHandler => (_req, res
     We check if the attached User with the "role" is in the 
       whitelist of permissions
     */
-
     const userStatus = res.locals.user.status
     if (!status.includes(userStatus)) {
         if (userStatus == Status.unverified) {

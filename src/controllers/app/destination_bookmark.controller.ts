@@ -9,7 +9,6 @@ import { DestinationPrivateFields } from "../../utils/private_field";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
 import { DestinationBookmark } from "../../models/destination_bookmark.model";
-import { DestinationImage } from "../../models/destination_image.model";
 import { Catalog } from "../../models/catalog.model";
 
 export const bookmarkDestination = catchAsync(async (req, res, next) => {
@@ -35,19 +34,21 @@ export const bookmarkDestination = catchAsync(async (req, res, next) => {
 
 export const getBookmarkDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const query = {
+        id: {
+            [Op.in]: Sequelize.literal(`(
+            SELECT "destinationID"
+            FROM public."DestinationBookmarks" AS bookmark
+            WHERE
+                bookmark."isBookmark" = true
+                AND
+                bookmark."travelerID" = '${res.locals.user.id}'
+    )`)
+        }
+    }
+
     const destinations = await Destination.findAll({
-        where: {
-            id: {
-                [Op.in]: Sequelize.literal(`(
-                SELECT "destinationID"
-                FROM public."DestinationBookmarks" AS bookmark
-                WHERE
-                    bookmark."isBookmark" = true
-                    AND
-                    bookmark."travelerID" = '${res.locals.user.id}'
-        )`)
-            }
-        },
+        where: query,
         attributes: { exclude: DestinationPrivateFields.getAllTraveler },
         include: defaultInclude,
         order: [['name', 'ASC']],
@@ -55,18 +56,7 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
         limit: PAGE_LIMIT,
     })
     const count = await Destination.count({
-        where: {
-            id: {
-                [Op.in]: Sequelize.literal(`(
-                SELECT "destinationID"
-                FROM public."DestinationBookmarks" AS bookmark
-                WHERE
-                    bookmark."isBookmark" = true
-                    AND
-                    bookmark."travelerID" = '${res.locals.user.id}'
-        )`)
-            }
-        }
+        where: query
     })
     // Create a response object
     const resDocument = new RESDocument(
@@ -85,6 +75,5 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
 })
 
 const defaultInclude = [
-    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
 ]

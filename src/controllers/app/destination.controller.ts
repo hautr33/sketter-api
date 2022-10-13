@@ -25,12 +25,12 @@ export const createDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities, recommendedTimes
     } = req.body;
 
-    const images = req.body.images as DestinationImage[]
+    const gallery = req.body.gallery as DestinationImage[]
 
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
         const destination = await Destination.create({
-            name: name, address: address, phone: phone, email: email, description: description,
+            name: name, address: address, phone: phone, email: email, description: description, image: gallery[0].url,
             longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
             openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
         }, { transaction: create })
@@ -39,8 +39,8 @@ export const createDestination = catchAsync(async (req, res, next) => {
         for (let i = 0; i < recommendedTimes.length; i++) {
             await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
         }
-        for (let i = 0; i < images.length; i++) {
-            await destination.createImage(images[i], { transaction: create })
+        for (let i = 0; i < gallery.length; i++) {
+            await destination.createImage(gallery[i], { transaction: create })
         }
         return destination
     })
@@ -62,7 +62,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
 
-    const images = req.body.images as DestinationImage[]
+    const gallery = req.body.gallery as DestinationImage[]
 
     if (res.locals.user.roleID == Roles["Supplier Manager"]) {
         const { longitude, latitude } = req.body;
@@ -81,13 +81,13 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     destination.closingTime = closingTime
     estimatedTimeStay ? destination.estimatedTimeStay = estimatedTimeStay : 0
     destination.status = status
-
+    destination.image = gallery[0].url
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
         await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
-        for (let i = 0; i < images.length; i++) {
-            await destination.createImage(images[i], { transaction: update })
+        for (let i = 0; i < gallery.length; i++) {
+            await destination.createImage(gallery[i], { transaction: update })
         }
         return destination
     })
@@ -254,7 +254,7 @@ const validate = async (body: any, supplierID: string) => {
     if (!listStatusDestination.includes(status))
         return 'Trạng thái không hợp lệ'
 
-    const images = body.images as DestinationImage[]
+    const gallery = body.gallery as DestinationImage[]
 
     if (!name || name === '' || name === null)
         return 'Vui lòng nhập tên địa điểm'
@@ -274,7 +274,7 @@ const validate = async (body: any, supplierID: string) => {
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
         return 'Vui lòng nhập loại địa điểm'
 
-    if (!images || images === null || images.length === 0)
+    if (!gallery || gallery === null || gallery.length === 0)
         return 'Vui lòng thêm ảnh vào địa điểm'
 
     if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
@@ -312,11 +312,10 @@ const validate = async (body: any, supplierID: string) => {
 const destinationInclude = [
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] },
     { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
-    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
+    { model: DestinationImage, as: 'gallery', attributes: { exclude: ['destinationID', 'id'] } },
     { model: User, as: 'supplier', attributes: { exclude: UserPrivateFields[Roles.Supplier] } }
 ]
 
 const defaultInclude = [
-    { model: DestinationImage, as: 'images', attributes: { exclude: ['destinationID', 'id'] } },
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
 ]

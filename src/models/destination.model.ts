@@ -16,6 +16,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     phone!: string;
     email!: string;
     description!: string;
+    image!: string;
     longitude!: number;
     latitude!: number;
     lowestPrice!: number;
@@ -103,6 +104,14 @@ Destination.init({
         validate: {
             notEmpty: {
                 msg: 'Mô tả địa điểm không được trống'
+            },
+        }
+    },
+    image: {
+        type: DataTypes.STRING,
+        validate: {
+            notEmpty: {
+                msg: 'Ảnh không được trống'
             },
         }
     },
@@ -201,9 +210,8 @@ Destination.hasMany(DestinationRecommendedTime, {
     foreignKey: "destinationID", as: 'recommendedTimes'
 });
 
-Destination.hasMany(DestinationImage, {
-    foreignKey: "destinationID", as: 'images'
-});
+Destination.hasMany(DestinationImage, { foreignKey: "destinationID", as: 'gallery' });
+DestinationImage.belongsTo(Destination, { foreignKey: "destinationID", as: 'gallery' });
 
 User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
 Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });

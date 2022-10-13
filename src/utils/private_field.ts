@@ -33,7 +33,6 @@ export const UserPrivateFields = [
         "address",
         "owner",
         "isActive",
-        "status",
         "authType",
         "firebaseID",
         "createdAt",
@@ -55,7 +54,6 @@ export const UserPrivateFields = [
         "address",
         "owner",
         "isActive",
-        "status",
         "authType",
         "firebaseID",
         "createdAt",
@@ -74,7 +72,6 @@ export const UserPrivateFields = [
         "gender",
         "dob",
         "isActive",
-        "status",
         "authType",
         "firebaseID",
         "createdAt",
@@ -160,7 +157,6 @@ export class PlanPrivateFields {
     static default = [
         "isActive",
         "travelerID",
-        "createdAt",
         "deletedAt",
         "updatedAt"
     ];
