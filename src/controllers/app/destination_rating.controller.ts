@@ -37,7 +37,6 @@ export const updateRating = catch_async(async (req, res, next) => {
     if (!star || typeof star !== 'number' || star < 1 || star > 5)
         return next(new AppError('Số sao không hợp lệ', StatusCodes.BAD_REQUEST))
 
-    await DestinationRating.update({ star: star, description: description }, { where: { destinationID: req.params.id, userID: res.locals.user.id } })
     await sequelizeConnection.transaction(async (update) => {
         await DestinationRating.update({ star: star, description: description }, {
             where: { destinationID: req.params.id, userID: res.locals.user.id },
@@ -56,7 +55,6 @@ export const deleteRating = catch_async(async (req, res, next) => {
     if (count !== 1)
         return next(new AppError('Không tìm thấy đánh giá này', StatusCodes.NOT_FOUND))
 
-    await DestinationRating.destroy({ where: { destinationID: req.params.id, userID: res.locals.user.id } })
     await sequelizeConnection.transaction(async (update) => {
         await DestinationRating.destroy({ where: { destinationID: req.params.id, userID: res.locals.user.id }, transaction: update })
         const sum = await DestinationRating.sum("star", { where: { destinationID: req.params.id }, transaction: update })
