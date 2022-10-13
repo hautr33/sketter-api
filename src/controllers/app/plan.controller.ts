@@ -116,7 +116,7 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
         {
             where: { travelerID: res.locals.user.id, stastus: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
-            order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
+            order: [['createdAt', 'DESC']]
         });
 
     // plans.forEach(plan => {
@@ -149,7 +149,7 @@ export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
             where: { isPublic: true },
             attributes: { exclude: PlanPrivateFields.default },
             include: [includeTraveler],
-            order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
+            order: [['createdAt', 'DESC']]
         });
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
