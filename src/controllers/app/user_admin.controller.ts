@@ -42,7 +42,7 @@ export const getAllUser = catchAsync(async (req, res, next) => {
     if (status && !listStatusUser.includes(status))
         return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
 
-    const users = await getAllUserService(res.locals.user.id, page, status)
+    const users = await getAllUserService(page, status)
     res.resDocument = users;
     next();
 });
