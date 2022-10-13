@@ -109,7 +109,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const destinations = await Destination.findAll({
         where: {
             name: { [Op.iLike]: `%${name}%` },
-            status: Status.verified,
+            status: Status.activated,
             id: {
                 [Op.in]: Sequelize.literal(`(
                     SELECT "destinationID"
