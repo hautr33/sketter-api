@@ -29,19 +29,30 @@ export const createDestination = catchAsync(async (req, res, next) => {
 
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
+        console.log("1")
         const destination = await Destination.create({
             name: name, address: address, phone: phone, email: email, description: description, image: gallery[0].url,
             longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
             openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
         }, { transaction: create })
+        console.log("2")
+
         await destination.addCatalogs(catalogs, { transaction: create })
+        console.log("3")
+
         await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
+        console.log("4")
+
         for (let i = 0; i < recommendedTimes.length; i++) {
             await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
         }
+        console.log("5")
+
         for (let i = 0; i < gallery.length; i++) {
-            await destination.createImage(gallery[i], { transaction: create })
+            await destination.createGallery(gallery[i], { transaction: create })
         }
+        console.log("6")
+
         return destination
     })
 
@@ -87,7 +98,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         await destination.setCatalogs(catalogs, { transaction: update })
         await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < gallery.length; i++) {
-            await destination.createImage(gallery[i], { transaction: update })
+            await destination.createGallery(gallery[i], { transaction: update })
         }
         return destination
     })
@@ -246,12 +257,12 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
-const validate = async (body: any, supplierID: string) => {
+const validate = async (body: any, supplierID: any) => {
     const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes, status
     } = body;
 
-    if (!listStatusDestination.includes(status))
+    if (status && !listStatusDestination.includes(status))
         return 'Trạng thái không hợp lệ'
 
     const gallery = body.gallery as DestinationImage[]
@@ -302,7 +313,7 @@ const validate = async (body: any, supplierID: string) => {
 
     if (!closingTime.match(regex) || closingTime <= openingTime)
         return 'Giờ đóng cửa không hợp lệ'
-    const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID } } })
+    const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID ? supplierID : null } } })
     if (count > 0)
         return 'Email đã được sử dụng bởi địa điểm của đối tác khác'
 

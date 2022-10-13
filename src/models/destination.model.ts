@@ -28,7 +28,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     avgRating?: number;
     view?: number;
     totalRating?: number;
-    supplierID!: ForeignKey<User['id']>;
+    supplierID!: ForeignKey<User['id']> | null;
     createdBy!: ForeignKey<User['id']>;
 
     readonly createdAt?: Date;
@@ -45,8 +45,8 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare getRecommendedTimes: HasManyGetAssociationsMixin<DestinationRecommendedTime>;
     declare createRecommendedTime: HasManyCreateAssociationMixin<DestinationRecommendedTime, 'destinationID'>;
 
-    declare getImages: HasManyGetAssociationsMixin<DestinationImage>;
-    declare createImage: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
+    declare getGallery: HasManyGetAssociationsMixin<DestinationImage>;
+    declare createGallery: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
     catalogs?: any[];
 }
@@ -224,9 +224,6 @@ Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
 Destination.beforeSave(async (destination) => {
     const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
 
-    const count = await User.count({ where: { id: destination.supplierID } })
-    if (count != 1)
-        throw new Error('SupplierID không hợp lệ');
 
     if (destination.highestPrice < destination.lowestPrice)
         throw new Error('Giá cao nhất không hợp lệ');

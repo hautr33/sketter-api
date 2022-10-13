@@ -116,10 +116,27 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
         {
             where: { travelerID: res.locals.user.id, stastus: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
-            include: [includeDetailGetAll],
             order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
         });
 
+    // plans.forEach(plan => {
+    //     const destination = await Destination.findAll({
+    //         where: {
+    //             id: {
+    //                 [Op.in]: Sequelize.literal(`(
+    //                     SELECT pldes."destinationID"
+    //         FROM public."PlanDestinations" AS pldes
+    //         WHERE
+    //             pldes."planDetailID" in (
+    //                 SELECT pldt."id"
+    //                 FROM public."PlanDetails" AS pldt
+    //                 WHERE pldt."planID" = '${plan.id}'
+    //                     )
+    //             )`)
+    //             }
+    //         }
+    //     })
+    // });
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
     next();
 });
@@ -131,7 +148,7 @@ export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
         {
             where: { isPublic: true },
             attributes: { exclude: PlanPrivateFields.default },
-            include: [includeTraveler, includeDetailGetAll],
+            include: [includeTraveler],
             order: [['createdAt', 'DESC'], ['details', 'date', 'ASC']]
         });
 
@@ -231,15 +248,6 @@ const validate = async (body: any, user?: any) => {
 }
 
 const includeTraveler = { model: User, as: 'traveler', attributes: { exclude: UserPrivateFields[Roles.Traveler] } }
-
-const includeDetailGetAll = {
-    model: PlanDetail, as: 'details', attributes: { exclude: PlanDetailPrivateFields.default }, include: [
-        {
-            model: PlanDestination, as: 'destinations', attributes: { exclude: PlanDestinationPrivateFields.default }
-        }
-    ]
-}
-
 
 const includeDetailGetOne = {
     model: PlanDetail, as: 'details', attributes: { exclude: PlanDetailPrivateFields.default }, include: [

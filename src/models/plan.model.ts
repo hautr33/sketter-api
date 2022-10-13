@@ -23,6 +23,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     declare addPlanPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
     declare setPlanPersonalities: HasManySetAssociationsMixin<Personalities, string>;
     planPersonalities?: any[];
+    destinations?: any[];
 
 }
 
