@@ -13,7 +13,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     place?: string;
     estimatedCost!: number;
     isPublic!: boolean;
-    stastus?: string;
+    status?: string;
     travelerID!: ForeignKey<User['id']>;
 
     readonly createdAt?: Date;
@@ -80,7 +80,7 @@ Plan.init({
     isPublic: {
         type: DataTypes.BOOLEAN
     },
-    stastus: {
+    status: {
         type: DataTypes.STRING,
         defaultValue: 'Planning',
         validate: {

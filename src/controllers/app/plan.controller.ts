@@ -114,7 +114,7 @@ export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
 
     const plans = await Plan.findAll(
         {
-            where: { travelerID: res.locals.user.id, stastus: { [Op.or]: ['Planning', 'Not Started'] } },
+            where: { travelerID: res.locals.user.id, status: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
             order: [['createdAt', 'DESC']]
         });
