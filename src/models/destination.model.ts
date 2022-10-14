@@ -13,8 +13,8 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare id?: string;
     name!: string;
     address!: string;
-    phone!: string;
-    email!: string;
+    phone?: string;
+    email?: string;
     description!: string;
     image!: string;
     longitude!: number;
@@ -81,6 +81,7 @@ Destination.init({
     },
     phone: {
         type: DataTypes.STRING,
+        allowNull: true,
         validate: {
             is: {
                 msg: "Số điện thoại không hợp lệ",
@@ -90,10 +91,8 @@ Destination.init({
     },
     email: {
         type: DataTypes.STRING,
+        allowNull: true,
         validate: {
-            notEmpty: {
-                msg: 'Email không được trống'
-            },
             isEmail: {
                 msg: "Email không hợp lệ"
             }

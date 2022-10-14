@@ -258,7 +258,7 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
 })
 
 const validate = async (body: any, supplierID: any) => {
-    const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
+    const { name, address, longitude, latitude, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes, status
     } = body;
 
@@ -272,12 +272,6 @@ const validate = async (body: any, supplierID: any) => {
 
     if (!address || address === '' || address === null)
         return 'Vui lòng nhập địa chỉ địa điểm'
-
-    if (!phone || phone === '' || phone === null)
-        return 'Vui lòng nhập số điện thoại địa điểm'
-
-    if (!email || email === '' || email === null)
-        return 'Vui lòng nhập email địa điểm'
 
     if (!description || description === '' || description === null)
         return 'Vui lòng nhập mô tả địa điểm'
@@ -313,9 +307,11 @@ const validate = async (body: any, supplierID: any) => {
 
     if (!closingTime.match(regex) || closingTime <= openingTime)
         return 'Giờ đóng cửa không hợp lệ'
-    const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID ? supplierID : null } } })
-    if (count > 0)
-        return 'Email đã được sử dụng bởi địa điểm của đối tác khác'
+    if (email !== null) {
+        const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID ? supplierID : null } } })
+        if (count > 0)
+            return 'Email đã được sử dụng bởi địa điểm của đối tác khác'
+    }
 
     return null
 }
