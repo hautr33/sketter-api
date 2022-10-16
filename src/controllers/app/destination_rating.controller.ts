@@ -1,11 +1,13 @@
 import { StatusCodes } from "http-status-codes"
 import { Op } from "sequelize"
+import { Roles } from "../../utils/constant"
 import sequelizeConnection from "../../db/sequelize.db"
 import { Destination } from "../../models/destination.model"
 import { DestinationRating } from "../../models/destination_rating.model"
 import AppError from "../../utils/app_error"
 import catch_async from "../../utils/catch_async"
 import RESDocument from "../factory/res_document"
+import { User } from "../../models/user.model"
 
 export const ratingDestination = catch_async(async (req, res, next) => {
     const { star, description } = req.body
@@ -66,6 +68,7 @@ export const deleteRating = catch_async(async (req, res, next) => {
 })
 
 export const getAllRating = catch_async(async (req, res, next) => {
+    const role = res.locals.user.roleID
     const rating = await Destination.findOne({
         where: { id: req.params.id },
         attributes: ['avgRating', 'totalRating']
@@ -76,20 +79,34 @@ export const getAllRating = catch_async(async (req, res, next) => {
 
     const otherRating = await DestinationRating.findAll({
         where: { destinationID: req.params.id, userID: { [Op.ne]: res.locals.user.id } },
-        attributes: ['userID', 'star', 'description']
+        include: [
+            { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
+        ],
+        attributes: ['star', 'description', 'updatedAt']
     })
 
-    const myRating = await DestinationRating.findOne({
-        where: { destinationID: req.params.id, userID: res.locals.user.id },
-        attributes: ['userID', 'star', 'description']
-    })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
-        rating: {
-            'avgRating': rating.avgRating,
-            'totalRating': rating.totalRating,
-            'myRating': myRating,
-            'otherRating': otherRating
-        }
-    })
+    if (role === Roles.Traveler) {
+        const myRating = await DestinationRating.findOne({
+            where: { destinationID: req.params.id, userID: res.locals.user.id },
+            attributes: ['userID', 'star', 'description', 'createdAt', 'updatedAt']
+        })
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
+            rating: {
+                'avgRating': rating.avgRating,
+                'totalRating': rating.totalRating,
+                'myRating': myRating,
+                'otherRating': otherRating
+            }
+        })
+    } else {
+        res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
+            rating: {
+                'avgRating': rating.avgRating,
+                'totalRating': rating.totalRating,
+                'travelerRating': otherRating
+            }
+        })
+    }
+
     next()
 })

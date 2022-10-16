@@ -13,11 +13,10 @@ import { DestinationImagePrivateFields, DestinationPrivateFields, PlanDestinatio
 import { DestinationImage } from "../../models/destination_image.model";
 import { User } from "../../models/user.model";
 import { PlanDetail } from "../../models/plan_detail.model";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import { Catalog } from "../../models/catalog.model";
 import { DestinationCatalog } from "../../models/destination_catalog.model";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
-// import { TravelerPersonalities } from "../../models/traveler_personalites.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
@@ -112,39 +111,46 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 
 export const getAllCreatedPlan = catchAsync(async (_req, res, next) => {
 
-    const plans = await Plan.findAll(
+    const result = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id, status: { [Op.or]: ['Planning', 'Not Started'] } },
             attributes: { exclude: PlanPrivateFields.default },
+            include: [{ model: PlanDetail, as: 'details', attributes: ['date'] }],
             order: [['createdAt', 'DESC']]
         });
-
-    // plans.forEach(plan => {
-    //     const destination = await Destination.findAll({
-    //         where: {
-    //             id: {
-    //                 [Op.in]: Sequelize.literal(`(
-    //                     SELECT pldes."destinationID"
-    //         FROM public."PlanDestinations" AS pldes
-    //         WHERE
-    //             pldes."planDetailID" in (
-    //                 SELECT pldt."id"
-    //                 FROM public."PlanDetails" AS pldt
-    //                 WHERE pldt."planID" = '${plan.id}'
-    //                     )
-    //             )`)
-    //             }
-    //         }
-    //     })
-    // });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
+    const plans = new Array()
+    for (let i = 0; i < result.length; i++) {
+        const destinations = await Destination.findAll({
+            where: {
+                id: {
+                    [Op.in]: Sequelize.literal(`(
+                        SELECT pldes."destinationID"
+                        FROM public."PlanDestinations" AS pldes
+                        WHERE
+                        pldes."planDetailID" in (
+                            SELECT pldt."id"
+                            FROM public."PlanDetails" AS pldt
+                            WHERE pldt."planID" = '${result[i].id}'
+                            )
+                        )`
+                    )
+                }
+            },
+            attributes: ['id', 'name', 'image'],
+            group: 'id'
+        })
+        const plan = _.omit(result[i].toJSON(), []);
+        plan.details = destinations
+        plans.push(plan)
+    }
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans })
     next();
 });
 
 
 export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
 
-    const plans = await Plan.findAll(
+    const result = await Plan.findAll(
         {
             where: { isPublic: true },
             attributes: { exclude: PlanPrivateFields.default },
@@ -152,6 +158,31 @@ export const getAllPublicPlan = catchAsync(async (_req, res, next) => {
             order: [['createdAt', 'DESC']]
         });
 
+    const plans = new Array()
+    for (let i = 0; i < result.length; i++) {
+        const destinations = await Destination.findAll({
+            where: {
+                id: {
+                    [Op.in]: Sequelize.literal(`(
+                            SELECT pldes."destinationID"
+                            FROM public."PlanDestinations" AS pldes
+                            WHERE
+                            pldes."planDetailID" in (
+                                SELECT pldt."id"
+                                FROM public."PlanDetails" AS pldt
+                                WHERE pldt."planID" = '${result[i].id}'
+                                )
+                            )`
+                    )
+                }
+            },
+            attributes: ['id', 'name', 'image'],
+            group: 'id'
+        })
+        const plan = _.omit(result[i].toJSON(), []);
+        plan.details = destinations
+        plans.push(plan)
+    }
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plans });
     next();
 });

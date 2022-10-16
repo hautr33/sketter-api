@@ -10,6 +10,8 @@ export class DestinationRating extends Model<InferAttributes<DestinationRating>,
     star!: number;
     description!: string;
     stastus?: string;
+    readonly createdAt?: Date;
+    readonly updatedAt?: Date;
 }
 
 DestinationRating.init({
@@ -39,9 +41,17 @@ DestinationRating.init({
             }
         }
     },
+    createdAt: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now()
+    },
+    updatedAt: {
+        type: DataTypes.DATEONLY,
+        defaultValue: Date.now()
+    },
 }, {
     // Other model options go here
-    timestamps: false,
+    timestamps: true,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'DestinationRating' // We need to choose the model name
 });
