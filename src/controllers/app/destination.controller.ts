@@ -114,8 +114,8 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const skipStay = req.query.skipStay === 'true' ? true : false
     const catalogQuery = `WHERE desCata."catalogName" IN (SELECT "name"
         FROM public."Catalogs" as cata
-        WHERE cata."name" = '${catalog}'
-        OR cata."parent" = '${catalog}')`
+        WHERE cata."name" ILIKE '%${catalog}%'
+        OR cata."parent" ILIKE '%${catalog}')%`
     const destinations = await Destination.findAll({
         where: {
             name: { [Op.iLike]: `%${name}%` },
