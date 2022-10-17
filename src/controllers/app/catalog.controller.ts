@@ -10,10 +10,11 @@ import { Roles } from "../../utils/constant";
  * This controller is getAllCatalog that get all catalogs
  *
  */
-export const getAllCatalog = catch_async(async (_req, res, next) => {
+export const getAllCatalog = catch_async(async (req, res, next) => {
+    const skipStay = req.query.skipStay === 'true' ? true : false
     const catalogs = await Catalog.findAll(
         {
-            where: { parent: null },
+            where: skipStay ? { name: { [Op.notILike]: '%Lưu Trú%' }, parent: null } : { parent: null },
             attributes: ['name'],
             include: [
                 {

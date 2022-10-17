@@ -111,6 +111,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const name = req.query.name as string ?? '';
     const catalog = req.query.catalog as string;
+    const skipStay = req.query.skipStay === 'true' ? true : false
     const catalogQuery = `WHERE desCata."catalogName" IN (SELECT "name"
         FROM public."Catalogs" as cata
         WHERE cata."name" = '${catalog}'
@@ -128,13 +129,13 @@ export const searchDestination = catchAsync(async (req, res, next) => {
             }
         },
         attributes: { exclude: DestinationPrivateFields.getAllTraveler },
-        include: defaultInclude,
+        include: defaultInclude(false, skipStay),
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT,
     })
 
-    const count = await Destination.count({
+    const count = await Destination.findAll({
         where: {
             name: { [Op.iLike]: `%${name}%` },
             status: Status.activated,
@@ -145,7 +146,9 @@ export const searchDestination = catchAsync(async (req, res, next) => {
                     ${catalog ? catalogQuery : ''}
             )`)
             }
-        }
+        },
+        attributes: ['id'],
+        include: defaultInclude(false, skipStay),
     })
     // Create a response object
     const resDocument = new RESDocument(
@@ -153,8 +156,8 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         'success',
         { destinations }
     )
-    if (count != 0) {
-        const maxPage = Math.ceil(count / PAGE_LIMIT)
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
         resDocument.setCurrentPage(page)
         resDocument.setMaxPage(maxPage)
     }
@@ -165,6 +168,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
 
 export const getAllDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const skipStay = req.query.skipStay === 'true' ? true : false
     const roleID = res.locals.user.roleID;
     let option = {}
     let privatFields = DestinationPrivateFields.default
@@ -180,21 +184,27 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
         {
             where: option,
             attributes: { exclude: privatFields },
-            include: defaultInclude,
+            include: defaultInclude(false, skipStay),
             order: [['name', 'ASC']],
             offset: (page - 1) * PAGE_LIMIT,
             limit: PAGE_LIMIT,
         }
     )
-    const count = await Destination.count({ where: option })
+    const count = await Destination.findAll(
+        {
+            where: option,
+            attributes: ['id'],
+            include: defaultInclude(true, skipStay)
+        }
+    )
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
         { destinations }
     )
-    if (count != 0) {
-        const maxPage = Math.ceil(count / PAGE_LIMIT)
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
         resDocument.setCurrentPage(page)
         resDocument.setMaxPage(maxPage)
     }
@@ -323,6 +333,12 @@ const destinationInclude = [
     { model: User, as: 'supplier', attributes: { exclude: UserPrivateFields[Roles.Supplier] } }
 ]
 
-const defaultInclude = [
-    { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
+const defaultInclude = (count: boolean, skipStay: boolean) => [
+    {
+        model: Catalog,
+        where: skipStay ? { name: { [Op.notILike]: '%Lưu Trú%' }, parent: { [Op.notILike]: '%Lưu Trú%' } } : {},
+        as: 'catalogs',
+        through: { attributes: [] },
+        attributes: count ? [] : ['name']
+    }
 ]
