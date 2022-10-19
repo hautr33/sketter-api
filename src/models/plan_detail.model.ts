@@ -1,8 +1,11 @@
-import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model, Op } from 'sequelize';
 import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 import { Plan } from './plan.model';
 import { PlanDestination } from './plan_destination.model';
+import { Catalog } from './catalog.model';
+import AppError from '../utils/app_error';
+import { StatusCodes } from 'http-status-codes';
 
 export class PlanDetail extends Model<InferAttributes<PlanDetail>, InferCreationAttributes<PlanDetail>> {
     declare id?: string;
@@ -28,6 +31,10 @@ PlanDetail.init({
     date: {
         type: DataTypes.DATEONLY,
         allowNull: false,
+        validate: {
+            notNull: { msg: 'Ngày của lịch trình chi tiết không được trống' },
+            notEmpty: { msg: 'Ngày của lịch trình chi tiết không được trống' }
+        }
     },
     stayDestinationID: {
         type: DataTypes.UUID,
@@ -45,3 +52,24 @@ PlanDestination.belongsTo(PlanDetail, { foreignKey: 'planDetailID', as: "destina
 
 Destination.hasMany(PlanDetail, { foreignKey: 'stayDestinationID', as: "stayDestination" })
 PlanDetail.belongsTo(Destination, { foreignKey: 'stayDestinationID', as: "stayDestination" })
+
+PlanDetail.beforeSave(async (planDetail) => {
+    if (planDetail.stayDestinationID && planDetail.stayDestinationID !== null) {
+        const stay = await Destination.findOne(
+            {
+                where: { id: planDetail.stayDestinationID },
+                attributes: ['id'],
+                include: [
+                    {
+                        model: Catalog,
+                        where: { [Op.or]: [{ name: { [Op.iLike]: '%Lưu Trú%' } }, { parent: { [Op.iLike]: '%Lưu Trú%' } }] },
+                        as: 'catalogs',
+                        through: { attributes: [] },
+                        attributes: []
+                    }]
+            }
+        )
+        if (!stay || stay === null)
+            throw new AppError(`Địa điểm lưu trú của ngày ${planDetail.date} không hợp lệ`, StatusCodes.BAD_REQUEST)
+    }
+});

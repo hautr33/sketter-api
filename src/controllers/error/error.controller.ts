@@ -98,12 +98,25 @@ const handleValidationErrorDB = (err: any) => {
  * @param {*} res Instance of Response of ExpressJS
  */
 const sendErrorDev = (err: AppError, res: Response) => {
-	res.status(err.statusCode).json({
-		status: err.status,
-		message: err.message,
-		error: err,
-		stack: err.stack
-	});
+	if (err.message.includes('notNull Violation') || err.message.includes('Validation error')) {
+		const message = err.message.split(': ')[1]
+		const statusCode = StatusCodes.BAD_REQUEST
+		const status = 'fail'
+		res.status(statusCode).json({
+			status: status,
+			message: message,
+			error: err,
+			stack: err.stack
+
+		});
+	} else {
+		res.status(err.statusCode).json({
+			status: err.status,
+			message: err.message,
+			error: err,
+			stack: err.stack
+		});
+	}
 };
 
 /**
@@ -129,10 +142,20 @@ const sendErrorProd = (err: AppError, res: Response) => {
 		// Log to the console, but not to the client
 		logger.error('*****ERROR*****\n', err);
 
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-			status: 'error',
-			message: 'Có lỗi xảy ra!'
-		});
+		if (err.message.includes('notNull Violation') || err.message.includes('Validation error')) {
+			const message = err.message.split(': ')[1]
+			const statusCode = StatusCodes.BAD_REQUEST
+			const status = 'fail'
+			res.status(statusCode).json({
+				status: status,
+				message: message,
+			});
+		} else {
+			res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+				status: 'error',
+				message: 'Đã có lỗi xảy ra!\nMáy chủ đã gặp phải lỗi và không thể hoàn thành yêu cầu của bạn.'
+			});
+		}
 	}
 };
 

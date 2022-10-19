@@ -5,7 +5,7 @@ import catchAsync from "../../utils/catch_async";
 import { Plan } from "../../models/plan.model";
 import RESDocument from "../factory/res_document";
 import { Personalities } from "../../models/personalities.model";
-import { Catalogs, Roles } from "../../utils/constant";
+import { Roles } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
@@ -14,8 +14,6 @@ import { DestinationImage } from "../../models/destination_image.model";
 import { User } from "../../models/user.model";
 import { PlanDetail } from "../../models/plan_detail.model";
 import { Op, Sequelize } from "sequelize";
-import { Catalog } from "../../models/catalog.model";
-import { DestinationCatalog } from "../../models/destination_catalog.model";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
@@ -27,11 +25,11 @@ export const createPlan = catchAsync(async (req, res, next) => {
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, fromDate, toDate, estimatedCost, isPublic, details } = req.body;
+    const { name, place, fromDate, toDate, estimatedCost, isPublic, details } = req.body;
     const planPersonalities = user?.travelerPersonalities as any[]
     const result = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
-            { name: name, fromDate: fromDate, toDate: toDate, estimatedCost: estimatedCost, isPublic: isPublic, travelerID: res.locals.user.id },
+            { name: name, place: place, fromDate: fromDate, toDate: toDate, estimatedCost: estimatedCost, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
         await plan.addPlanPersonalities(planPersonalities, { transaction: create })
         for (let i = 0; i < details.length; i++) {
@@ -215,65 +213,19 @@ export const deletePlan = catchAsync(async (req, res, next) => {
 })
 
 const validate = async (body: any, user?: any) => {
-    const { name, fromDate, toDate, estimatedCost, isPublic, details } = body;
-    if (!name || name === '' || name === null)
-        return 'Tên lịch trình không được trống'
-    if (!fromDate || fromDate === '' || fromDate === null)
-        return 'Ngày bắt đầu không được trống'
-    if (!toDate || toDate === '' || toDate === null)
-        return 'Ngày kết thúc không được trống'
-    if (typeof estimatedCost !== 'number' || estimatedCost < 0)
-        return 'Chi phí dự tính không hợp lệ'
-
-    if (!_.isBoolean(isPublic))
-        return 'Tình trạng công khai không hợp lệ'
-
+    const { details } = body;
     if (user) {
         const planPersonalities = user.travelerPersonalities
 
         if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
             return 'Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này'
-        for (let i = 0; i < planPersonalities.length; i++) {
-            const count = await Personalities.count({ where: { name: planPersonalities[i].name } })
-            if (count !== 1)
-                return `Tính cách du lịch: ${planPersonalities[i].name} không hợp lệ`
-        }
     }
 
     if (!details || details.length == 0)
         return 'Chi tiết lịch trình không được trống'
-    const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
     for (let i = 0; i < details.length; i++) {
-        if (!details[i].date)
-            return `Ngày thứ ${i + 1} không được trống`
-        if (details[i].stayDestinationID || details[i].stayDestinationID != null) {
-            let stayCatalog = [Catalogs.stay];
-            let index = 0;
-            do {
-                const catalogs = await Catalog.findAll({ where: { parent: stayCatalog[index] } })
-                if (catalogs.length > 0) {
-                    catalogs.forEach(catalog => {
-                        stayCatalog.push(catalog.name)
-                    });
-                }
-                index++;
-            } while (index < stayCatalog.length)
-            const count = await DestinationCatalog.count({ where: { destinationID: details[i].stayDestinationID, catalogName: { [Op.or]: stayCatalog } } })
-            if (count < 1)
-                return `Địa điểm lưu trú của ngày ${details[i].date} không hợp lệ`
-        }
         if (!details[i].destinations || details[i].destinations.length == 0)
             return 'Địa điểm không được trống'
-        for (let j = 0; j < details[i].destinations.length; j++) {
-            const count = await Destination.count({ where: { id: details[i].destinations[j].destinationID } })
-            if (count != 1)
-                return `Địa điểm với id: ${details[i].destinations[j].destinationID} không hợp lệ`
-            if (!details[i].destinations[j].fromTime || !details[i].destinations[j].fromTime.match(regex))
-                return `Giờ đến địa điểm với id: ${details[i].destinations[j].destinationID} không hợp lệ`
-            if (!details[i].destinations[j].toTime || !details[i].destinations[j].toTime.match(regex))
-                return `Giờ rời khỏi địa điểm với id: ${details[i].destinations[j].destinationID} không hợp lệ`
-        };
-
     };
     return null
 }

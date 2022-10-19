@@ -1,5 +1,8 @@
-import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { StatusCodes } from 'http-status-codes';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model, Op } from 'sequelize';
+import AppError from '../utils/app_error';
 import sequelize from '../db/sequelize.db';
+import { Catalog } from './catalog.model';
 import { Destination } from './destination.model';
 import { PlanDetail } from './plan_detail.model';
 
@@ -37,40 +40,32 @@ PlanDestination.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            is: {
-                msg: "Giờ bắt đầu không hợp lệ (HH:MM)",
-                args: /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-            }
+            notNull: { msg: 'Vui lòng nhập giờ bắt đầu' },
+            notEmpty: { msg: 'Vui lòng nhập giờ bắt đầu' }
         }
     },
     toTime: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            is: {
-                msg: "Giờ kết thúc không hợp lệ (HH:MM)",
-                args: /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-            }
+            notNull: { msg: 'Vui lòng nhập giờ kết thúc' },
+            notEmpty: { msg: 'Vui lòng nhập giờ kết thúc' }
         }
     },
     distance: {
         type: DataTypes.REAL,
         allowNull: false,
         validate: {
-            min: {
-                msg: "Khoảng cách đến địa điểm này phải lớn hơn 0 km",
-                args: [0]
-            }
+            notNull: { msg: 'Khảng cách đến địa điểm không được trống' },
+            notEmpty: { msg: 'Khảng cách đến địa điểm không được trống' }
         }
     },
     timeTraveling: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-            min: {
-                msg: "Thời gian di chuyển đến địa điểm này phải lớn hơn 0 phút",
-                args: [0]
-            }
+            notNull: { msg: 'Thời gian di chuyển đến địa điểm không được trống' },
+            notEmpty: { msg: 'Thời gian di chuyển đến địa điểm không được trống' }
         }
     },
     checkinTime: {
@@ -89,3 +84,38 @@ PlanDestination.init({
 
 Destination.hasMany(PlanDestination, { foreignKey: 'destinationID', as: 'destination' })
 PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destination' })
+
+PlanDestination.beforeSave(async (planDes) => {
+    const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+    const { fromTime, toTime, distance, timeTraveling, destinationID
+    } = planDes;
+    const des = await Destination.findOne(
+        {
+            where: { id: destinationID },
+            attributes: ['name'],
+            include: [
+                {
+                    model: Catalog,
+                    where: { name: { [Op.notILike]: '%Lưu Trú%' }, parent: { [Op.notILike]: '%Lưu Trú%' } },
+                    as: 'catalogs',
+                    through: { attributes: [] },
+                    attributes: []
+                }]
+        }
+    )
+    if (!des || des === null)
+        throw new AppError(`Địa điểm với ID: ${destinationID} không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+    if (!fromTime.match(timeRegex))
+        throw new AppError(`Giờ bắt đầu (HH:MM): ${fromTime} của địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+    if (!toTime.match(timeRegex) || toTime <= fromTime)
+        throw new AppError(`Giờ kết thúc (HH:MM): ${toTime} của địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+    if (distance < 0)
+        throw new AppError(`Khoảng cách đến địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+    if (timeTraveling < 0)
+        throw new AppError(`Thời gian di chuyển đến địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+});

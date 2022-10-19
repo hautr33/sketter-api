@@ -1,4 +1,4 @@
-import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model, Op } from 'sequelize';
 import { Status } from '../utils/constant';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
@@ -8,6 +8,8 @@ import { User } from './user.model';
 import { DestinationRecommendedTime } from './destination_recommended_time.model';
 import { DestinationImage } from './destination_image.model';
 import { DestinationPersonalites } from './destination_personalities.model';
+import AppError from '../utils/app_error';
+import { StatusCodes } from 'http-status-codes';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
@@ -28,7 +30,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     avgRating?: number;
     view?: number;
     totalRating?: number;
-    supplierID!: ForeignKey<User['id']> | null;
+    supplierID?: ForeignKey<User['id']> | null;
     createdBy!: ForeignKey<User['id']>;
 
     readonly createdAt?: Date;
@@ -65,104 +67,99 @@ Destination.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Tên địa điểm không được trống'
-            },
+            notNull: { msg: 'Vui lòng nhập tên địa điểm' },
+            notEmpty: { msg: 'Vui lòng nhập tên địa điểm' }
         }
     },
     address: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Địa chỉ không được trống'
-            },
+            notNull: { msg: 'Vui lòng nhập địa chỉ' },
+            notEmpty: { msg: 'Vui lòng nhập địa chỉ' }
         }
     },
     phone: {
         type: DataTypes.STRING,
-        allowNull: true,
-        validate: {
-            is: {
-                msg: "Số điện thoại không hợp lệ",
-                args: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g
-            },
-        }
     },
     email: {
         type: DataTypes.STRING,
-        allowNull: true,
-        validate: {
-            isEmail: {
-                msg: "Email không hợp lệ"
-            }
-        }
     },
     description: {
         type: DataTypes.TEXT,
+        allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Mô tả địa điểm không được trống'
-            },
+            notNull: { msg: 'Vui lòng nhập mô tả địa điểm' },
+            notEmpty: { msg: 'Vui lòng nhập mô tả địa điểm' }
         }
     },
     image: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Ảnh không được trống'
-            },
+            notNull: { msg: 'Vui lòng thêm ảnh vào địa điểm' },
+            notEmpty: { msg: 'Vui lòng  thêm ảnh vào địa điểm' }
         }
     },
     longitude: {
         type: DataTypes.DOUBLE,
+        allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Kinh độ không được trống'
-            },
-            min: -180,
-            max: 180
+            notNull: { msg: 'Vui lòng nhập kinh độ' },
+            notEmpty: { msg: 'Vui lòng nhập kinh độ' }
         }
     },
     latitude: {
         type: DataTypes.DOUBLE,
+        allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Vĩ độ không được trống'
-            },
-            min: -90,
-            max: 90
+            notNull: { msg: 'Vui lòng nhập vĩ độ' },
+            notEmpty: { msg: 'Vui lòng nhập vĩ độ' }
         }
     },
     lowestPrice: {
         type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng nhập giá thấp nhất' },
+            notEmpty: { msg: 'Vui lòng nhập giá thấp nhất' }
+        }
     },
     highestPrice: {
         type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng nhập giá cao nhất' },
+            notEmpty: { msg: 'Vui lòng nhập giá cao nhất' }
+        }
     },
     openingTime: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
-            is: {
-                msg: "Giờ mở cửa không hợp lệ (HH:MM)",
-                args: /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-            }
+            notNull: { msg: 'Vui lòng nhập giờ mở cửa' },
+            notEmpty: { msg: 'Vui lòng nhập giờ mở cửa' }
         }
     },
     closingTime: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
-            is: {
-                msg: "Giờ đóng cửa không hợp lệ (HH:MM)",
-                args: /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-            }
+            notNull: { msg: 'Vui lòng nhập giờ đóng cửa' },
+            notEmpty: { msg: 'Vui lòng nhập giờ đóng cửa' }
         }
     },
     estimatedTimeStay: {
         type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng nhập thời gian tham quan' },
+            notEmpty: { msg: 'Vui lòng nhập thời gian tham quan' }
+        }
     },
     status: {
         type: DataTypes.STRING,
+        allowNull: false,
         defaultValue: Status.activated,
         validate: {
             isIn: {
@@ -173,14 +170,17 @@ Destination.init({
     },
     avgRating: {
         type: DataTypes.REAL,
-        defaultValue: 0
+        allowNull: false,
+        defaultValue: 0.0
     },
     view: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         defaultValue: 0
     },
     totalRating: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         defaultValue: 0
     },
     supplierID: {
@@ -188,6 +188,7 @@ Destination.init({
     },
     createdBy: {
         type: DataTypes.UUID,
+        allowNull: false
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
@@ -221,15 +222,47 @@ Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
 
 
 Destination.beforeSave(async (destination) => {
-    const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+    const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/g
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g
+    const { phone, email, longitude, latitude, lowestPrice, highestPrice,
+        openingTime, closingTime, estimatedTimeStay, supplierID
+    } = destination;
+    let err = null
 
+    if (phone && phone !== null && !phone.match(phoneRegex))
+        err = 'Số điện thoại không hợp lệ'
 
-    if (destination.highestPrice < destination.lowestPrice)
-        throw new Error('Giá cao nhất không hợp lệ');
+    else if (typeof longitude !== 'number' || longitude < -180 || longitude > 180)
+        err = 'Kinh độ không hợp lệ'
 
-    if (!destination.openingTime.match(regex))
-        throw new Error('Giờ mở cửa không hợp lệ');
+    else if (typeof latitude !== 'number' || latitude < -90 || latitude > 90)
+        err = 'Vĩ độ không hợp lệ'
 
-    if (!destination.closingTime.match(regex) || destination.closingTime < destination.openingTime)
-        throw new Error('Giờ đóng cửa không hợp lệ');
+    else if (typeof lowestPrice !== 'number' || lowestPrice < 0)
+        err = 'Giá thấp nhất không hợp lệ'
+
+    else if (typeof highestPrice !== 'number' || highestPrice < lowestPrice)
+        err = 'Giá cao nhất không hợp lệ'
+
+    else if (!openingTime.match(timeRegex))
+        err = 'Giờ mở cửa không hợp lệ (HH:MM)'
+
+    else if (!closingTime.match(timeRegex) || closingTime <= openingTime)
+        err = 'Giờ đóng cửa không hợp lệ (HH:MM)'
+
+    else if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
+        err = 'Thời gian tham quan không hợp lệ'
+
+    else if (email && email !== null)
+        if (!email.match(emailRegex))
+            err = 'Email không hợp lệ'
+        else {
+            const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID ? supplierID : null } } })
+            if (count > 0)
+                err = 'Email đã được sử dụng bởi địa điểm của đối tác khác'
+        }
+
+    if (err !== null)
+        throw new AppError(err, StatusCodes.BAD_REQUEST)
 })

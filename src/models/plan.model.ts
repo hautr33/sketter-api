@@ -1,16 +1,18 @@
 import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import AppError from '../utils/app_error';
 import sequelize from '../db/sequelize.db';
 import { Personalities } from './personalities.model';
 import { PlanDetail } from './plan_detail.model';
 import { PlanPersonalities } from './plan_personalities.model';
 import { User } from './user.model';
+import { StatusCodes } from 'http-status-codes';
 
 export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<Plan>> {
     declare id?: string;
     name!: string;
     fromDate!: Date;
     toDate!: Date;
-    place?: string;
+    place!: string;
     estimatedCost!: number;
     isPublic!: boolean;
     status?: string;
@@ -42,57 +44,63 @@ Plan.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Tên lịch trình không được trống'
-            },
+            notNull: { msg: 'Vui lòng nhập tên lịch trình' },
+            notEmpty: { msg: 'Vui lòng nhập tên lịch trình' }
         }
     },
     fromDate: {
         type: DataTypes.DATEONLY,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Ngày bắt đầu không được trốngF'
-            },
+            notNull: { msg: 'Vui lòng chọn ngày bắt đầu' },
+            notEmpty: { msg: 'Vui lòng chọn ngày bắt đầu' }
         }
     },
     toDate: {
         type: DataTypes.DATEONLY,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'Ngày kết thúc không được trốngF'
-            }
+            notNull: { msg: 'Vui lòng chọn ngày kết thúc' },
+            notEmpty: { msg: 'Vui lòng chọn ngày kết thúc' }
         }
     },
     place: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'Đà Lạt',
         validate: {
-            notEmpty: {
-                msg: 'Địa điểm lên lịch trình không được trốngF'
-            },
+            notNull: { msg: 'Vui lòng chọn tỉnh/thành phố lên lịch trình' },
+            notEmpty: { msg: 'Vui lòng chọn tỉnh/thành phố lên lịch trình' }
         }
     },
     estimatedCost: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Chi phí dự tính không hợp lệ' },
+            notEmpty: { msg: 'Chi phí dự tính không hợp lệ' }
+        }
     },
     isPublic: {
-        type: DataTypes.BOOLEAN
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng chọn công khai/không công khai lịch trình' },
+            notEmpty: { msg: 'Vui lòng chọn công khai/không công khai lịch trình' }
+        }
     },
     status: {
         type: DataTypes.STRING,
         defaultValue: 'Planning',
         validate: {
             isIn: {
-                args: [['Planning', 'Not Started', 'Active', 'Complete']],
+                args: [['Draft', 'Planning', 'Active', 'Complete']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
     },
     travelerID: {
-        type: DataTypes.UUID
+        type: DataTypes.UUID,
+        allowNull: false
     },
 }, {
     // Other model options go here
@@ -116,6 +124,9 @@ Plan.belongsTo(User, { foreignKey: 'travelerID', as: "traveler" })
 
 Plan.beforeSave(async (plan) => {
     if (plan.toDate < plan.fromDate)
-        throw new Error('Ngày kết thúc không hợp lệ');
+        throw new AppError('Thời gian kết thúc không hợp lệ', StatusCodes.BAD_REQUEST)
+
+    if (plan.estimatedCost < 0)
+        throw new AppError('Chi phí dự tính không hợp lệ', StatusCodes.BAD_REQUEST)
 
 });

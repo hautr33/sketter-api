@@ -5,7 +5,7 @@ import { Destination } from "../../models/destination.model";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import { DestinationRecommendedTime } from "../../models/destination_recommended_time.model";
-import { listStatusDestination, Roles, Status } from "../../utils/constant";
+import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
 import { DestinationPrivateFields, UserPrivateFields } from "../../utils/private_field";
 import { DestinationImage } from "../../models/destination_image.model";
@@ -17,42 +17,31 @@ import { User } from "../../models/user.model";
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
-    const error = await validate(req.body, supplierID)
+    let error = await validate(req.body)
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, address, longitude, latitude, phone, email, description, lowestPrice, highestPrice,
+    const { name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities, recommendedTimes
     } = req.body;
 
     const gallery = req.body.gallery as DestinationImage[]
-
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
-        console.log("1")
+
         const destination = await Destination.create({
             name: name, address: address, phone: phone, email: email, description: description, image: gallery[0].url,
             longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
             openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
         }, { transaction: create })
-        console.log("2")
-
         await destination.addCatalogs(catalogs, { transaction: create })
-        console.log("3")
-
         await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
-        console.log("4")
-
         for (let i = 0; i < recommendedTimes.length; i++) {
             await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
         }
-        console.log("5")
-
         for (let i = 0; i < gallery.length; i++) {
             await destination.createGallery(gallery[i], { transaction: create })
         }
-        console.log("6")
-
         return destination
     })
 
@@ -65,7 +54,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     if (!destination || res.locals.user.roleID != Roles["Supplier Manager"] && destination.supplierID != res.locals.user.id)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    const error = await validate(req.body, destination.supplierID)
+    const error = await validate(req.body)
     if (error)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
@@ -90,7 +79,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     destination.highestPrice = highestPrice
     destination.openingTime = openingTime
     destination.closingTime = closingTime
-    estimatedTimeStay ? destination.estimatedTimeStay = estimatedTimeStay : 0
+    destination.estimatedTimeStay = estimatedTimeStay
     destination.status = status
     destination.image = gallery[0].url
     const result = await sequelizeConnection.transaction(async (update) => {
@@ -267,61 +256,19 @@ export const deleteOneDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
-const validate = async (body: any, supplierID: any) => {
-    const { name, address, longitude, latitude, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs, estimatedTimeStay, recommendedTimes, status
-    } = body;
-
-    if (status && !listStatusDestination.includes(status))
-        return 'Trạng thái không hợp lệ'
+const validate = async (body: any) => {
+    const { catalogs, recommendedTimes } = body;
 
     const gallery = body.gallery as DestinationImage[]
 
-    if (!name || name === '' || name === null)
-        return 'Vui lòng nhập tên địa điểm'
-
-    if (!address || address === '' || address === null)
-        return 'Vui lòng nhập địa chỉ địa điểm'
-
-    if (!description || description === '' || description === null)
-        return 'Vui lòng nhập mô tả địa điểm'
-
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
-        return 'Vui lòng nhập loại địa điểm'
+        return 'Vui lòng chọn loại địa điểm'
 
     if (!gallery || gallery === null || gallery.length === 0)
         return 'Vui lòng thêm ảnh vào địa điểm'
 
     if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
         return 'Vui lòng thêm khung giờ lý tưởng vào địa điểm'
-
-    if (longitude != null && (typeof longitude !== 'number' || longitude < -180 || longitude > 180))
-        return 'Kinh độ không hợp lệ'
-
-    if (latitude != null && (typeof latitude !== 'number' || latitude < -90 || latitude > 90))
-        return 'Vĩ độ không hợp lệ'
-
-    if (typeof highestPrice !== 'number' || highestPrice < lowestPrice)
-        return 'Giá cao nhất không hợp lệ'
-
-    if (typeof lowestPrice !== 'number')
-        return 'Giá thấp nhất không hợp lệ'
-
-    if (typeof estimatedTimeStay !== 'number' || estimatedTimeStay < 0)
-        return 'Thời gian ở lại không hợp lệ'
-
-    const regex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-
-    if (!openingTime.match(regex))
-        return 'Giờ mở cửa không hợp lệ'
-
-    if (!closingTime.match(regex) || closingTime <= openingTime)
-        return 'Giờ đóng cửa không hợp lệ'
-    if (email !== null) {
-        const count = await Destination.count({ where: { email: email, supplierID: { [Op.ne]: supplierID ? supplierID : null } } })
-        if (count > 0)
-            return 'Email đã được sử dụng bởi địa điểm của đối tác khác'
-    }
 
     return null
 }
