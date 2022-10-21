@@ -20,9 +20,7 @@ import { checkPassword } from '../../services/user.service';
 export const signup = catchAsync(async (req, res, next) => {
     // Get parameters from body
     const { email, password, confirmPassword, role } = req.body;
-    const err = checkPassword(password, confirmPassword)
-    if (err)
-        return next(new AppError(err, StatusCodes.BAD_REQUEST));
+    checkPassword(password, confirmPassword)
 
     // Check user exist
     const count = await User.count({ where: { email: email } });
