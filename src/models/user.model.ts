@@ -67,7 +67,6 @@ User.init({
     },
     password: {
         type: DataTypes.STRING,
-        allowNull: false,
     },
     passwordUpdatedAt: {
         type: DataTypes.DATE
