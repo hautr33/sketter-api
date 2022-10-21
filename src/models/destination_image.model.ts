@@ -26,9 +26,9 @@ DestinationImage.init({
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            notEmpty: {
-                msg: 'URL ảnh không được trống'
-            },
+            notNull: { msg: 'Vui lòng thêm ảnh vào địa điểm' },
+            notEmpty: { msg: 'Vui lòng thêm ảnh vào địa điểm' },
+            max: 200
         }
     },
 }, {

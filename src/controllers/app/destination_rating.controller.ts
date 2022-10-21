@@ -16,8 +16,6 @@ export const ratingDestination = catch_async(async (req, res, next) => {
     if (count === 1)
         return next(new AppError('Không thể đánh giá địa điểm đã đánh giá', StatusCodes.BAD_REQUEST))
 
-    if (!star || typeof star !== 'number' || star < 1 || star > 5)
-        return next(new AppError('Số sao không hợp lệ', StatusCodes.BAD_REQUEST))
     await sequelizeConnection.transaction(async (create) => {
         await DestinationRating.create({ destinationID: req.params.id, userID: res.locals.user.id, star: star, description: description },
             { transaction: create })
@@ -35,9 +33,6 @@ export const updateRating = catch_async(async (req, res, next) => {
     const count = await DestinationRating.count({ where: { destinationID: req.params.id, userID: res.locals.user.id } })
     if (count !== 1)
         return next(new AppError('Không tìm thấy đánh giá này', StatusCodes.NOT_FOUND))
-
-    if (!star || typeof star !== 'number' || star < 1 || star > 5)
-        return next(new AppError('Số sao không hợp lệ', StatusCodes.BAD_REQUEST))
 
     await sequelizeConnection.transaction(async (update) => {
         await DestinationRating.update({ star: star, description: description }, {

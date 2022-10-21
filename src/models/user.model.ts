@@ -7,6 +7,8 @@ import { Role } from './role.model';
 import { Personalities } from './personalities.model';
 import { TravelerPersonalities } from './traveler_personalites.model';
 import { Session } from './session.model';
+import AppError from '../utils/app_error';
+import { StatusCodes } from 'http-status-codes';
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare id: string;
@@ -24,7 +26,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     phone!: string;
     address!: string;
     owner!: string;
-    isActive!: boolean;
     roleID!: ForeignKey<Role['id']>;
     authType!: string;
     status?: string;
@@ -60,16 +61,13 @@ User.init({
             msg: 'Email đã được sử dụng bởi tài khoản khác'
         },
         validate: {
-            notEmpty: {
-                msg: 'Email không được trống'
-            },
-            isEmail: {
-                msg: "Email không hợp lệ"
-            }
+            notEmpty: { msg: 'Vui lòng nhập email' },
+            isEmail: { msg: "Email không hợp lệ" }
         }
     },
     password: {
         type: DataTypes.STRING,
+        allowNull: false,
     },
     passwordUpdatedAt: {
         type: DataTypes.DATE
@@ -87,7 +85,13 @@ User.init({
         type: DataTypes.DATE
     },
     name: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng nhập tên' },
+            notEmpty: { msg: 'Vui lòng nhập tên' },
+            len: { msg: 'Tên phải có từ 2 đến 50 ký tự', args: [2, 50] }
+        }
     },
     avatar: {
         type: DataTypes.TEXT,
@@ -105,34 +109,45 @@ User.init({
         type: DataTypes.DATEONLY
     },
     phone: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING,
         unique: {
             name: 'phone-exist',
             msg: 'Số điện thoại đã được sử dụng bởi tài khoản khác'
         },
         validate: {
-            is: /(84|0[3|5|7|8|9])+([0-9]{8})\b/g,
+            notEmpty: { msg: 'Vui lòng nhập số điện thoại' },
+            is: {
+                msg: "Số điện thoại không hợp lệ",
+                args: /(\+84|0)((2[0-9])|(3)|(5)|(7)|(8)|(9))+([0-9]{8})\b/g
+            }
         }
     },
     address: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        validate: {
+            notEmpty: { msg: 'Vui lòng nhập địa chỉ' },
+            len: { msg: 'Địa chỉ không quá 200 ký tự', args: [0, 200] }
+        }
     },
     owner: {
-        type: DataTypes.STRING
-    },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
+        type: DataTypes.STRING,
+        validate: {
+            notEmpty: { msg: 'Vui lòng nhập tên chủ sở hữu' },
+            len: { msg: 'Tên chủ sở hữu phải có từ 2 đến 50 ký tự', args: [2, 50] }
+        }
     },
     status: {
         type: DataTypes.STRING,
+        allowNull: false,
         defaultValue: Status.unverified
     },
     roleID: {
         type: DataTypes.INTEGER,
+        allowNull: false,
     },
     authType: {
         type: DataTypes.STRING,
+        allowNull: false,
         validate: {
             isIn: {
                 args: [['Sketter', 'Google']],
@@ -162,22 +177,17 @@ Session.belongsTo(User, { foreignKey: "userID", as: 'session' })
 
 User.beforeSave(async (user) => {
     if (user.roleID == Roles.Supplier) {
-        if (!user.name || user.name == '')
-            throw new Error('Tên Supplier không được trống');
+        if (!user.owner || user.owner === null)
+            throw new AppError('Vui lòng nhập tên chủ sở hũu', StatusCodes.BAD_REQUEST)
 
-        if (!user.owner || user.owner == '')
-            throw new Error('Tên chủ sở hữu không được trống');
+        if (!user.phone || user.phone === null)
+            throw new AppError('Vui lòng nhập số điện thoại', StatusCodes.BAD_REQUEST)
 
-        if (!user.phone || user.phone == '')
-            throw new Error('Số điện thoại không được trống');
-
-        if (!user.address || user.address == '')
-            throw new Error('Địa chỉ không được trống');
+        if (!user.address || user.address === null)
+            throw new AppError('Vui lòng nhập địa chỉ', StatusCodes.BAD_REQUEST)
     }
-    if (user.roleID == Roles.Traveler) {
-        if (!user.name || user.name == '')
-            throw new Error('Tên không được trống');
-    }
+
+    //pass 6-16
     if (user.changed("password")) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(user.password, salt);

@@ -11,6 +11,7 @@ import { PAGE_LIMIT } from "../config/default"
 import { Op } from "sequelize"
 import RESDocument from "../controllers/factory/res_document"
 import { StatusCodes } from "http-status-codes"
+import AppError from "../utils/app_error"
 
 /**
  * This method get User's information
@@ -179,13 +180,11 @@ export const verifyEmailService = async (id: string) => {
  */
 export const checkPassword = (password: string, confirmPassword: string, oldPassword?: string) => {
     if (oldPassword && (password === oldPassword))
-        return 'Vui lòng nhập mật khẩu mới khác với mật khẩu hiện tại'
+        throw new AppError('Vui lòng nhập mật khẩu mới khác với mật khẩu hiện tại', StatusCodes.BAD_REQUEST)
 
     if (!password || password.length < 6 || password.length > 16)
-        return 'Mật khẩu phải có từ 6 đến 16 kí tự'
+        throw new AppError('Mật khẩu phải có từ 6 đến 16 kí tự', StatusCodes.BAD_REQUEST)
 
     if (password !== confirmPassword)
-        return 'Nhập lại mật khẩu không khớp'
-
-    return null
+        throw new AppError('Nhập lại mật khẩu không khớp', StatusCodes.BAD_REQUEST)
 }

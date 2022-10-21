@@ -13,7 +13,7 @@ import sequelize from '../db/sequelize.db';
 export class Catalog extends Model<InferAttributes<Catalog>, InferCreationAttributes<Catalog>> {
     declare name: string;
     declare parent: ForeignKey<Catalog['name']> | null;
-    
+
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
     readonly deletedAt?: Date | null;
@@ -24,10 +24,22 @@ Catalog.init({
     name: {
         type: DataTypes.STRING,
         allowNull: false,
-        primaryKey: true
+        primaryKey: true,
+        unique: {
+            name: 'catalog-exist',
+            msg: 'Loại địa điểm này đã tồn tại'
+        },
+        validate: {
+            notNull: { msg: 'Vui lòng nhập loại địa điểm' },
+            notEmpty: { msg: 'Vui lòng nhập loại địa điểm' },
+            len: { msg: 'Tên loại địa điểm phải có từ 4-50 ký tự', args: [4, 50] }
+        }
     },
     parent: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        validate: {
+            notEmpty: { msg: 'Vui lòng chọn loại địa điểm cha' }
+        }
     },
     createdAt: {
         type: DataTypes.DATE,

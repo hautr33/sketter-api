@@ -57,9 +57,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
 
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
-    const err = checkPassword(newPassword, confirmNewPassword, currentPassword)
-    if (err !== null)
-        return next(new AppError(err, StatusCodes.BAD_REQUEST))
+    checkPassword(newPassword, confirmNewPassword, currentPassword)
 
     const user = await User.findOne({ where: { id: res.locals.user.id } })
     if (!user || !(await user.comparePassword(currentPassword)))
@@ -101,7 +99,6 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     })
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'Đường dẫn đặt lại mật khẩu đã được gửi sang email của bạn', null);
-
     next();
 });
 
@@ -117,9 +114,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 
     const { password, confirmPassword } = req.body;
 
-    const err = checkPassword(password, confirmPassword)
-    if (err)
-        return next(new AppError(err, StatusCodes.BAD_REQUEST));
+    checkPassword(password, confirmPassword)
 
     const hashedToken = crypto
         .createHash('sha256')

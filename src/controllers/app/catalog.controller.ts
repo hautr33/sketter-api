@@ -7,7 +7,7 @@ import { Op } from "sequelize";
 import { Roles } from "../../utils/constant";
 
 /**
- * This controller is getAllCatalog that get all catalogs
+ * This controller is getAllCatalog that get all destination catalogs
  *
  */
 export const getAllCatalog = catch_async(async (req, res, next) => {
@@ -34,24 +34,16 @@ export const getAllCatalog = catch_async(async (req, res, next) => {
  */
 export const createCatalog = catch_async(async (req, res, next) => {
     const { name, parent } = req.body;
-    if (!name)
-        return next(new AppError('Vui lòng nhập loại địa điểm phụ', StatusCodes.BAD_REQUEST));
-
-    const countName = await Catalog.count({ where: { name: name } });
-    if (countName === 1)
-        return next(new AppError(`Loại địa điểm "${name}" đã tồn tại`, StatusCodes.BAD_REQUEST));
 
     const count = await Catalog.count({ where: { name: parent, parent: null } });
     if (count !== 1)
-        return next(new AppError('Loại địa điểm chính không hợp lệ', StatusCodes.BAD_REQUEST));
+        return next(new AppError('Loại địa điểm cha không hợp lệ', StatusCodes.BAD_REQUEST));
 
     await Catalog.create({ name: name, parent: parent })
     res.resDocument = new RESDocument(StatusCodes.OK, `Đã thêm loại địa điểm "${name}" vào "${parent}"`, null);
 
     next()
 })
-
-
 
 export const disableCatalog = catch_async(async (req, res, next) => {
     const action = req.query.action ? (req.query.action as string).toLowerCase() : null;

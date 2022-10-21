@@ -26,7 +26,7 @@ DestinationBookmark.init({
     }
 }, {
     // Other model options go here
-    timestamps: true,
+    timestamps: false,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'DestinationBookmark' // We need to choose the model name
 });

@@ -21,9 +21,7 @@ export const createUser = catchAsync(async (req, res, next) => {
     if (!role)
         return next(new AppError("Vai trò không hợp lệ", StatusCodes.BAD_REQUEST));
 
-    const err = checkPassword(password, confirmPassword)
-    if (err)
-        return next(new AppError(err, StatusCodes.BAD_REQUEST));
+    checkPassword(password, confirmPassword)
 
     const user = new User();
     user.name = name;

@@ -27,9 +27,18 @@ DestinationRating.init({
     star: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        validate: {
+            notNull: { msg: 'Vui lòng chọn số sao đánh giá' },
+            isInt: { msg: 'Số sao đánh giá không hợp lệ' },
+            min: { msg: 'Bạn chỉ có thể đánh giá từ 1 đến 5 sao', args: [1] },
+            max: { msg: 'Bạn chỉ có thể đánh giá từ 1 đến 5 sao', args: [5] },
+        }
     },
     description: {
         type: DataTypes.TEXT,
+        validate: {
+            len: { msg: 'Mô tả trải nghiệm của bạn không quá 500 ký tự', args: [0, 500] }
+        }
     },
     stastus: {
         type: DataTypes.STRING,
