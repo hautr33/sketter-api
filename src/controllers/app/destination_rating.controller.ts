@@ -83,6 +83,9 @@ export const getAllRating = catch_async(async (req, res, next) => {
     if (role === Roles.Traveler) {
         const myRating = await DestinationRating.findOne({
             where: { destinationID: req.params.id, userID: res.locals.user.id },
+            include: [
+                { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
+            ],
             attributes: ['star', 'description', 'updatedAt']
         })
         res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
