@@ -58,7 +58,7 @@ User.init({
         allowNull: false,
         unique: {
             name: 'email-exist',
-            msg: 'Email đã được sử dụng bởi tài khoản khác'
+            msg: 'email-exist: Email đã được sử dụng bởi tài khoản khác'
         },
         validate: {
             notEmpty: { msg: 'Vui lòng nhập email' },
@@ -111,7 +111,7 @@ User.init({
         type: DataTypes.STRING,
         unique: {
             name: 'phone-exist',
-            msg: 'Số điện thoại đã được sử dụng bởi tài khoản khác'
+            msg: 'phone-exist: Số điện thoại đã được sử dụng bởi tài khoản khác'
         },
         validate: {
             notEmpty: { msg: 'Vui lòng nhập số điện thoại' },

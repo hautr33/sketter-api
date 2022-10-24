@@ -4,7 +4,7 @@ import { DB_URL, ENVIRONMENT } from '../config/default';
 /**
  * Sequelize Connection related actions
  */
-const isDev = ENVIRONMENT === 'development'
+const isDev = ENVIRONMENT === 'developmentt'
 const sequelizeConnection = isDev ? new Sequelize(DB_URL, { logging: false })
     : new Sequelize(DB_URL, { logging: false, dialectOptions: { ssl: { rejectUnauthorized: false } } })
 

@@ -27,7 +27,7 @@ Catalog.init({
         primaryKey: true,
         unique: {
             name: 'catalog-exist',
-            msg: 'Loại địa điểm này đã tồn tại'
+            msg: 'catalog-exist: Loại địa điểm này đã tồn tại'
         },
         validate: {
             notNull: { msg: 'Vui lòng nhập loại địa điểm' },

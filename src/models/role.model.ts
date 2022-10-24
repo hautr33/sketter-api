@@ -16,7 +16,10 @@ Role.init({
     name: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        unique: {
+            name: 'role-exist',
+            msg: 'role-exist: Vai trò đã tồn tại'
+        },
     },
     description: {
         type: DataTypes.STRING,
