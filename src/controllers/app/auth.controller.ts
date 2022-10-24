@@ -92,8 +92,6 @@ export const login = catchAsync(async (req, res, next) => {
             return next(new AppError('Token không hợp lệ', StatusCodes.BAD_REQUEST));
 
         const user = await loginViaGoogle(token)
-        if (!user)
-            return next(new AppError('Không thể đăng nhập', StatusCodes.BAD_REQUEST));
         createSendToken(user.id, StatusCodes.OK, res, next);
     }
 });
