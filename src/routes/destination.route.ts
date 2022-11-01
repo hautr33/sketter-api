@@ -7,7 +7,7 @@ import { Roles, Status } from "../utils/constant";
 import { createDestination, deleteOneDestination, getAllDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
 import { deleteRating, getAllRating, ratingDestination, updateRating } from "../controllers/app/destination_rating.controller";
 import { bookmarkDestination, getBookmarkDestination } from "../controllers/app/destination_bookmark.controller";
-import { getDistance } from "../controllers/app/distance.controller";
+// import { getDistance } from "../controllers/app/distance.controller";
 
 const router = Router();
 
@@ -22,8 +22,8 @@ router.route('/search')
     .get(standardPipeline(restrictTo(Roles.Traveler,Roles.Supplier, Roles["Supplier Manager"]), searchDestination))
 
 
-router.route('/distance')
-    .get(standardPipeline(restrictTo(Roles.Traveler), getDistance))
+// router.route('/distance')
+//     .get(standardPipeline(restrictTo(Roles.Traveler), getDistance))
 
 router.route('/bookmark')
     .get(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), getBookmarkDestination))
