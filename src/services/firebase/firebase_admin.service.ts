@@ -8,6 +8,7 @@ import { Op } from "sequelize";
 
 export const signUpFirebase = async (user: User): Promise<any> => {
     await sequelizeConnection.transaction(async (create) => {
+        await user.save({ transaction: create });
         await getAuth()
             .createUser({
                 email: user.email,
@@ -21,11 +22,15 @@ export const signUpFirebase = async (user: User): Promise<any> => {
 }
 
 export const loginViaGoogle = async (token: string): Promise<any> => {
-    const result = await sequelizeConnection.transaction(async (save) => {
+    let email = ''
+    let firebaseID = ''
+    await sequelizeConnection.transaction(async (save) => {
         const decodedToken = await getAuth()
             .verifyIdToken(token)
         if (decodedToken && decodedToken.email !== undefined) {
-            const count = await User.count({ where: { email: decodedToken.email, firebaseID: decodedToken.uid } })
+            email = decodedToken.email
+            firebaseID = decodedToken.uid
+            const count = await User.count({ where: { email: email, firebaseID: firebaseID } })
             if (count === 0) {
                 const user = new User()
                 user.email = decodedToken.email
@@ -39,12 +44,11 @@ export const loginViaGoogle = async (token: string): Promise<any> => {
             } else if (count === 1) {
                 await User.update(decodedToken.picture ? { name: decodedToken.name, avatar: decodedToken.picture } : { name: decodedToken.name }, { where: { email: decodedToken.email, firebaseID: decodedToken.uid }, transaction: save })
             }
-            const user = await User.findOne({ where: { email: decodedToken.email, firebaseID: decodedToken.uid, status: { [Op.ne]: Status.deactivated } } })
-            if (!user)
-                throw new AppError('Không thể đăng nhập', StatusCodes.BAD_REQUEST)
-            return user
         } else
             throw new AppError('Token không hợp lệ', StatusCodes.BAD_REQUEST)
     })
-    return result
+    const user = await User.findOne({ where: { email: email, firebaseID: firebaseID, status: { [Op.ne]: Status.deactivated } } })
+    if (!user)
+        throw new AppError('Không thể đăng nhập', StatusCodes.BAD_REQUEST)
+    return user
 }

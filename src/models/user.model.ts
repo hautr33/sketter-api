@@ -33,7 +33,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     comparePassword!: (candidatePassword: string) => Promise<any>;
     createResetPasswordToken!: () => Promise<string>;
     createVerifyCode!: () => Promise<string>;
-    getavatarURL!: () => Promise<any>;
 
     declare getTravelerPersonalities: HasManyGetAssociationsMixin<Personalities>;
     declare addTravelerPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
@@ -175,23 +174,39 @@ User.hasMany(Session, { foreignKey: "userID", as: 'session' });
 Session.belongsTo(User, { foreignKey: "userID", as: 'session' })
 
 User.beforeSave(async (user) => {
-    if (user.roleID == Roles.Supplier) {
-        if (!user.owner || user.owner === null)
-            throw new AppError('Vui lòng nhập tên chủ sở hũu', StatusCodes.BAD_REQUEST)
-
-        if (!user.phone || user.phone === null)
-            throw new AppError('Vui lòng nhập số điện thoại', StatusCodes.BAD_REQUEST)
-
-        if (!user.address || user.address === null)
-            throw new AppError('Vui lòng nhập địa chỉ', StatusCodes.BAD_REQUEST)
-    }
-
     //pass 6-16
     if (user.changed("password")) {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(user.password, salt);
         user.password = hashedPassword;
         user.passwordUpdatedAt = new Date(Date.now() - 1000); // Now - 1 minutes
+    } else {
+        if (!user.email || user.email === null)
+            throw new AppError('Vui lòng nhập emal', StatusCodes.BAD_REQUEST)
+
+        const count = await User.count({ where: { email: user.email } })
+        if (count > 0)
+            throw new AppError('Email đã được sử dụng bởi tài khoản khác', StatusCodes.BAD_REQUEST)
+
+        if (!user.name || user.name === null)
+            throw new AppError('Vui lòng nhập tên', StatusCodes.BAD_REQUEST)
+
+        if (!user.roleID || user.roleID === null)
+            throw new AppError('Vui lòng chọn vai trò', StatusCodes.BAD_REQUEST)
+
+        if (user.roleID == Roles.Supplier) {
+            if (!user.name || user.name === null)
+                throw new AppError('Vui lòng nhập tên đối tác', StatusCodes.BAD_REQUEST)
+
+            if (!user.owner || user.owner === null)
+                throw new AppError('Vui lòng nhập tên chủ sở hũu', StatusCodes.BAD_REQUEST)
+
+            if (!user.phone || user.phone === null)
+                throw new AppError('Vui lòng nhập số điện thoại', StatusCodes.BAD_REQUEST)
+
+            if (!user.address || user.address === null)
+                throw new AppError('Vui lòng nhập địa chỉ', StatusCodes.BAD_REQUEST)
+        }
     }
 });
 

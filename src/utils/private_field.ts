@@ -135,7 +135,6 @@ export class DestinationPrivateFields {
         "openingTime",
         "closingTime",
         "estimatedTimeStay",
-        "avgRating",
         "view",
         "totalRating",
         "supplierID",

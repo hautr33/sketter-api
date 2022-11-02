@@ -22,11 +22,6 @@ export const signup = catchAsync(async (req, res, next) => {
     const { email, password, confirmPassword, role } = req.body;
     checkPassword(password, confirmPassword)
 
-    // Check user exist
-    const count = await User.count({ where: { email: email } });
-    if (count > 0)
-        return next(new AppError('Email đã được sử dụng bởi tài khoản khác', StatusCodes.BAD_REQUEST));
-
     // Set parameters to user
     const user = new User();
     user.email = email;

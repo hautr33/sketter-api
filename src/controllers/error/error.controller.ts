@@ -142,7 +142,7 @@ const sendErrorProd = (err: AppError, res: Response) => {
 		// Log to the console, but not to the client
 		logger.error('*****ERROR*****\n', err);
 
-		if (err.message.includes('notNull Violation') || err.message.includes('Validation error')) {
+		if (err.message.includes('notNull Violation') || err.message.includes('Validation error') || err.message.includes('exist')) {
 			const message = err.message.split(': ')[1].split(',')[0]
 			const statusCode = StatusCodes.BAD_REQUEST
 			const status = 'fail'
