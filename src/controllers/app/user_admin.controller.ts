@@ -13,10 +13,6 @@ import { signUpFirebase } from "../../services/firebase/firebase_admin.service";
 export const createUser = catchAsync(async (req, res, next) => {
     const { name, email, password, confirmPassword, roleName } = req.body;
 
-    const count = await User.count({ where: { email: email } })
-    if (count > 0)
-        return next(new AppError('Email đã được sử dụng bởi tài khoản khác', StatusCodes.BAD_REQUEST));
-
     const role = await Role.findOne({ where: { description: { [Op.eq]: roleName }, id: { [Op.ne]: Roles.Admin } } });
     if (!role)
         return next(new AppError("Vai trò không hợp lệ", StatusCodes.BAD_REQUEST));
@@ -28,6 +24,12 @@ export const createUser = catchAsync(async (req, res, next) => {
     user.email = email;
     user.password = password;
     user.roleID = role.id
+    if (role.id == Roles.Supplier) {
+        const { owner, phone, address } = req.body;
+        user.owner = owner;
+        user.phone = phone;
+        user.address = address;
+    }
     await signUpFirebase(user)
     res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo tài khoản thành công', null);
     next();

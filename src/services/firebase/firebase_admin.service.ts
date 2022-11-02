@@ -7,18 +7,22 @@ import { StatusCodes } from "http-status-codes";
 import { Op } from "sequelize";
 
 export const signUpFirebase = async (user: User): Promise<any> => {
-    await sequelizeConnection.transaction(async (create) => {
-        await user.save({ transaction: create });
-        await getAuth()
-            .createUser({
-                email: user.email,
-                password: user.password
-            })
-            .then(async (userRecord: { uid: string; }) => {
-                user.firebaseID = userRecord.uid
-                await user.save({ transaction: create });
-            })
-    })
+    await getAuth()
+        .createUser({
+            email: user.email,
+        })
+        .then(async (userRecord: { uid: string; }) => {
+            user.firebaseID = userRecord.uid
+            await user.save();
+        })
+        .catch(async () => {
+            await getAuth()
+                .getUserByEmail(user.email)
+                .then(async (userRecord) => {
+                    user.firebaseID = userRecord.uid
+                    await user.save();
+                })
+        })
 }
 
 export const loginViaGoogle = async (token: string): Promise<any> => {
