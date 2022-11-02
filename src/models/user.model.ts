@@ -40,6 +40,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     role?: any
     travelerPersonalities?: any
     session?: any
+    isCheck?: boolean
 }
 
 User.init({
@@ -180,7 +181,9 @@ User.beforeSave(async (user) => {
         const hashedPassword = await bcrypt.hash(user.password, salt);
         user.password = hashedPassword;
         user.passwordUpdatedAt = new Date(Date.now() - 1000); // Now - 1 minutes
-    } else {
+    }
+
+    if (user.isCheck) {
         if (!user.email || user.email === null)
             throw new AppError('Vui lòng nhập emal', StatusCodes.BAD_REQUEST)
 

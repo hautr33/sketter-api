@@ -30,6 +30,7 @@ export const createUser = catchAsync(async (req, res, next) => {
         user.phone = phone;
         user.address = address;
     }
+    user.isCheck = true
     await signUpFirebase(user)
     res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo tài khoản thành công', null);
     next();
