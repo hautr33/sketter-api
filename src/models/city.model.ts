@@ -31,4 +31,4 @@ City.init({
     for (let i = 0; i < city.length; i++) {
         await City.upsert({ id: city[i][0] as number, name: city[i][1] as string })
     }
-})();
+});
