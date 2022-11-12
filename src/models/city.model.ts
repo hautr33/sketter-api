@@ -24,11 +24,11 @@ City.init({
     modelName: 'City' // We need to choose the model name
 });
 
-(async () => {
-    const city = [
-        [1, 'Đà Lạt']
-    ]
-    for (let i = 0; i < city.length; i++) {
-        await City.upsert({ id: city[i][0] as number, name: city[i][1] as string })
-    }
-});
+// (async () => {
+//     const city = [
+//         [1, 'Đà Lạt']
+//     ]
+//     for (let i = 0; i < city.length; i++) {
+//         await City.upsert({ id: city[i][0] as number, name: city[i][1] as string })
+//     }
+// });
