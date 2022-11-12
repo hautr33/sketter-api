@@ -11,7 +11,6 @@ import { Destination } from "../../models/destination.model";
 import _ from "lodash";
 import { PlanPrivateFields } from "../../utils/private_field";
 import { User } from "../../models/user.model";
-import { PlanDetail } from "../../models/plan_detail.model";
 import { Op } from "sequelize";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import { PAGE_LIMIT } from "../../config/default";
@@ -22,7 +21,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body, user)
-
 
     const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
     const plan = await sequelizeConnection.transaction(async (create) => {
@@ -39,7 +37,13 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
                 planDestination.date = details[i].date;
+                planDestination.distanceText = planDestination.distance / 1000 > 1 ? Math.ceil(planDestination.distance / 100) / 10 + 'km' : planDestination.distance + 'm'
+                const hour = planDestination.duration / 3600
+                planDestination.durationText = hour > 1 ?
+                    Math.floor(hour) + 'h ' + (planDestination.duration - Math.floor(hour) * 3600 + ' p') : (planDestination.duration / 60 > 1 ?
+                        Math.floor(planDestination.duration / 60) + 'p' + (planDestination.duration - Math.floor(planDestination.duration / 60) * 60) + 's' : planDestination.duration + 's')
                 await planDestination.save({ transaction: create })
+
                 for (let i = 0; i < user?.travelerPersonalities.length; i++) {
                     await DestinationPersonalites.findOrCreate({
                         where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
@@ -62,7 +66,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
         {
             where: { id: plan.id },
             attributes: { exclude: PlanPrivateFields.default },
-            include: includeDetailGetOne
+            include: includeDetailGetOne,
+            order: [['details', 'fromTime', 'ASC']]
         });
     res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: result });
     next();
@@ -84,7 +89,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 
     await sequelizeConnection.transaction(async (update) => {
         await plan.save({ transaction: update });
-        await PlanDetail.destroy({ where: { planID: plan.id }, transaction: update })
+        await PlanDestination.destroy({ where: { planID: plan.id }, transaction: update })
         for (let i = 0; i < details.length; i++) {
             for (let j = 0; j < details[i].destinations.length; j++) {
                 const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice'] })
@@ -93,7 +98,12 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                 cost += (destination.lowestPrice + destination.highestPrice) / 2
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
-                planDestination.planID = details[i].date;
+                planDestination.date = details[i].date;
+                planDestination.distanceText = planDestination.distance / 1000 > 1 ? Math.ceil(planDestination.distance / 100) / 10 + 'km' : planDestination.distance + 'm'
+                const hour = planDestination.duration / 3600
+                planDestination.durationText = hour > 1 ?
+                    Math.floor(hour) + 'h ' + (planDestination.duration - Math.floor(hour) * 3600 + ' p') : (planDestination.duration / 60 > 1 ?
+                        Math.ceil(planDestination.duration / 60) + 'p' + (planDestination.duration - Math.ceil(planDestination.duration / 60) * 60) + 's' : planDestination.duration + 's')
                 await planDestination.save({ transaction: update })
             }
         }
@@ -103,7 +113,8 @@ export const updatePlan = catchAsync(async (req, res, next) => {
         {
             where: { id: plan.id },
             attributes: { exclude: PlanPrivateFields.default },
-            include: includeDetailGetOne
+            include: includeDetailGetOne,
+            order: [['details', 'fromTime', 'ASC']]
         });
     res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: result });
     next();
@@ -180,7 +191,7 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
             include: includeDetailGetOne,
-            order: [['details', 'fromTime', 'ASC']],
+            order: [['details', 'fromTime', 'ASC']]
         });
 
     if (!plan)
@@ -224,7 +235,7 @@ const includeDetailGetOne = [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image'] },
     {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'timeTraveling'], include: [
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText'], include: [
             {
                 model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'estimatedTimeStay']
             }

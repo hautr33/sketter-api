@@ -14,7 +14,9 @@ export class PlanDestination extends Model<InferAttributes<PlanDestination>, Inf
     fromTime!: Date;
     toTime!: Date;
     distance!: number;
-    timeTraveling!: number;
+    duration!: number;
+    distanceText !: string;
+    durationText !: string;
     status?: string;
     destinationName?: string;
     destinationImage?: string;
@@ -64,20 +66,28 @@ PlanDestination.init({
         }
     },
     distance: {
-        type: DataTypes.REAL,
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notNull: { msg: 'Khoảng cách đến địa điểm không được trống' },
-            notEmpty: { msg: 'Khoảng cách đến địa điểm không được trống' }
+            isInt: { msg: 'Khoảng cách đến địa điểm không hợp lệ' }
         }
     },
-    timeTraveling: {
+    duration: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notNull: { msg: 'Thời gian di chuyển đến địa điểm không được trống' },
-            notEmpty: { msg: 'Thời gian di chuyển đến địa điểm không được trống' }
+            isInt: { msg: 'Thời gian di chuyển đến địa điểm không hợp lệ' }
         }
+    },
+    distanceText: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    durationText: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
     checkinTime: {
         type: DataTypes.DATE,
@@ -114,7 +124,7 @@ PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'desti
 
 PlanDestination.beforeSave(async (planDes) => {
     // const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-    const { distance, timeTraveling, destinationID
+    const { destinationID
     } = planDes;
     const des = await Destination.findOne(
         {
@@ -132,11 +142,5 @@ PlanDestination.beforeSave(async (planDes) => {
     )
     if (!des || des === null)
         throw new AppError(`Địa điểm với ID: ${destinationID} không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-    if (distance < 0)
-        throw new AppError(`Khoảng cách đến địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-    if (timeTraveling < 0)
-        throw new AppError(`Thời gian di chuyển đến địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
 
 });
