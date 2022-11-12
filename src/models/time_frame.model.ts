@@ -26,13 +26,3 @@ TimeFrame.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'TimeFrame' // We need to choose the model name
 });
-
-
-// (async () => {
-//     for (let i = 1; i <= 12; i++) {
-//         const id = i
-//         const from = (i - 1) * 2 >= 10 ? (i - 1) * 2 + ':00' : '0' + (i - 1) * 2 + ':00'
-//         const to = i * 2 >= 10 ? i * 2 + ':00' : '0' + i * 2 + ':00'
-//         await TimeFrame.upsert({ id: id, from: from, to: to })
-//     }
-// });

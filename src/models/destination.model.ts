@@ -226,7 +226,7 @@ Destination.init({
     },
     cityID: {
         type: DataTypes.INTEGER,
-        // allowNull: false,
+        allowNull: false,
     },
     supplierID: {
         type: DataTypes.UUID,
