@@ -8,6 +8,7 @@ import { Op } from "sequelize";
 
 export const signUpFirebase = async (user: User): Promise<any> => {
     await sequelizeConnection.transaction(async (save) => {
+        await user.save({ transaction: save });
         await getAuth()
             .createUser({
                 email: user.email,
@@ -25,6 +26,7 @@ export const signUpFirebase = async (user: User): Promise<any> => {
                         await user.save({ transaction: save });
                     })
             })
+        return
     })
 }
 

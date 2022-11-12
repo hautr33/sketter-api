@@ -47,6 +47,13 @@ export class Status {
     public static readonly deactivated = 'Deactivated';
 
     public static readonly closed = 'Closed';
+
+    public static readonly open = 'Open';
+
+    public static readonly pending = 'Pending';
+
+    public static readonly cancel = 'Cancel';
+
 }
 
 export const listStatusDestination = [Status.activated, Status.inactivated, Status.deactivated, Status.closed];

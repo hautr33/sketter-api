@@ -4,16 +4,20 @@ import { Catalog } from "../../models/catalog.model";
 import { Destination } from "../../models/destination.model";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
-import { DestinationRecommendedTime } from "../../models/destination_recommended_time.model";
 import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
-import { DestinationPrivateFields, UserPrivateFields } from "../../utils/private_field";
 import { DestinationImage } from "../../models/destination_image.model";
-import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import sequelizeConnection from "../../db/sequelize.db";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
 import { User } from "../../models/user.model";
+import { TimeFrame } from "../../models/time_frame.model";
+import { Personalities } from "../../models/personalities.model";
+import { City } from "../../models/city.model";
+import { DestinationBookmark } from "../../models/destination_bookmark.model";
+import { DestinationPrivateFields } from "../../utils/private_field";
+const jsrmvi = require('jsrmvi');
+const { removeVI } = jsrmvi;
 
 export const createDestination = catchAsync(async (req, res, next) => {
     const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : req.body.supplierID;
@@ -21,47 +25,46 @@ export const createDestination = catchAsync(async (req, res, next) => {
     if (error != null)
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
-    const { name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
+    const { cityID, name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities, recommendedTimes
     } = req.body;
 
+    const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
     const createdBy = res.locals.user.id;
     const result = await sequelizeConnection.transaction(async (create) => {
 
         const destination = await Destination.create({
-            name: name, address: address, phone: phone, email: email, description: description, image: gallery[0].url,
-            longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice,
+            name: name, address: address, phone: phone, email: email, description: description, image: gallery[0].url, latinName: latinName,
+            longitude: longitude, latitude: latitude, lowestPrice: lowestPrice, highestPrice: highestPrice, cityID: cityID,
             openingTime: openingTime, closingTime: closingTime, estimatedTimeStay: estimatedTimeStay, supplierID: supplierID, createdBy: createdBy
         }, { transaction: create })
         await destination.addCatalogs(catalogs, { transaction: create })
         await destination.addDestinationPersonalities(destinationPersonalities, { transaction: create })
-        for (let i = 0; i < recommendedTimes.length; i++) {
-            await destination.createRecommendedTime(recommendedTimes[i], { transaction: create })
-        }
+        await destination.addRecommendedTimes(recommendedTimes, { transaction: create })
         for (let i = 0; i < gallery.length; i++) {
             await destination.createGallery(gallery[i], { transaction: create })
         }
         return destination
     })
 
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo địa điểm thành công', { destination: result })
+    const destination = await Destination.findOne({ where: { id: result.id }, attributes: ['id', 'name', 'address', 'image'] })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo địa điểm thành công', { destination })
     next()
 })
 
 export const updateDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findOne({ where: { id: req.params.id } })
-    if (!destination || res.locals.user.roleID != Roles["Supplier Manager"] && destination.supplierID != res.locals.user.id)
+    const query = res.locals.user.roleID === Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id, status: { [Op.ne]: Status.deactivated } } : { id: req.params.id, status: { [Op.ne]: Status.deactivated } }
+    const destination = await Destination.findOne({ where: query })
+    if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    const error = await validate(req.body)
-    if (error)
-        return next(new AppError(error, StatusCodes.BAD_REQUEST))
+    await validate(req.body)
 
     const { name, address, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs, estimatedTimeStay, status
+        openingTime, closingTime, catalogs, estimatedTimeStay, status, recommendedTimes
     } = req.body;
-
+    const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
 
     if (res.locals.user.roleID == Roles["Supplier Manager"]) {
@@ -69,22 +72,23 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         destination.longitude = longitude
         destination.latitude = latitude
     }
-
-    destination.name = name
-    destination.address = address
-    destination.phone = phone
-    destination.email = email
-    destination.description = description
-    destination.lowestPrice = lowestPrice
-    destination.highestPrice = highestPrice
-    destination.openingTime = openingTime
-    destination.closingTime = closingTime
-    destination.estimatedTimeStay = estimatedTimeStay
-    destination.status = status
-    destination.image = gallery[0].url
+    gallery.length > 0 ? destination.image = gallery[0].url : 0
+    name ? destination.name = name : 0
+    name ? destination.latinName = latinName : 0
+    address ? destination.address = address : 0
+    phone ? destination.phone = phone : 0
+    email ? destination.email = email : 0
+    description ? destination.description = description : 0
+    lowestPrice ? destination.lowestPrice = lowestPrice : 0
+    highestPrice ? destination.highestPrice = highestPrice : 0
+    openingTime ? destination.openingTime = openingTime : 0
+    closingTime ? destination.closingTime = closingTime : 0
+    estimatedTimeStay ? destination.estimatedTimeStay = estimatedTimeStay : 0;
+    [Status.open, Status.closed].includes(status as string) ? destination.status = status : 0
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         await destination.setCatalogs(catalogs, { transaction: update })
+        await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
         await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
         for (let i = 0; i < gallery.length; i++) {
             await destination.createGallery(gallery[i], { transaction: update })
@@ -98,52 +102,61 @@ export const updateDestination = catchAsync(async (req, res, next) => {
 
 export const searchDestination = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const cityID = isNaN(Number(req.query.cityID)) || !req.query.cityID ? 1 : Number(req.query.cityID)
     const name = req.query.name as string ?? '';
     const catalog = req.query.catalog as string;
+    const orderBy = ['createdAt', 'name', 'avgRating', 'lowestPrice', 'highestPrice'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'name';
+    const orderDirection = (req.query.isOrderASC as string) === 'true' ? 'ASC' : 'DESC';
     const skipStay = req.query.skipStay === 'true' ? true : false
     const catalogQuery = `WHERE desCata."catalogName" IN (SELECT "name"
         FROM public."Catalogs" as cata
         WHERE cata."name" ILIKE '%${catalog}%'
         OR cata."parent" ILIKE '%${catalog}%')`
+    const supplierID = res.locals.user.roleID === Roles.Supplier ? res.locals.user.id : null
+    const status = res.locals.user.roleID === Roles.Traveler ? Status.open : req.query.status ?? ''
+    const destinationQuery = supplierID === null ? {
+        [Op.or]: [{ name: { [Op.iLike]: `%${name}%` } }, { latinName: { [Op.iLike]: `%${name}%` } }],
+        status: { [Op.like]: `%${status}%` },
+        cityID: cityID,
+        id: {
+            [Op.in]: Sequelize.literal(`(
+                SELECT "destinationID"
+                FROM public."DestinationCatalogs" as desCata
+                ${catalog ? catalogQuery : ''}
+        )`)
+        }
+    } : {
+        [Op.or]: [{ name: { [Op.iLike]: `%${name}%` } }, { latinName: { [Op.iLike]: `%${name}%` } }],
+        status: { [Op.like]: `%${status}%` },
+        supplierID: supplierID,
+        cityID: cityID,
+        id: {
+            [Op.in]: Sequelize.literal(`(
+                SELECT "destinationID"
+                FROM public."DestinationCatalogs" as desCata
+                ${catalog ? catalogQuery : ''}
+        )`)
+        }
+    }
     const destinations = await Destination.findAll({
-        where: {
-            name: { [Op.iLike]: `%${name}%` },
-            status: Status.activated,
-            id: {
-                [Op.in]: Sequelize.literal(`(
-                    SELECT "destinationID"
-                    FROM public."DestinationCatalogs" as desCata
-                    ${catalog ? catalogQuery : ''}
-            )`)
-            }
-        },
-        attributes: { exclude: DestinationPrivateFields.getAllTraveler },
+        where: destinationQuery,
+        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'status', 'createdAt'],
         include: defaultInclude(false, skipStay),
-        order: [['name', 'ASC']],
+        order: [[orderBy, orderDirection]],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT,
     })
 
     const count = await Destination.findAll({
-        where: {
-            name: { [Op.iLike]: `%${name}%` },
-            status: Status.activated,
-            id: {
-                [Op.in]: Sequelize.literal(`(
-                    SELECT "destinationID"
-                    FROM public."DestinationCatalogs" as desCata
-                    ${catalog ? catalogQuery : ''}
-            )`)
-            }
-        },
+        where: destinationQuery,
         attributes: ['id'],
-        include: defaultInclude(false, skipStay),
+        include: defaultInclude(true, skipStay),
     })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { destinations }
+        { count: count.length, destinations }
     )
     if (count.length != 0) {
         const maxPage = Math.ceil(count.length / PAGE_LIMIT)
@@ -151,7 +164,6 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         resDocument.setMaxPage(maxPage)
     }
     res.resDocument = resDocument;
-
     next()
 })
 
@@ -165,7 +177,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
         option = { supplierID: res.locals.user.id }
         privatFields = DestinationPrivateFields.getAllSupplier
     } else if (roleID == Roles.Traveler) {
-        option = { status: Status.activated }
+        option = { status: Status.open }
         privatFields = DestinationPrivateFields.getAllTraveler
 
     }
@@ -190,7 +202,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { destinations }
+        { count: count.length, destinations }
     )
     if (count.length != 0) {
         const maxPage = Math.ceil(count.length / PAGE_LIMIT)
@@ -205,54 +217,51 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
 export const getOneDestination = catchAsync(async (req, res, next) => {
     const role = res.locals.user.roleID;
 
-    let result = null
+    const query = role === Roles.Traveler ? { id: req.params.id, status: Status.open } : (
+        role === Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id } : { id: req.params.id }
+    )
 
-    if (role === Roles.Traveler) {
-        result = await Destination.findOne({
-            where: { id: req.params.id, status: Status.activated },
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: destinationInclude
-        })
-    } else if (role === Roles.Supplier) {
-        result = await Destination.findOne({
-            where: { id: req.params.id, supplierID: res.locals.user.id },
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: destinationInclude
-        })
-    } else if (role === Roles["Supplier Manager"]) {
-        result = await Destination.findOne({
-            where: { id: req.params.id },
-            attributes: { exclude: DestinationPrivateFields.default },
-            include: destinationInclude
-        })
-    }
-    if (!result || result === null) {
+    const result = await Destination.findOne({
+        where: query,
+        attributes: { exclude: DestinationPrivateFields.default },
+        include: destinationInclude
+    })
+
+    if (!result || result === null)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
-    }
-    const personality = await DestinationPersonalites.
-        findAll({
-            where: { destinationID: result.id },
-            attributes: { exclude: ['destinationID'] },
-            order: [['visitCount', 'DESC'], ['planCount', 'DESC']]
-        })
-    const destination = _.omit(result.toJSON(), []);
-    destination.destinationPersonalities = personality
+
     if (role === Roles.Traveler)
-        await Destination.increment({ view: 1 }, { where: { id: destination.id } })
+        await Destination.increment({ view: 1 }, { where: { id: result.id } })
+
+    const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id } })
+
+    const destination = _.omit(result.toJSON(), []);
+    count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })
     next()
 })
 
-export const deleteOneDestination = catchAsync(async (req, res, next) => {
-    const destination = await Destination.findByPk(req.params.id)
+export const deactivateDestination = catchAsync(async (req, res, next) => {
+    const count = await Destination.count({ where: { id: req.params.id, status: { [Op.ne]: Status.deactivated } } })
 
-    if (!destination
-        || (res.locals.user.roleID == Roles.Supplier && destination.supplierID != res.locals.user.id)) {
+    if (count !== 1)
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
-    }
 
-    await destination.destroy()
-    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'success', null)
+    await Destination.update({ status: Status.deactivated }, { where: { id: req.params.id } })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Huỷ kích hoạt địa điểm thành công', null)
+    next()
+})
+
+export const deleteOneDestination = catchAsync(async (req, res, next) => {
+    const query = res.locals.user.roleID == Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id } : { id: req.params.id, supplierID: null }
+    const count = await Destination.count({ where: query })
+
+    if (count !== 1)
+        return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
+
+
+    await Destination.destroy({ where: { id: req.params.id } })
+    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Đã xoá địa điểm', null)
     next()
 })
 
@@ -262,22 +271,22 @@ const validate = async (body: any) => {
     const gallery = body.gallery as DestinationImage[]
 
     if (!catalogs || catalogs === '' || catalogs === null || catalogs.length === 0)
-        return 'Vui lòng chọn loại địa điểm'
+        throw new AppError('Vui lòng chọn loại địa điểm', StatusCodes.BAD_REQUEST)
 
     if (!gallery || gallery === null || gallery.length === 0)
-        return 'Vui lòng thêm ảnh vào địa điểm'
+        throw new AppError('Vui lòng thêm ảnh vào địa điểm', StatusCodes.BAD_REQUEST)
 
     if (!recommendedTimes || recommendedTimes === null || recommendedTimes.length === 0)
-        return 'Vui lòng thêm khung giờ lý tưởng vào địa điểm'
-
-    return null
+        throw new AppError('Vui lòng thêm khung giờ lý tưởng vào địa điểm', StatusCodes.BAD_REQUEST)
 }
 
 const destinationInclude = [
     { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] },
-    { model: DestinationRecommendedTime, as: 'recommendedTimes', attributes: { exclude: ['destinationID', 'id'] } },
+    { model: TimeFrame, as: 'recommendedTimes', through: { attributes: ['planCount', 'visitCount'], as: 'count' }, attributes: ['from', 'to'] },
+    { model: Personalities, as: 'destinationPersonalities', through: { attributes: ['planCount', 'visitCount'], as: 'count' }, attributes: ['name'] },
     { model: DestinationImage, as: 'gallery', attributes: { exclude: ['destinationID', 'id'] } },
-    { model: User, as: 'supplier', attributes: { exclude: UserPrivateFields[Roles.Supplier] } }
+    { model: User, as: 'supplier', attributes: ['id', 'email', 'name', 'avatar', 'phone'] },
+    { model: City, as: 'city', attributes: ['name'] }
 ]
 
 const defaultInclude = (count: boolean, skipStay: boolean) => [

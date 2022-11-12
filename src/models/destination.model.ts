@@ -10,10 +10,13 @@ import { DestinationImage } from './destination_image.model';
 import { DestinationPersonalites } from './destination_personalities.model';
 import AppError from '../utils/app_error';
 import { StatusCodes } from 'http-status-codes';
+import { TimeFrame } from './time_frame.model';
+import { City } from './city.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
     declare id?: string;
     name!: string;
+    latinName?: string;
     address!: string;
     phone?: string;
     email?: string;
@@ -30,6 +33,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     avgRating?: number;
     view?: number;
     totalRating?: number;
+    cityID!: ForeignKey<City['id']>;
     supplierID?: ForeignKey<User['id']> | null;
     createdBy!: ForeignKey<User['id']>;
 
@@ -40,17 +44,17 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare addCatalogs: HasManyAddAssociationsMixin<Catalog, string>;
     declare setCatalogs: HasManySetAssociationsMixin<Catalog, string>;
 
-    declare getDestinationPersonalities: HasManyGetAssociationsMixin<Personalities>;
     declare addDestinationPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
     declare setDestinationPersonalities: HasManySetAssociationsMixin<Personalities, string>;
 
-    declare getRecommendedTimes: HasManyGetAssociationsMixin<DestinationRecommendedTime>;
-    declare createRecommendedTime: HasManyCreateAssociationMixin<DestinationRecommendedTime, 'destinationID'>;
+    declare addRecommendedTimes: HasManyAddAssociationsMixin<TimeFrame, number>;
+    declare setRecommendedTimes: HasManySetAssociationsMixin<TimeFrame, number>;
 
     declare getGallery: HasManyGetAssociationsMixin<DestinationImage>;
     declare createGallery: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
     catalogs?: any[];
+    isBookmarked?: boolean;
 }
 
 Destination.init({
@@ -71,6 +75,9 @@ Destination.init({
             notEmpty: { msg: 'Vui lòng nhập tên địa điểm' },
             len: { msg: 'Tên địa điểm phải có từ 2 đến 50 ký tự', args: [2, 50] }
         }
+    },
+    latinName: {
+        type: DataTypes.STRING,
     },
     address: {
         type: DataTypes.STRING,
@@ -158,7 +165,7 @@ Destination.init({
         }
     },
     openingTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(5),
         allowNull: false,
         validate: {
             notNull: { msg: 'Vui lòng nhập giờ mở cửa' },
@@ -170,7 +177,7 @@ Destination.init({
         }
     },
     closingTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(5),
         allowNull: false,
         validate: {
             notNull: { msg: 'Vui lòng nhập giờ đóng cửa' },
@@ -194,10 +201,10 @@ Destination.init({
     status: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: Status.activated,
+        defaultValue: Status.open,
         validate: {
             isIn: {
-                args: [[Status.activated, Status.inactivated, Status.deactivated, Status.closed]],
+                args: [[Status.open, Status.deactivated, Status.closed]],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
@@ -216,6 +223,10 @@ Destination.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: 0
+    },
+    cityID: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
     },
     supplierID: {
         type: DataTypes.UUID,
@@ -238,11 +249,10 @@ Destination.belongsToMany(Catalog, { through: DestinationCatalog, foreignKey: "d
 Catalog.belongsToMany(Destination, { through: DestinationCatalog, foreignKey: "catalogName", as: 'catalogs' });
 
 Destination.belongsToMany(Personalities, { through: DestinationPersonalites, foreignKey: "destinationID", as: 'destinationPersonalities' });
-Personalities.belongsToMany(Destination, { through: DestinationPersonalites, foreignKey: "personalityName", as: 'destinationPersonalities' });
+Personalities.belongsToMany(Destination, { through: DestinationPersonalites, foreignKey: "personality", as: 'destinationPersonalities' });
 
-Destination.hasMany(DestinationRecommendedTime, {
-    foreignKey: "destinationID", as: 'recommendedTimes'
-});
+Destination.belongsToMany(TimeFrame, { through: DestinationRecommendedTime, foreignKey: "destinationID", as: 'recommendedTimes' });
+TimeFrame.belongsToMany(Destination, { through: DestinationRecommendedTime, foreignKey: "timeFrameID", as: 'recommendedTimes' });
 
 Destination.hasMany(DestinationImage, { foreignKey: "destinationID", as: 'gallery' });
 DestinationImage.belongsTo(Destination, { foreignKey: "destinationID", as: 'gallery' });
@@ -253,7 +263,8 @@ Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
 User.hasMany(Destination, { foreignKey: "createdBy", as: "creater" });
 Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
 
-
+City.hasMany(Destination, { foreignKey: "cityID", as: "city" });
+Destination.belongsTo(City, { foreignKey: 'cityID', as: "city" })
 
 Destination.beforeSave(async (destination) => {
     const { email, lowestPrice, highestPrice, openingTime, closingTime, supplierID

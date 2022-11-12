@@ -5,7 +5,7 @@ import { Personalities } from './personalities.model';
 
 export class DestinationPersonalites extends Model<InferAttributes<DestinationPersonalites>, InferCreationAttributes<DestinationPersonalites>> {
     destinationID!: ForeignKey<Destination['id']>;
-    personalityName!: ForeignKey<Personalities['name']>;
+    personality!: ForeignKey<Personalities['name']>;
     planCount!: number;
     visitCount!: number;
 }
@@ -17,8 +17,8 @@ DestinationPersonalites.init({
         type: DataTypes.UUID,
         primaryKey: true
     },
-    personalityName: {
-        type: DataTypes.STRING,
+    personality: {
+        type: DataTypes.INTEGER,
         primaryKey: true
     },
     planCount: {

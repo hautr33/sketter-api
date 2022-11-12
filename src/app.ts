@@ -18,7 +18,7 @@ import AppError from './utils/app_error';
 import router from './routes';
 
 const app = express();
-
+process.env.TZ = "Asia/Ho_Chi_Minh";
 // Hide X-Powered-By header
 app.disable('x-powered-by');
 

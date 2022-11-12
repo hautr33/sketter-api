@@ -4,18 +4,24 @@ import AppError from '../utils/app_error';
 import sequelize from '../db/sequelize.db';
 import { Catalog } from './catalog.model';
 import { Destination } from './destination.model';
-import { PlanDetail } from './plan_detail.model';
+import { Plan } from './plan.model';
 
 export class PlanDestination extends Model<InferAttributes<PlanDestination>, InferCreationAttributes<PlanDestination>> {
     declare id?: string;
-    planDetailID!: ForeignKey<PlanDetail['id']>;
+    planID!: ForeignKey<Plan['id']>;
     destinationID!: ForeignKey<Destination['id']>;
-    fromTime!: string;
-    toTime!: string;
+    date!: Date;
+    fromTime!: Date;
+    toTime!: Date;
     distance!: number;
     timeTraveling!: number;
+    status?: string;
+    destinationName?: string;
+    destinationImage?: string;
     checkinTime?: Date;
     checkoutTime?: Date;
+    rating?: number;
+    description?: string;
 }
 
 PlanDestination.init({
@@ -28,36 +34,41 @@ PlanDestination.init({
             isUUID: 4
         }
     },
-    planDetailID: {
+    planID: {
         type: DataTypes.UUID,
         allowNull: false,
+    },
+    date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+        validate: {
+            isDate: { msg: 'Ngày không hợp lệ', args: true }
+        }
     },
     destinationID: {
         type: DataTypes.UUID,
         allowNull: false,
     },
     fromTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: false,
         validate: {
-            notNull: { msg: 'Vui lòng nhập giờ bắt đầu' },
-            notEmpty: { msg: 'Vui lòng nhập giờ bắt đầu' }
+            isDate: { msg: 'Thời gian bắt đầu không hợp lệ', args: true }
         }
     },
     toTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.DATE,
         allowNull: false,
         validate: {
-            notNull: { msg: 'Vui lòng nhập giờ kết thúc' },
-            notEmpty: { msg: 'Vui lòng nhập giờ kết thúc' }
+            isDate: { msg: 'Thời gian kết thúc không hợp lệ', args: true }
         }
     },
     distance: {
         type: DataTypes.REAL,
         allowNull: false,
         validate: {
-            notNull: { msg: 'Khảng cách đến địa điểm không được trống' },
-            notEmpty: { msg: 'Khảng cách đến địa điểm không được trống' }
+            notNull: { msg: 'Khoảng cách đến địa điểm không được trống' },
+            notEmpty: { msg: 'Khoảng cách đến địa điểm không được trống' }
         }
     },
     timeTraveling: {
@@ -69,10 +80,26 @@ PlanDestination.init({
         }
     },
     checkinTime: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        validate: {
+            isDate: { msg: 'Thời gian đến địa điểm không hợp lệ', args: true }
+        }
     },
     checkoutTime: {
-        type: DataTypes.DATE
+        type: DataTypes.DATE,
+        validate: {
+            isDate: { msg: 'Thời gian rời địa điểm không hợp lệ', args: true }
+        }
+    },
+    status: {
+        type: DataTypes.STRING,
+        defaultValue: 'Planned',
+        validate: {
+            isIn: {
+                args: [['Planned', 'Checked-in', 'New']],
+                msg: 'Trạng thái không hợp lệ'
+            }
+        }
     },
 }, {
     // Other model options go here
@@ -86,8 +113,8 @@ Destination.hasMany(PlanDestination, { foreignKey: 'destinationID', as: 'destina
 PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destination' })
 
 PlanDestination.beforeSave(async (planDes) => {
-    const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-    const { fromTime, toTime, distance, timeTraveling, destinationID
+    // const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
+    const { distance, timeTraveling, destinationID
     } = planDes;
     const des = await Destination.findOne(
         {
@@ -105,12 +132,6 @@ PlanDestination.beforeSave(async (planDes) => {
     )
     if (!des || des === null)
         throw new AppError(`Địa điểm với ID: ${destinationID} không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-    if (!fromTime.match(timeRegex))
-        throw new AppError(`Giờ bắt đầu (HH:MM): ${fromTime} của địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-    if (!toTime.match(timeRegex) || toTime <= fromTime)
-        throw new AppError(`Giờ kết thúc (HH:MM): ${toTime} của địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
 
     if (distance < 0)
         throw new AppError(`Khoảng cách đến địa điểm '${des.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)

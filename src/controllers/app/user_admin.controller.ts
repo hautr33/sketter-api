@@ -21,7 +21,7 @@ export const createUser = catchAsync(async (req, res, next) => {
 
     const user = new User();
     user.name = name;
-    user.email = email;
+    user.email = email.toLowerCase();
     user.password = password;
     user.roleID = role.id
     if (role.id == Roles.Supplier) {

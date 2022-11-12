@@ -57,18 +57,20 @@ export const getAllUserService = async (page: number, status: string) => {
             limit: PAGE_LIMIT,
         }
     )
-    const count = await User.count(
+    const count = await User.findAll(
         {
-            where: query
+            where: query,
+            attributes: ['id'],
+            include: [{ model: Role, as: 'role', attributes: [] }],
         })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { users }
+        { count: count.length, users: users }
     )
-    if (count != 0) {
-        const maxPage = Math.ceil(count / PAGE_LIMIT)
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
         resDocument.setCurrentPage(page)
         resDocument.setMaxPage(maxPage)
     }

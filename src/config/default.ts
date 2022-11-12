@@ -49,6 +49,8 @@ export const FORGOT_PASSWORD_URL = process.env.FORGOT_PASSWORD_URL as string;
 
 export const PAGE_LIMIT = Number(process.env.PAGE_LIMIT ?? 10);
 
+export const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN;
+
 export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
 export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';
 export const REDIS_TIMEOUT_SECONDS = parseInt(process.env.REDIS_TIMEOUT_SECONDS as string, 10) ?? 3600;

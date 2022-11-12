@@ -187,10 +187,6 @@ User.beforeSave(async (user) => {
         if (!user.email || user.email === null)
             throw new AppError('Vui lòng nhập emal', StatusCodes.BAD_REQUEST)
 
-        const count = await User.count({ where: { email: user.email } })
-        if (count > 0)
-            throw new AppError('Email đã được sử dụng bởi tài khoản khác', StatusCodes.BAD_REQUEST)
-
         if (!user.name || user.name === null)
             throw new AppError('Vui lòng nhập tên', StatusCodes.BAD_REQUEST)
 

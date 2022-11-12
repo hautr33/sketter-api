@@ -24,7 +24,7 @@ export const signup = catchAsync(async (req, res, next) => {
 
     // Set parameters to user
     const user = new User();
-    user.email = email;
+    user.email = email.toLowerCase();
     user.password = password;
     user.roleID = role;
 

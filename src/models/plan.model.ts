@@ -1,19 +1,18 @@
-import { DataTypes, ForeignKey, HasManyAddAssociationsMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import AppError from '../utils/app_error';
 import sequelize from '../db/sequelize.db';
-import { Personalities } from './personalities.model';
-import { PlanDetail } from './plan_detail.model';
-import { PlanPersonalities } from './plan_personalities.model';
 import { User } from './user.model';
 import { StatusCodes } from 'http-status-codes';
+import { Destination } from './destination.model';
+import { PlanDestination } from './plan_destination.model';
 
 export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<Plan>> {
     declare id?: string;
     name!: string;
     fromDate!: Date;
     toDate!: Date;
-    place!: string;
-    estimatedCost!: number;
+    stayDestinationID?: ForeignKey<Destination['id']>;
+    estimatedCost?: number;
     isPublic!: boolean;
     status?: string;
     travelerID!: ForeignKey<User['id']>;
@@ -21,9 +20,6 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
 
-    declare getPlanPersonalities: HasManyGetAssociationsMixin<Personalities>;
-    declare addPlanPersonalities: HasManyAddAssociationsMixin<Personalities, string>;
-    declare setPlanPersonalities: HasManySetAssociationsMixin<Personalities, string>;
     planPersonalities?: any[];
     destinations?: any[];
     details?: any[];
@@ -53,7 +49,8 @@ Plan.init({
         allowNull: false,
         validate: {
             notNull: { msg: 'Vui lòng chọn ngày bắt đầu' },
-            notEmpty: { msg: 'Vui lòng chọn ngày bắt đầu' }
+            notEmpty: { msg: 'Vui lòng chọn ngày bắt đầu' },
+            isDate: { msg: 'Ngày bắt đầu không hợp lệ', args: true }
         }
     },
     toDate: {
@@ -61,24 +58,18 @@ Plan.init({
         allowNull: false,
         validate: {
             notNull: { msg: 'Vui lòng chọn ngày kết thúc' },
-            notEmpty: { msg: 'Vui lòng chọn ngày kết thúc' }
+            notEmpty: { msg: 'Vui lòng chọn ngày kết thúc' },
+            isDate: { msg: 'Ngày kết thúc không hợp lệ', args: true }
         }
     },
-    place: {
-        type: DataTypes.STRING,
-        allowNull: false,
+    stayDestinationID: {
+        type: DataTypes.UUID,
         validate: {
-            notNull: { msg: 'Vui lòng chọn tỉnh/thành phố lên lịch trình' },
-            notEmpty: { msg: 'Vui lòng chọn tỉnh/thành phố lên lịch trình' }
+            isUUID: 4
         }
     },
     estimatedCost: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            notNull: { msg: 'Chi phí dự tính không hợp lệ' },
-            notEmpty: { msg: 'Chi phí dự tính không hợp lệ' }
-        }
+        type: DataTypes.DOUBLE,
     },
     isPublic: {
         type: DataTypes.BOOLEAN,
@@ -90,10 +81,10 @@ Plan.init({
     },
     status: {
         type: DataTypes.STRING,
-        defaultValue: 'Planning',
+        defaultValue: 'Draft',
         validate: {
             isIn: {
-                args: [['Draft', 'Planning', 'Active', 'Complete']],
+                args: [['Draft', 'Planned', 'Activated', 'Completed']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
@@ -110,23 +101,19 @@ Plan.init({
     modelName: 'Plan' // We need to choose the model name
 });
 
-
-
-Plan.belongsToMany(Personalities, { through: PlanPersonalities, foreignKey: "planID", as: "planPersonalities" });
-Personalities.belongsToMany(Plan, { through: PlanPersonalities, foreignKey: "personalityName", as: "planPersonalities" });
-
-Plan.hasMany(PlanDetail, { foreignKey: 'planID', as: "details" })
-PlanDetail.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
+Plan.hasMany(PlanDestination, { foreignKey: 'planID', as: "details" })
+PlanDestination.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
 
 User.hasMany(Plan, { foreignKey: "travelerID", as: "traveler" });
 Plan.belongsTo(User, { foreignKey: 'travelerID', as: "traveler" })
 
+Destination.hasMany(Plan, { foreignKey: "stayDestinationID", as: "stayDestination" });
+Plan.belongsTo(Destination, { foreignKey: 'stayDestinationID', as: "stayDestination" })
+
+Destination.belongsToMany(Plan, { through: PlanDestination, foreignKey: "destinationID", as: 'destinations' });
+Plan.belongsToMany(Destination, { through: PlanDestination, foreignKey: "planID", as: 'destinations' });
 
 Plan.beforeSave(async (plan) => {
     if (plan.toDate < plan.fromDate)
-        throw new AppError('Thời gian kết thúc không hợp lệ', StatusCodes.BAD_REQUEST)
-
-    if (plan.estimatedCost < 0)
-        throw new AppError('Chi phí dự tính không hợp lệ', StatusCodes.BAD_REQUEST)
-
+        throw new AppError('Ngày kết thúc không hợp lệ', StatusCodes.BAD_REQUEST)
 });
