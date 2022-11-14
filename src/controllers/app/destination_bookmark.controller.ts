@@ -12,7 +12,7 @@ import { Catalog } from "../../models/catalog.model";
 
 export const bookmarkDestination = catchAsync(async (req, res, next) => {
     const id = req.params.id as string;
-    const destination = await Destination.findOne({ where: { id: id, status: Status.activated } })
+    const destination = await Destination.findOne({ where: { id: id, status: Status.open } })
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
@@ -59,6 +59,7 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: defaultInclude(true),
     })
+    console.log(count)
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
