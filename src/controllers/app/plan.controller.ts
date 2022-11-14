@@ -22,8 +22,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body, user)
-    let hh = 8
-    let mm = 0
+
 
     const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
     const plan = await sequelizeConnection.transaction(async (create) => {
@@ -32,6 +31,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
             { transaction: create })
         let cost = 0;
         for (let i = 0; i < details.length; i++) {
+            let hh = 8
+            let mm = 0
             for (let j = 0; j < details[i].destinations.length; j++) {
                 const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay'] })
                 if (!destination || destination === null)
