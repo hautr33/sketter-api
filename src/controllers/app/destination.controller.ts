@@ -66,8 +66,6 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    await validate(req.body)
-
     const { name, address, phone, email, description, lowestPrice, highestPrice,
         openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
@@ -103,11 +101,13 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     [Status.open, Status.closed].includes(status as string) ? destination.status = status : 0
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
-        await destination.setCatalogs(catalogs, { transaction: update })
-        await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
-        await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
-        for (let i = 0; i < gallery.length; i++) {
-            await destination.createGallery(gallery[i], { transaction: update })
+        catalogs ? await destination.setCatalogs(catalogs, { transaction: update }) : 0
+        recommendedTimes ? await destination.setRecommendedTimes(recommendedTimes, { transaction: update }) : 0
+        if (gallery) {
+            await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
+            for (let i = 0; i < gallery.length; i++) {
+                await destination.createGallery(gallery[i], { transaction: update })
+            }
         }
         return destination
     })

@@ -23,7 +23,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
     })
     await validate(req.body, user)
 
-
     const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
     const plan = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
