@@ -5,7 +5,6 @@ import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import { Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
-import { DestinationPrivateFields } from "../../utils/private_field";
 import _ from "lodash"
 import { Op, Sequelize } from "sequelize";
 import { DestinationBookmark } from "../../models/destination_bookmark.model";
@@ -49,23 +48,25 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
 
     const destinations = await Destination.findAll({
         where: query,
-        attributes: { exclude: DestinationPrivateFields.getAllTraveler },
-        include: defaultInclude,
+        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'status', 'createdAt'],
+        include: defaultInclude(false),
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT,
     })
-    const count = await Destination.count({
-        where: query
+    const count = await Destination.findAll({
+        where: query,
+        attributes: ['id'],
+        include: defaultInclude(true),
     })
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { destinations }
+        { count: count.length, destinations }
     )
-    if (count != 0) {
-        const maxPage = Math.ceil(count / PAGE_LIMIT)
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
         resDocument.setCurrentPage(page)
         resDocument.setMaxPage(maxPage)
     }
@@ -74,6 +75,11 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
     next()
 })
 
-const defaultInclude = [
-    { model: Catalog, as: 'catalogs', through: { attributes: [] }, attributes: ['name'] }
+const defaultInclude = (count: boolean) => [
+    {
+        model: Catalog,
+        as: 'catalogs',
+        through: { attributes: [] },
+        attributes: count ? [] : ['name']
+    }
 ]
