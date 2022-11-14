@@ -105,7 +105,6 @@ export class DestinationPrivateFields {
         "deletedAt",
         "updatedAt",
         'latinName',
-        'image',
         'cityID',
     ];
     static getAllTraveler = [

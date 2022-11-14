@@ -28,7 +28,7 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
     if (!from || !to)
         throw new AppError('Địa điểm không hợp lệ', StatusCodes.BAD_GATEWAY)
 
-    const distance = await sequelizeConnection.transaction(async (distance) => {
+    const distance = await sequelizeConnection.transaction(async (getDistance) => {
         const result = await Distance.findOne({
             where: {
                 profile: profile,
@@ -61,7 +61,7 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
             newDistance.durationText = hour > 1 ?
                 Math.floor(hour) + 'h ' + (newDistance.duration - Math.floor(hour) * 3600 + ' p') : (newDistance.duration / 60 > 1 ?
                     Math.round(newDistance.duration / 60) + 'p' : newDistance.duration + 's')
-            await newDistance.save({ transaction: distance })
+            await newDistance.save({ transaction: getDistance })
             const result = await Distance.findOne({
                 where: {
                     profile: profile,
@@ -69,7 +69,7 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
                     toDestination: toID
                 },
                 attributes: ['profile', 'distance', 'duration', 'distanceText', 'durationText'],
-                transaction: distance
+                transaction: getDistance
             })
             return result
         } else
