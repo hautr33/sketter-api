@@ -1,0 +1,79 @@
+import sequelizeConnection from "../db/sequelize.db"
+import _ from "lodash"
+import { MAPBOX_TOKEN } from "../config/default"
+import { StatusCodes } from "http-status-codes"
+import AppError from "../utils/app_error"
+import { Destination } from "../models/destination.model"
+import { Distance } from "../models/distance.model"
+import axios from "axios"
+
+/**
+ * This method is getDestinationDistanceService that calculate distance and duration between two destination
+ *
+ * @param {*} fromID ID of from destination
+ * @param {*} toID ID of to destination
+ * @param {*} profile vehicle profile: driving | walking | cycling
+ * @author HauTr
+ * @version 0.0.1
+ *
+ */
+export const getDestinationDistanceService = async (fromID: string, toID: string, profile: string) => {
+    profile = ['driving', 'walking', 'cycling'].includes(profile) ? profile : 'driving'
+    if (fromID === toID)
+        throw new AppError('Địa điểm bắt đầu và địa địa điểm đến phải khác nhau', StatusCodes.BAD_GATEWAY)
+
+
+    const from = await Destination.findOne({ where: { id: fromID }, attributes: ['longitude', 'latitude'] })
+    const to = await Destination.findOne({ where: { id: toID }, attributes: ['longitude', 'latitude'] })
+    if (!from || !to)
+        throw new AppError('Địa điểm không hợp lệ', StatusCodes.BAD_GATEWAY)
+
+    const distance = await sequelizeConnection.transaction(async (distance) => {
+        const result = await Distance.findOne({
+            where: {
+                profile: profile,
+                fromDestination: fromID,
+                toDestination: toID
+            },
+            attributes: ['profile', 'distance', 'duration', 'distanceText', 'durationText']
+        })
+
+        if (!result) {
+            const response = await axios.get(
+                `https://api.mapbox.com/directions/v5/mapbox/${profile}/${from.longitude},${from.latitude};${to.longitude},${to.latitude}`,
+                {
+                    params: {
+                        alternatives: true,
+                        geometries: 'geojson',
+                        overview: 'simplified',
+                        access_token: MAPBOX_TOKEN
+                    }
+                }
+            );
+            const newDistance = new Distance()
+            newDistance.fromDestination = fromID
+            newDistance.toDestination = toID
+            newDistance.profile = profile
+            newDistance.distance = Math.ceil(response.data.routes[0].distance)
+            newDistance.duration = Math.ceil(response.data.routes[0].duration)
+            newDistance.distanceText = newDistance.distance / 1000 > 1 ? Math.ceil(newDistance.distance / 100) / 10 + 'km' : newDistance.distance + 'm'
+            const hour = newDistance.duration / 3600
+            newDistance.durationText = hour > 1 ?
+                Math.floor(hour) + 'h ' + (newDistance.duration - Math.floor(hour) * 3600 + ' p') : (newDistance.duration / 60 > 1 ?
+                    Math.round(newDistance.duration / 60) + 'p' : newDistance.duration + 's')
+            await newDistance.save({ transaction: distance })
+            const result = await Distance.findOne({
+                where: {
+                    profile: profile,
+                    fromDestination: fromID,
+                    toDestination: toID
+                },
+                attributes: ['profile', 'distance', 'duration', 'distanceText', 'durationText'],
+                transaction: distance
+            })
+            return result
+        } else
+            return result
+    })
+    return distance
+}

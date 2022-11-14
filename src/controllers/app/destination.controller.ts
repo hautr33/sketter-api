@@ -26,8 +26,15 @@ export const createDestination = catchAsync(async (req, res, next) => {
         return next(new AppError(error, StatusCodes.BAD_REQUEST))
 
     const { cityID, name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
-        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities, recommendedTimes
+        openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
+    const recommendedTimes: (number)[] = [];
+    (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
+        const count = await TimeFrame.count({ where: { id: time.id, from: time.from, to: time.to } })
+        if (count !== 1)
+            throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
+        recommendedTimes.push(time.id)
+    });
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]

@@ -15,6 +15,7 @@ export class PlanDestination extends Model<InferAttributes<PlanDestination>, Inf
     toTime!: Date;
     distance!: number;
     duration!: number;
+    profile !: string;
     distanceText !: string;
     durationText !: string;
     status?: string;
@@ -80,6 +81,10 @@ PlanDestination.init({
             notNull: { msg: 'Thời gian di chuyển đến địa điểm không được trống' },
             isInt: { msg: 'Thời gian di chuyển đến địa điểm không hợp lệ' }
         }
+    },
+    profile: {
+        type: DataTypes.STRING,
+        defaultValue:'driving'
     },
     distanceText: {
         type: DataTypes.STRING,
