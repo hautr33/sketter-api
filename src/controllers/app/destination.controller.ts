@@ -246,13 +246,14 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
     if (!result || result === null)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    if (role === Roles.Traveler)
-        await Destination.increment({ view: 1 }, { where: { id: result.id } })
-
-    const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id } })
-
     const destination = _.omit(result.toJSON(), []);
-    count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
+
+    if (role === Roles.Traveler) {
+        await Destination.increment({ view: 1 }, { where: { id: result.id } })
+        const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id } })
+        count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
+    }
+
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { destination })
     next()
 })

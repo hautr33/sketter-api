@@ -14,6 +14,7 @@ import { User } from "../../models/user.model";
 import { Op } from "sequelize";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import { PAGE_LIMIT } from "../../config/default";
+import { getDestinationDistanceService } from "../../services/destination.service";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
@@ -21,6 +22,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body, user)
+    let hh = 8
+    let mm = 0
 
     const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
     const plan = await sequelizeConnection.transaction(async (create) => {
@@ -30,18 +33,43 @@ export const createPlan = catchAsync(async (req, res, next) => {
         let cost = 0;
         for (let i = 0; i < details.length; i++) {
             for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice'] })
+                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay'] })
                 if (!destination || destination === null)
                     throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
                 cost += (destination.lowestPrice + destination.highestPrice) / 2
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
                 planDestination.date = details[i].date;
-                planDestination.distanceText = planDestination.distance / 1000 > 1 ? Math.ceil(planDestination.distance / 100) / 10 + 'km' : planDestination.distance + 'm'
-                const hour = planDestination.duration / 3600
-                planDestination.durationText = hour > 1 ?
-                    Math.floor(hour) + 'h ' + (planDestination.duration - Math.floor(hour) * 3600 + ' p') : (planDestination.duration / 60 > 1 ?
-                        Math.floor(planDestination.duration / 60) + 'p' + (planDestination.duration - Math.floor(planDestination.duration / 60) * 60) + 's' : planDestination.duration + 's')
+
+                if (j !== 0) {
+                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
+                    if (!distance)
+                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
+
+                    console.log(Math.ceil(distance.duration / 60));
+
+                    hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
+                    mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
+                    planDestination.distance = distance.distance
+                    planDestination.duration = distance.duration
+                    planDestination.distanceText = distance.distanceText
+                    planDestination.durationText = distance.durationText
+                } else {
+                    planDestination.distance = 0
+                    planDestination.duration = 0
+                    planDestination.distanceText = '0m'
+                    planDestination.durationText = '0s'
+                }
+                if (hh == 23 && mm > 1 || hh > 23)
+                    throw new AppError('Thời gian không đủ', StatusCodes.BAD_REQUEST)
+                const fromTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
+                hh += Math.floor((destination.estimatedTimeStay + mm) / 60)
+                mm = destination.estimatedTimeStay + mm - Math.floor((destination.estimatedTimeStay + mm) / 60) * 60
+                const toTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
+                console.log(fromTime + ' - ' + toTime + ' --- ' + destination.estimatedTimeStay);
+                planDestination.fromTime = new Date(fromTime)
+                planDestination.toTime = new Date(toTime)
+
                 await planDestination.save({ transaction: create })
 
                 for (let i = 0; i < user?.travelerPersonalities.length; i++) {
@@ -56,8 +84,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 }
             }
         }
-        console.log(cost);
-
         await Plan.update({ estimatedCost: cost }, { where: { id: plan.id }, transaction: create })
         return plan
     })
