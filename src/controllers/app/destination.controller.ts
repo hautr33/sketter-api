@@ -30,10 +30,10 @@ export const createDestination = catchAsync(async (req, res, next) => {
     } = req.body;
     const recommendedTimes: (number)[] = [];
     (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
-        const count = await TimeFrame.count({ where: { id: time.id, from: time.from, to: time.to } })
-        if (count !== 1)
+        const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
+        if (!timeFrame)
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
-        recommendedTimes.push(time.id)
+        recommendedTimes.push(timeFrame.id)
     });
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
@@ -69,8 +69,17 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     await validate(req.body)
 
     const { name, address, phone, email, description, lowestPrice, highestPrice,
-        openingTime, closingTime, catalogs, estimatedTimeStay, status, recommendedTimes
+        openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
+
+    const recommendedTimes: (number)[] = [];
+    (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
+        const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
+        if (!timeFrame)
+            throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
+        recommendedTimes.push(timeFrame.id)
+    });
+
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
 
