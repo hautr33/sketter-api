@@ -250,7 +250,7 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
 
     if (role === Roles.Traveler) {
         await Destination.increment({ view: 1 }, { where: { id: result.id } })
-        const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id } })
+        const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id, isBookmark: true } })
         count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
     }
 
