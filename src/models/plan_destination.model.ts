@@ -1,8 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
-import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model, Op } from 'sequelize';
-import AppError from '../utils/app_error';
+import { DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import sequelize from '../db/sequelize.db';
-import { Catalog } from './catalog.model';
 import { Destination } from './destination.model';
 import { Plan } from './plan.model';
 
@@ -55,16 +52,10 @@ PlanDestination.init({
     fromTime: {
         type: DataTypes.DATE,
         allowNull: false,
-        validate: {
-            isDate: { msg: 'Thời gian bắt đầu không hợp lệ', args: true }
-        }
     },
     toTime: {
         type: DataTypes.DATE,
         allowNull: false,
-        validate: {
-            isDate: { msg: 'Thời gian kết thúc không hợp lệ', args: true }
-        }
     },
     distance: {
         type: DataTypes.INTEGER,
@@ -127,25 +118,6 @@ PlanDestination.init({
 Destination.hasMany(PlanDestination, { foreignKey: 'destinationID', as: 'destination' })
 PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destination' })
 
-PlanDestination.beforeSave(async (planDes) => {
-    // const timeRegex = /^([0-1][0-9]|[2][0-3]):([0-5][0-9])$/g
-    const { destinationID
-    } = planDes;
-    const des = await Destination.findOne(
-        {
-            where: { id: destinationID },
-            attributes: ['name'],
-            include: [
-                {
-                    model: Catalog,
-                    where: { name: { [Op.notILike]: '%Lưu Trú%' }, parent: { [Op.notILike]: '%Lưu Trú%' } },
-                    as: 'catalogs',
-                    through: { attributes: [] },
-                    attributes: []
-                }]
-        }
-    )
-    if (!des || des === null)
-        throw new AppError(`Địa điểm với ID: ${destinationID} không hợp lệ`, StatusCodes.BAD_REQUEST)
+PlanDestination.beforeSave(async () => {
 
 });

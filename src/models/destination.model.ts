@@ -14,7 +14,7 @@ import { TimeFrame } from './time_frame.model';
 import { City } from './city.model';
 
 export class Destination extends Model<InferAttributes<Destination>, InferCreationAttributes<Destination>> {
-    declare id?: string;
+    declare id: string;
     name!: string;
     latinName?: string;
     address!: string;

@@ -5,7 +5,7 @@ import catchAsync from "../../utils/catch_async";
 import { Plan } from "../../models/plan.model";
 import RESDocument from "../factory/res_document";
 import { Personalities } from "../../models/personalities.model";
-import { Roles } from "../../utils/constant";
+import { Roles, Status } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash";
@@ -15,6 +15,7 @@ import { Op } from "sequelize";
 import { DestinationPersonalites } from "../../models/destination_personalities.model";
 import { PAGE_LIMIT } from "../../config/default";
 import { getDestinationDistanceService } from "../../services/destination.service";
+import { Catalog } from "../../models/catalog.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
@@ -22,20 +23,33 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body, user)
-
     const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
+
+    const stay = await Destination.findOne({
+        where: { id: stayDestinationID, status: Status.open },
+        attributes: ['id', 'lowestPrice', 'highestPrice'],
+        include: [
+            { model: Catalog, as: 'catalogs', where: { [Op.or]: [{ name: { [Op.iLike]: '%Lưu Trú%' } }, { parent: { [Op.iLike]: '%Lưu Trú%' } }] }, through: { attributes: [] }, attributes: [] }
+        ]
+    })
+    if (stayDestinationID && !stay)
+        return next(new AppError('Địa điểm lưu trú không hợp lệ', StatusCodes.BAD_REQUEST))
     const plan = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, stayDestinationID: stayDestinationID, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
-        let cost = 0;
+        let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
         for (let i = 0; i < details.length; i++) {
             let hh = 8
             let mm = 0
             for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay'] })
+                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status'] })
                 if (!destination || destination === null)
                     throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
+
+                if (destination.status !== Status.open)
+                    throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa hoặc ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+
                 cost += (destination.lowestPrice + destination.highestPrice) / 2
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
@@ -45,8 +59,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
                     const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
                     if (!distance)
                         throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
-
-                    console.log(Math.ceil(distance.duration / 60));
 
                     hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
                     mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
@@ -66,7 +78,6 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 hh += Math.floor((destination.estimatedTimeStay + mm) / 60)
                 mm = destination.estimatedTimeStay + mm - Math.floor((destination.estimatedTimeStay + mm) / 60) * 60
                 const toTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
-                console.log(fromTime + ' - ' + toTime + ' --- ' + destination.estimatedTimeStay);
                 planDestination.fromTime = new Date(fromTime)
                 planDestination.toTime = new Date(toTime)
 
@@ -106,30 +117,84 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 
     await validate(req.body)
 
-    const { name, fromDate, toDate, isPublic, details } = req.body;
+    const { name, stayDestinationID, fromDate, toDate, isPublic, details } = req.body;
+    const stay = await Destination.findOne({
+        where: { id: stayDestinationID, status: Status.open },
+        attributes: ['id', 'lowestPrice', 'highestPrice'],
+        include: [
+            { model: Catalog, as: 'catalogs', where: { [Op.or]: [{ name: { [Op.iLike]: '%Lưu Trú%' } }, { parent: { [Op.iLike]: '%Lưu Trú%' } }] }, through: { attributes: [] }, attributes: [] }
+        ]
+    })
+    if (stayDestinationID && !stay)
+        return next(new AppError('Địa điểm lưu trú không hợp lệ', StatusCodes.BAD_REQUEST))
     name ? plan.name = name : 0;
     fromDate ? plan.fromDate = fromDate : 0;
     toDate ? plan.toDate = toDate : 0;
     isPublic ? plan.isPublic = isPublic : 0;
-    let cost = 0
 
     await sequelizeConnection.transaction(async (update) => {
         await plan.save({ transaction: update });
         await PlanDestination.destroy({ where: { planID: plan.id }, transaction: update })
+        let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
+
         for (let i = 0; i < details.length; i++) {
+            let hh = 0
+            let mm = 0
             for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice'] })
+                const destination = await Destination.findOne({
+                    where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
+                    include: [
+                        { model: Catalog, as: 'catalogs', where: { name: { [Op.notILike]: '%lưu trú%' }, parent: { [Op.notILike]: '%lưu trú%' } } }
+                    ]
+                })
+
                 if (!destination || destination === null)
                     throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
+
+                if (destination.status === Status.closed)
+                    throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+
+                if (destination.status === Status.deactivated)
+                    return next(new AppError(`Địa điểm '${destination.name}' đã bị ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST))
                 cost += (destination.lowestPrice + destination.highestPrice) / 2
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
+                planDestination.destinationID = details[i].destinations[j].destinationID;
                 planDestination.date = details[i].date;
-                planDestination.distanceText = planDestination.distance / 1000 > 1 ? Math.ceil(planDestination.distance / 100) / 10 + 'km' : planDestination.distance + 'm'
-                const hour = planDestination.duration / 3600
-                planDestination.durationText = hour > 1 ?
-                    Math.floor(hour) + 'h ' + (planDestination.duration - Math.floor(hour) * 3600 + ' p') : (planDestination.duration / 60 > 1 ?
-                        Math.ceil(planDestination.duration / 60) + 'p' + (planDestination.duration - Math.ceil(planDestination.duration / 60) * 60) + 's' : planDestination.duration + 's')
+                planDestination.fromTime = new Date(details[i].destinations[j].fromTime)
+                planDestination.toTime = new Date(details[i].destinations[j].toTime)
+                if (!(planDestination.fromTime instanceof Date && !isNaN(planDestination.fromTime.getTime())))
+                    throw new AppError(`Thời gian đến địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+                if (!(planDestination.toTime instanceof Date && !isNaN(planDestination.toTime.getTime())))
+                    throw new AppError(`Thời gian rời địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+                if (j !== 0) {
+                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
+                    if (!distance)
+                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
+
+                    // console.log(Math.ceil(distance.duration / 60));
+
+                    hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
+                    mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
+                    const preToTime = new Date(planDestination.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm))
+
+
+                    if (planDestination.fromTime < preToTime)
+                        throw new AppError(`Thời gian đến địa điểm '${destination.name}' không được trước ${preToTime.toLocaleString()}`, StatusCodes.BAD_REQUEST)
+
+                    planDestination.distance = distance.distance
+                    planDestination.duration = distance.duration
+                    planDestination.distanceText = distance.distanceText
+                    planDestination.durationText = distance.durationText
+                } else {
+                    planDestination.distance = 0
+                    planDestination.duration = 0
+                    planDestination.distanceText = '0m'
+                    planDestination.durationText = '0s'
+                }
+                hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
+                mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
                 await planDestination.save({ transaction: update })
             }
         }
@@ -223,7 +288,6 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
 
-
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
     next();
 })
@@ -259,11 +323,11 @@ const validate = async (body: any, user?: any) => {
 
 const includeDetailGetOne = [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText'], include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'estimatedTimeStay']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
             }
         ]
     }
