@@ -217,7 +217,7 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
     const plans = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id, status: status },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['createdAt', 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -249,7 +249,7 @@ export const getAllPublicPlan = catchAsync(async (req, res, next) => {
     const plans = await Plan.findAll(
         {
             where: { isPublic: true },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['createdAt', 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -277,6 +277,9 @@ export const getAllPublicPlan = catchAsync(async (req, res, next) => {
 });
 
 export const getOnePlan = catchAsync(async (req, res, next) => {
+    if (res.locals.user.roleID === Roles.Traveler) {
+        await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
+    }
     const plan = await Plan.findOne(
         {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
@@ -287,6 +290,7 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
 
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
+
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
     next();

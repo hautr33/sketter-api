@@ -156,7 +156,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     }
     const destinations = await Destination.findAll({
         where: destinationQuery,
-        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'status', 'createdAt'],
+        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view', 'status', 'createdAt'],
         include: defaultInclude(false, skipStay),
         order: [[orderBy, orderDirection]],
         offset: (page - 1) * PAGE_LIMIT,
@@ -232,7 +232,9 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
 
 export const getOneDestination = catchAsync(async (req, res, next) => {
     const role = res.locals.user.roleID;
-
+    if (role === Roles.Traveler) {
+        await Destination.increment({ view: 1 }, { where: { id: req.params.id } })
+    }
     const query = role === Roles.Traveler ? { id: req.params.id, status: Status.open } : (
         role === Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id } : { id: req.params.id }
     )
@@ -249,7 +251,6 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
     const destination = _.omit(result.toJSON(), []);
 
     if (role === Roles.Traveler) {
-        await Destination.increment({ view: 1 }, { where: { id: result.id } })
         const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id, isBookmark: true } })
         count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
     }

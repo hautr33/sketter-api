@@ -14,6 +14,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     stayDestinationID?: ForeignKey<Destination['id']>;
     estimatedCost?: number;
     isPublic!: boolean;
+    view?: number;
     status?: string;
     travelerID!: ForeignKey<User['id']>;
 
@@ -70,6 +71,11 @@ Plan.init({
     },
     estimatedCost: {
         type: DataTypes.DOUBLE,
+    },
+    view: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
     },
     isPublic: {
         type: DataTypes.BOOLEAN,
