@@ -23,7 +23,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body, user)
-    const { name, fromDate, toDate, stayDestinationID, isPublic, details } = req.body;
+    const { name, fromDate, toDate, isPublic, details } = req.body;
+    const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
 
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
