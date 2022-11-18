@@ -5,6 +5,7 @@ import destination from "./destination.route";
 import catalog from "./catalog.route";
 import personality from "./personalities.route";
 import plan from "./plan.route";
+import voucher from "./voucher.route";
 import city from "./city.route";
 import timeFrames from "./time_frame.route";
 import { StatusCodes } from "http-status-codes";
@@ -21,5 +22,6 @@ router.use('/api/v1/cities', city);
 router.use('/api/v1/time_frames', timeFrames);
 router.use('/api/v1/personalities', personality);
 router.use('/api/v1/plans', plan);
+router.use('/api/v1/vouchers', voucher);
 
 export default router;

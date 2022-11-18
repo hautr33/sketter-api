@@ -81,7 +81,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
 
-    if (res.locals.user.roleID == Roles["Supplier Manager"]) {
+    if (res.locals.user.roleID == Roles.Manager) {
         const { longitude, latitude } = req.body;
         destination.longitude = longitude
         destination.latitude = latitude

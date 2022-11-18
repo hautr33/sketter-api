@@ -15,11 +15,11 @@ router.use(deserializeUser, requireUser);
 
 router
     .route('/')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier, Roles.Traveler), getAllDestination))
-    .post(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), requireStatus(Status.verified), createDestination));
+    .get(standardPipeline(restrictTo(Roles.Manager, Roles.Supplier, Roles.Traveler), getAllDestination))
+    .post(standardPipeline(restrictTo(Roles.Manager, Roles.Supplier), requireStatus(Status.verified), createDestination));
 
 router.route('/search')
-    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles["Supplier Manager"]), searchDestination))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Manager), searchDestination))
 
 
 router.route('/distance')
@@ -32,18 +32,18 @@ router.route('/:id/bookmark')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), bookmarkDestination))
 
 router.route('/:id/deactivate')
-    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"]), requireStatus(Status.verified), bookmarkDestination))
+    .patch(standardPipeline(restrictTo(Roles.Manager), requireStatus(Status.verified), bookmarkDestination))
 
 router.route('/:id/rating')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), ratingDestination))
     .patch(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), updateRating))
     .delete(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), deleteRating))
-    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles["Supplier Manager"]), requireStatus(Status.verified), getAllRating))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Manager), requireStatus(Status.verified), getAllRating))
 
 router
     .route('/:id')
-    .get(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier, Roles.Traveler), getOneDestination))
-    .patch(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), requireStatus(Status.verified), updateDestination))
-    .delete(standardPipeline(restrictTo(Roles["Supplier Manager"], Roles.Supplier), requireStatus(Status.verified), deleteOneDestination))
+    .get(standardPipeline(restrictTo(Roles.Manager, Roles.Supplier, Roles.Traveler), getOneDestination))
+    .patch(standardPipeline(restrictTo(Roles.Manager, Roles.Supplier), requireStatus(Status.verified), updateDestination))
+    .delete(standardPipeline(restrictTo(Roles.Manager, Roles.Supplier), requireStatus(Status.verified), deleteOneDestination))
 
 export default router;

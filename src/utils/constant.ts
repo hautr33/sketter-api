@@ -1,6 +1,6 @@
 export enum Roles {
     'Admin' = 1,
-    'Supplier Manager',
+    'Manager',
     'Supplier',
     'Traveler',
 }
@@ -36,6 +36,8 @@ export class Auth {
 }
 
 export class Status {
+    public static readonly draft = 'Draft';
+
     public static readonly unverified = 'Unverified';
 
     public static readonly verified = 'Verified';
@@ -58,4 +60,4 @@ export class Status {
 
 export const listStatusDestination = [Status.activated, Status.inactivated, Status.deactivated, Status.closed];
 export const listStatusUser = [Status.unverified, Status.verified, Status.inactivated, Status.deactivated];
-export const listRole = ['Admin', 'Supplier Manager', 'Supplier', 'Traveler'];
+export const listRole = ['Admin', 'Manager', 'Supplier', 'Traveler'];

@@ -18,7 +18,7 @@ router.use(deserializeUser, requireUser);
 
 router
     .route('/me')
-    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles["Supplier Manager"], Roles.Admin), getMe))
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Manager, Roles.Admin), getMe))
     .patch(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), updateMe))
 
 router.route('/me/verify')
@@ -27,7 +27,7 @@ router.route('/me/verify')
 
 router.patch('/update_password', standardPipeline(updatePassword));
 
-router.get('/supplier', standardPipeline(restrictTo(Roles["Supplier Manager"]), getAllSupplier));
+router.get('/supplier', standardPipeline(restrictTo(Roles.Manager), getAllSupplier));
 
 router
     .route('/')
