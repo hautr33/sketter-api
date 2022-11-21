@@ -18,7 +18,7 @@ export class Voucher extends Model<InferAttributes<Voucher>, InferCreationAttrib
     discountPercent!: number;
     fromDate!: Date;
     toDate!: Date;
-    stastus?: string;
+    status?: string;
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
 }
@@ -111,7 +111,7 @@ Voucher.init({
             notEmpty: { msg: 'Vui lòng chọn ngày kết thúc' }
         }
     },
-    stastus: {
+    status: {
         type: DataTypes.STRING,
         defaultValue: Status.draft,
         validate: {
@@ -140,10 +140,14 @@ Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'destinationAppl
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destinationApply' })
 
 Voucher.beforeSave(async (voucher) => {
-    const { value, salePrice
+    const { value, salePrice, fromDate, toDate
     } = voucher;
     if (value < salePrice)
-        throw new AppError('Giá bán phải thấp hơn giá trị của voucher', StatusCodes.BAD_REQUEST)
+        throw new AppError('Giá bán phải thấp hơn giá trị của khuyến mãi', StatusCodes.BAD_REQUEST)
+
+
+    if (toDate < fromDate)
+        throw new AppError('Ngày kết thúc không được trước ngày bắt đầu', StatusCodes.BAD_REQUEST)
 
     voucher.discountPercent = 100 - Math.round((salePrice / value) * 100)
 })

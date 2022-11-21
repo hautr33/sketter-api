@@ -31,7 +31,7 @@ export const createVoucher = catchAsync(async (req, res, next) => {
     await voucher.save()
     const result = await Voucher.findOne({
         where: { id: voucher.id },
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'stastus'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -50,7 +50,7 @@ export const createVoucher = catchAsync(async (req, res, next) => {
 export const getAllVoucher = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const vouchers = await Voucher.findAll({
-        attributes: ['id', 'name', 'image', 'updatedAt'], include: [
+        attributes: ['id', 'name', 'quantity', 'totalSold', 'status', 'updatedAt'], include: [
             {
                 model: Destination, as: 'destinationApply',
                 where: { supplierID: res.locals.user.id },
@@ -94,7 +94,7 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
     const query = isTraveler ? { id: req.params.id, status: Status.activated } : { id: req.params.id }
     const voucher = await Voucher.findOne({
         where: query,
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'stastus'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: getOneInclude(isTraveler, res.locals.user.id)
     })
 
@@ -120,8 +120,8 @@ export const updateVoucher = catchAsync(async (req, res, next) => {
     }
 
     const voucher = await Voucher.findOne({
-        where: { id: req.params.id, stastus: Status.draft },
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'stastus'],
+        where: { id: req.params.id, status: Status.draft },
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -146,7 +146,7 @@ export const updateVoucher = catchAsync(async (req, res, next) => {
 
     const result = await Voucher.findOne({
         where: { id: req.params.id },
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'stastus'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -165,7 +165,7 @@ export const updateVoucher = catchAsync(async (req, res, next) => {
  */
 export const deleteVoucher = catchAsync(async (req, res, next) => {
     const voucher = await Voucher.findOne({
-        where: { id: req.params.id, stastus: Status.draft },
+        where: { id: req.params.id, status: Status.draft },
         attributes: ['id'],
         include: [
             {
@@ -191,7 +191,7 @@ export const deleteVoucher = catchAsync(async (req, res, next) => {
  */
 export const duplicateVoucher = catchAsync(async (req, res, next) => {
     const targetVoucher = await Voucher.findOne({
-        where: { id: req.params.id, stastus: Status.draft },
+        where: { id: req.params.id, status: Status.draft },
         attributes: ['id', 'destinationID', 'name', 'image', 'description', 'quantity', 'value', 'salePrice', 'fromDate', 'toDate'],
         include: [
             {
@@ -217,7 +217,7 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
 
     const result = await Voucher.findOne({
         where: { id: voucher.id },
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'stastus'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -229,6 +229,20 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+
+/**
+ * This controller is getListDestnation that get all destinatiion of a supplier to create voucher
+ *
+ */
+export const getListDestnation = catchAsync(async (_req, res, next) => {
+    const destination = await Destination.findAll({
+        where: { id: res.locals.user.id, status: Status.open },
+        attributes: ['id', 'name', 'address'],
+        order: [['name', 'ASC']]
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', destination)
+    next()
+})
 
 const getOneInclude = (isTraveler: boolean, supplierID: string) => [
     {

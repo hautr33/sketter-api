@@ -83,8 +83,8 @@ export const updateDestination = catchAsync(async (req, res, next) => {
 
     if (res.locals.user.roleID == Roles.Manager) {
         const { longitude, latitude } = req.body;
-        destination.longitude = longitude
-        destination.latitude = latitude
+        longitude ? destination.longitude = longitude : 0
+        latitude ? destination.latitude = latitude : 0
     }
     gallery.length > 0 ? destination.image = gallery[0].url : 0
     name ? destination.name = name : 0

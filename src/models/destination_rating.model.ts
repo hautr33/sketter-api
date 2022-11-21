@@ -9,7 +9,7 @@ export class DestinationRating extends Model<InferAttributes<DestinationRating>,
     userID!: ForeignKey<User['id']>;
     star!: number;
     description!: string;
-    stastus?: string;
+    status?: string;
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
 }
@@ -40,7 +40,7 @@ DestinationRating.init({
             len: { msg: 'Mô tả trải nghiệm của bạn không quá 500 ký tự', args: [0, 500] }
         }
     },
-    stastus: {
+    status: {
         type: DataTypes.STRING,
         defaultValue: Status.activated,
         validate: {

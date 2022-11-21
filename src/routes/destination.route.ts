@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { createDestination, deleteOneDestination, getAllDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
+import { createDestination, deactivateDestination, deleteOneDestination, getAllDestination, getOneDestination, searchDestination, updateDestination } from "../controllers/app/destination.controller";
 import { deleteRating, getAllRating, ratingDestination, updateRating } from "../controllers/app/destination_rating.controller";
 import { bookmarkDestination, getBookmarkDestination } from "../controllers/app/destination_bookmark.controller";
 import { getDistance } from "../controllers/app/distance.controller";
@@ -21,7 +21,6 @@ router
 router.route('/search')
     .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Manager), searchDestination))
 
-
 router.route('/distance')
     .get(standardPipeline(restrictTo(Roles.Traveler), getDistance))
 
@@ -32,7 +31,7 @@ router.route('/:id/bookmark')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), bookmarkDestination))
 
 router.route('/:id/deactivate')
-    .patch(standardPipeline(restrictTo(Roles.Manager), requireStatus(Status.verified), bookmarkDestination))
+    .patch(standardPipeline(restrictTo(Roles.Manager), requireStatus(Status.verified), deactivateDestination))
 
 router.route('/:id/rating')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), ratingDestination))
