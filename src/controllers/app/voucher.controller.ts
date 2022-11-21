@@ -236,7 +236,7 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
  */
 export const getListDestnation = catchAsync(async (_req, res, next) => {
     const destinations = await Destination.findAll({
-        where: { id: res.locals.user.id, status: Status.open },
+        where: { supplierID: res.locals.user.id, status: Status.open },
         attributes: ['id', 'name', 'address'],
         order: [['name', 'ASC']]
     })
