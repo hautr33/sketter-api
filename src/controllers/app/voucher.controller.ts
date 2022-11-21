@@ -235,12 +235,12 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const getListDestnation = catchAsync(async (_req, res, next) => {
-    const destination = await Destination.findAll({
+    const destinations = await Destination.findAll({
         where: { id: res.locals.user.id, status: Status.open },
         attributes: ['id', 'name', 'address'],
         order: [['name', 'ASC']]
     })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'success', destination)
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', destinations)
     next()
 })
 
