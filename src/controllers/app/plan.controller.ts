@@ -110,7 +110,16 @@ export const createPlan = catchAsync(async (req, res, next) => {
     res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: result });
     next();
 });
-
+export const createSmartPlan = catchAsync(async (req, res, next) => {
+    const user = await User.findByPk(res.locals.user.id, {
+        attributes: ['id'],
+        include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
+    })
+    await validate(req.body, user)
+    // const { name, fromDate, toDate,cityID } = req.body;
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: user?.travelerPersonalities });
+    next();
+})
 export const updatePlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id } });
     if (!plan)
