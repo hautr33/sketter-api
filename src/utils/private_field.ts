@@ -17,7 +17,8 @@ export const UserPrivateFields = [
         "createdAt",
         "updatedAt",
         "roleID",
-        "travelerPersonalities"
+        "travelerPersonalities",
+        "commissionRate"
     ],
     // Admin
     [
@@ -38,7 +39,8 @@ export const UserPrivateFields = [
         "createdAt",
         "updatedAt",
         "roleID",
-        "travelerPersonalities"
+        "travelerPersonalities",
+        "commissionRate"
     ],
     // Supplier Manager
     [
@@ -59,7 +61,8 @@ export const UserPrivateFields = [
         "createdAt",
         "updatedAt",
         "roleID",
-        "travelerPersonalities"
+        "travelerPersonalities",
+        "commissionRate"
     ],
     // Supplier
     [
@@ -93,7 +96,8 @@ export const UserPrivateFields = [
         "firebaseID",
         "createdAt",
         "updatedAt",
-        "roleID"
+        "roleID",
+        "commissionRate"
     ]
 ]
 

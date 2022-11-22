@@ -33,6 +33,8 @@ export const getUserService = async (id: string) => {
     )
     if (!user)
         return null
+    console.log(user.roleID);
+
     return _.omit(user.toJSON(), UserPrivateFields[user.roleID ?? 0])
 }
 
@@ -45,8 +47,12 @@ export const getUserService = async (id: string) => {
  * @version 0.0.1
  *
  */
-export const getAllUserService = async (page: number, status: string) => {
-    const query = status ? { status: status, roleID: { [Op.ne]: Roles.Admin } } : { roleID: { [Op.ne]: Roles.Admin } }
+export const getAllUserService = async (page: number, status: string, search: string) => {
+    const query = {
+        [Op.or]: [{ name: { [Op.iLike]: `%${search}%` } }, { email: { [Op.iLike]: `%${search}%` } }],
+        status: { [Op.iLike]: `%${status}%` },
+        roleID: { [Op.ne]: Roles.Admin }
+    }
     const users = await User.findAll(
         {
             where: query,
@@ -101,10 +107,11 @@ export const updateUserService = async (id: string, body: any, isAdmin?: boolean
         gender ? user.gender = gender : 0
         dob ? user.dob = dob : 0
     } else if (user.roleID == Roles.Supplier) {
-        const { owner, phone, address } = body;
+        const { owner, phone, address, commissionRate } = body;
         phone ? user.phone = phone : 0
         address ? user.address = address : 0
         owner ? user.owner = owner : 0
+        isAdmin && commissionRate ? user.commissionRate = commissionRate : 0
     }
     await sequelizeConnection.transaction(async (update) => {
         await user.save({ transaction: update })

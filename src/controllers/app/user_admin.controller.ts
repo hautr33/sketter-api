@@ -38,12 +38,11 @@ export const createUser = catchAsync(async (req, res, next) => {
 
 export const getAllUser = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
-    const status = req.query.status as string;
+    const status = ['Unverified', 'Verified', 'Deactivated'].includes(req.query.status as string) ? req.query.status as string : '';
+    const search = req.query.search as string ?? '';
 
-    if (status && !listStatusUser.includes(status))
-        return next(new AppError("Trạng thái không hợp lệ", StatusCodes.BAD_REQUEST));
 
-    const users = await getAllUserService(page, status)
+    const users = await getAllUserService(page, status, search)
     res.resDocument = users;
     next();
 });

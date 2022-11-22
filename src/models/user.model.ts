@@ -26,6 +26,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
     phone!: string;
     address!: string;
     owner!: string;
+    commissionRate?: number;
     roleID!: ForeignKey<Role['id']>;
     authType!: string;
     status?: string;
@@ -135,10 +136,25 @@ User.init({
             len: { msg: 'Tên chủ sở hữu phải có từ 2 đến 50 ký tự', args: [2, 50] }
         }
     },
+    commissionRate: {
+        type: DataTypes.INTEGER,
+        defaultValue: 5,
+        validate: {
+            isInt: { msg: 'Tỷ lệ hoa hồng không hợp lệ' },
+            min: { msg: 'Tỷ lệ hoa hồng có giá trị từ 1% đến 10%', args: [1] },
+            max: { msg: 'Tỷ lệ hoa hồng có giá trị từ 1% đến 10%', args: [10] }
+        }
+    },
     status: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: Status.unverified
+        defaultValue: Status.unverified,
+        validate: {
+            isIn: {
+                args: [['Unverified', 'Verified', 'Deactivated']],
+                msg: 'Phương thức xác thực không hợp lệ'
+            }
+        },
     },
     roleID: {
         type: DataTypes.INTEGER,
