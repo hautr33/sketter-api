@@ -8,7 +8,7 @@ export class Personalities extends Model<InferAttributes<Personalities>, InferCr
 Personalities.init({
     // Model attributes are defined here
     name: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
         primaryKey: true
     },

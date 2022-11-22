@@ -57,10 +57,10 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
             newDistance.distance = Math.ceil(response.data.routes[0].distance)
             newDistance.duration = Math.ceil(response.data.routes[0].duration)
             newDistance.distanceText = newDistance.distance / 1000 > 1 ? Math.ceil(newDistance.distance / 100) / 10 + 'km' : newDistance.distance + 'm'
-            const hour = newDistance.duration / 3600
-            newDistance.durationText = hour > 1 ?
-                Math.floor(hour) + 'h ' + (newDistance.duration - Math.floor(hour) * 3600 + ' p') : (newDistance.duration / 60 > 1 ?
-                    Math.ceil(newDistance.duration / 60) + 'p' : newDistance.duration + 's')
+            const hour = Math.floor(newDistance.duration / 3600)
+            const min = Math.ceil((newDistance.duration - hour * 3600) / 60)
+            const minText = hour > 0 && min < 10 ? '0' + min : min
+            newDistance.durationText = hour > 0 ? (hour + 'h' + minText + 'p') : minText + 'p'
             await newDistance.save({ transaction: getDistance })
             const result = await Distance.findOne({
                 where: {

@@ -22,7 +22,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
-    await validate(req.body, user)
+    await validate(req.body)
     const { name, fromDate, toDate, isPublic, details } = req.body;
     const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
 
@@ -84,7 +84,10 @@ export const createPlan = catchAsync(async (req, res, next) => {
 
                 await planDestination.save({ transaction: create })
 
-                for (let i = 0; i < user?.travelerPersonalities.length; i++) {
+                if (!user || !user.travelerPersonalities)
+                    throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
+
+                for (let i = 0; i < user.travelerPersonalities.length; i++) {
                     await DestinationPersonalites.findOrCreate({
                         where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
                     })
@@ -115,12 +118,43 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
-    await validate(req.body, user)
-    // const { name, fromDate, toDate,cityID } = req.body;
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: user?.travelerPersonalities });
+    const personalities: string[] = []
+    user?.travelerPersonalities?.forEach((personality: { name: string; }) => {
+        personalities.push(personality.name)
+    });
+    if (personalities.length === 0)
+        return next(new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST))
+
+    // const { name, fromDate, toDate, cityID, fromPrice, toPrice } = req.body;
+    const { cityID } = req.body;
+    const des = await Destination.findAll({
+        where: { status: Status.open, cityID: cityID },
+        attributes: ['id', 'longitude', 'latitude', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'avgRating', 'view'],
+        include: [
+            {
+                model: Personalities,
+                as: 'destinationPersonalities',
+                where: {
+                    name: {
+                        [Op.or]: personalities
+                    }
+                },
+                through: { attributes: ['planCount', 'visitCount'], as: 'count' },
+                attributes: []
+            },
+
+
+        ]
+
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { count: des.length, des: des, test: personalities });
     next();
 })
 export const updatePlan = catchAsync(async (req, res, next) => {
+    const user = await User.findByPk(res.locals.user.id, {
+        attributes: ['id'],
+        include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
+    })
     const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id } });
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
@@ -206,6 +240,19 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                 hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
                 mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
                 await planDestination.save({ transaction: update })
+                if (!user || !user.travelerPersonalities)
+                    throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
+
+                for (let i = 0; i < user.travelerPersonalities.length; i++) {
+                    await DestinationPersonalites.findOrCreate({
+                        where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
+                    })
+                    await DestinationPersonalites.
+                        increment(
+                            { planCount: 1 },
+                            { where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name } }
+                        )
+                }
             }
         }
         await Plan.update({ estimatedCost: cost }, { where: { id: plan.id }, transaction: update })
@@ -317,15 +364,8 @@ export const deletePlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-const validate = async (body: any, user?: any) => {
+const validate = async (body: any) => {
     const { details } = body;
-    if (user) {
-        const planPersonalities = user.travelerPersonalities
-
-        if (!planPersonalities || planPersonalities === '' || planPersonalities === null || planPersonalities.length === 0)
-            throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
-    }
-
     if (!details || details.length == 0)
         throw new AppError('Chi tiết lịch trình không được trống', StatusCodes.BAD_REQUEST)
     for (let i = 0; i < details.length; i++) {
