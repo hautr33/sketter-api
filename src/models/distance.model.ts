@@ -6,6 +6,7 @@ export class Distance extends Model<InferAttributes<Distance>, InferCreationAttr
     declare id: number;
     fromDestination!: ForeignKey<Destination['id']>;
     toDestination!: ForeignKey<Destination['id']>;
+    count?: number;
     profile!: string;
     distance !: number;
     duration !: number;
@@ -36,6 +37,10 @@ Distance.init({
         validate: {
             notNull: { msg: 'Vui lòng chọn địa điểm đến' }
         }
+    },
+    count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1
     },
     profile: {
         type: DataTypes.STRING,

@@ -73,8 +73,10 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
                 transaction: getDistance
             })
             return result
-        } else
+        } else {
+            await Distance.increment({ count: 1 }, { where: { profile: profile, fromDestination: fromID, toDestination: toID } })
             return result
+        }
     })
     return distance
 }
