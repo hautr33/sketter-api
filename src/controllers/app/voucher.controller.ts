@@ -12,7 +12,7 @@ import { PAGE_LIMIT } from "../../config/default";
  *
  */
 export const createVoucher = catchAsync(async (req, res, next) => {
-    const { name, image, destinationID, description, quantity, value, salePrice, fromDate, toDate } = req.body;
+    const { name, image, destinationID, description, quantity, value, salePrice, refundRate, fromDate, toDate } = req.body;
 
     const destination = await Destination.findOne({ where: { id: destinationID, supplierID: res.locals.user.id, status: Status.open }, attributes: ['name'] });
     if (!destination || destination === null)
@@ -26,6 +26,7 @@ export const createVoucher = catchAsync(async (req, res, next) => {
     voucher.quantity = quantity
     voucher.value = value
     voucher.salePrice = salePrice
+    voucher.refundRate = refundRate
     voucher.fromDate = fromDate
     voucher.toDate = toDate
     await voucher.save()
@@ -94,7 +95,7 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
     const query = isTraveler ? { id: req.params.id, status: Status.activated } : { id: req.params.id }
     const voucher = await Voucher.findOne({
         where: query,
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'refundRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: getOneInclude(isTraveler, res.locals.user.id)
     })
 
@@ -111,7 +112,7 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const updateVoucher = catchAsync(async (req, res, next) => {
-    const { name, image, destinationID, description, quantity, value, salePrice, fromDate, toDate } = req.body;
+    const { name, image, destinationID, description, quantity, value, salePrice, refundRate, fromDate, toDate } = req.body;
 
     if (destinationID) {
         const destination = await Destination.findOne({ where: { id: destinationID, supplierID: res.locals.user.id, status: Status.open }, attributes: ['name'] });
@@ -121,7 +122,7 @@ export const updateVoucher = catchAsync(async (req, res, next) => {
 
     const voucher = await Voucher.findOne({
         where: { id: req.params.id, status: Status.draft },
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate', 'status'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'refundRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -140,6 +141,7 @@ export const updateVoucher = catchAsync(async (req, res, next) => {
     quantity ? voucher.quantity = quantity : 0
     value ? voucher.value = value : 0
     salePrice ? voucher.salePrice = salePrice : 0
+    refundRate ? voucher.refundRate = refundRate : 0
     fromDate ? voucher.fromDate = fromDate : 0
     toDate ? voucher.toDate = toDate : 0
     await voucher.save()
@@ -192,7 +194,7 @@ export const deleteVoucher = catchAsync(async (req, res, next) => {
 export const duplicateVoucher = catchAsync(async (req, res, next) => {
     const targetVoucher = await Voucher.findOne({
         where: { id: req.params.id, status: Status.draft },
-        attributes: ['id', 'destinationID', 'name', 'image', 'description', 'quantity', 'value', 'salePrice', 'fromDate', 'toDate'],
+        attributes: ['id', 'destinationID', 'name', 'image', 'description', 'quantity', 'value', 'salePrice', 'refundRate', 'fromDate', 'toDate'],
         include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -211,6 +213,7 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
     voucher.quantity = targetVoucher.quantity
     voucher.value = targetVoucher.value
     voucher.salePrice = targetVoucher.salePrice
+    voucher.refundRate = targetVoucher.refundRate
     voucher.fromDate = targetVoucher.fromDate
     voucher.toDate = targetVoucher.toDate
     await voucher.save()

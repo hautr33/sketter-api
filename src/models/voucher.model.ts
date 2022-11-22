@@ -15,6 +15,7 @@ export class Voucher extends Model<InferAttributes<Voucher>, InferCreationAttrib
     totalSold?: number;
     value!: number;
     salePrice!: number;
+    refundRate!: number;
     discountPercent!: number;
     fromDate!: Date;
     toDate!: Date;
@@ -90,6 +91,17 @@ Voucher.init({
             isInt: { msg: 'Giá trị của voucher không hợp lệ' },
             min: { msg: 'Giá trị của voucher phải từ 1.000 đồng đến 99.999.000 đồng', args: [1] },
             max: { msg: 'Giá trị của voucher phải từ 1.000 đồng đến 99.999.000 đồng', args: [99999] }
+        }
+    },
+    refundRate: {
+        type: DataTypes.INTEGER,
+        defaultValue:50,
+        // allowNull: false,
+        validate: {
+            // notNull: { msg: 'Vui lòng nhập tỷ lệ hoàn tiền' },
+            isInt: { msg: 'Tỷ lệ hoàn tiền không hợp lệ' },
+            min: { msg: 'Tỷ lệ hoàn tiền có giá trị từ 50% đến 100%', args: [50] },
+            max: { msg: 'Tỷ lệ hoàn tiền có giá trị từ 50% đến 100%', args: [100] }
         }
     },
     discountPercent: {
