@@ -61,7 +61,7 @@ export const getDestinationDistanceService = async (fromID: string, toID: string
             const hour = Math.floor(min / 60)
             min -= hour * 60
             const hourText = hour > 0 ? hour + 'h' : ''
-            const minText = hour > 0 && min < 10 ? '0' + min + 'p' : (min > 0 ? min + 'p' : '')
+            const minText = hour > 0 && min < 10 && min > 0 ? '0' + min + 'p' : (min > 0 ? min + 'p' : '')
             newDistance.durationText = hourText + minText
             await newDistance.save({ transaction: getDistance })
             const result = await Distance.findOne({
