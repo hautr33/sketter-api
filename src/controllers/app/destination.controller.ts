@@ -97,7 +97,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     highestPrice ? destination.highestPrice = highestPrice : 0
     openingTime ? destination.openingTime = openingTime : 0
     closingTime ? destination.closingTime = closingTime : 0
-    estimatedTimeStay ? destination.estimatedTimeStay = estimatedTimeStay : 0;
+    estimatedTimeStay || estimatedTimeStay === 0 ? destination.estimatedTimeStay = estimatedTimeStay : 0;
     [Status.open, Status.closed].includes(status as string) ? destination.status = status : 0
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
