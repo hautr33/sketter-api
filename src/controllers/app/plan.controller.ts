@@ -161,7 +161,8 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 
     await validate(req.body)
 
-    const { name, stayDestinationID, fromDate, toDate, isPublic, details } = req.body;
+    const { name, fromDate, toDate, isPublic, details } = req.body;
+    const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
         attributes: ['id', 'lowestPrice', 'highestPrice'],
