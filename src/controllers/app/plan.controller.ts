@@ -113,43 +113,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
     res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: result });
     next();
 });
-export const createSmartPlan = catchAsync(async (req, res, next) => {
-    const user = await User.findByPk(res.locals.user.id, {
-        attributes: ['id'],
-        include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
-    })
-    const personalities: string[] = []
-    user?.travelerPersonalities?.forEach((personality: { name: string; }) => {
-        personalities.push(personality.name)
-    });
-    if (personalities.length === 0)
-        return next(new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST))
-
-    // const { name, fromDate, toDate, cityID, fromPrice, toPrice } = req.body;
-    const { cityID } = req.body;
-    const des = await Destination.findAll({
-        where: { status: Status.open, cityID: cityID },
-        attributes: ['id', 'longitude', 'latitude', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'avgRating', 'view'],
-        include: [
-            {
-                model: Personalities,
-                as: 'destinationPersonalities',
-                where: {
-                    name: {
-                        [Op.or]: personalities
-                    }
-                },
-                through: { attributes: ['planCount', 'visitCount'], as: 'count' },
-                attributes: []
-            },
 
 
-        ]
-
-    })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { count: des.length, des: des, test: personalities });
-    next();
-})
 export const updatePlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
         attributes: ['id'],
@@ -176,6 +141,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     fromDate ? plan.fromDate = fromDate : 0;
     toDate ? plan.toDate = toDate : 0;
     isPublic ? plan.isPublic = isPublic : 0;
+    stayDestinationID ? plan.stayDestinationID = stayDestinationID : 0;
 
     await sequelizeConnection.transaction(async (update) => {
         await plan.save({ transaction: update });

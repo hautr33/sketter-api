@@ -53,8 +53,13 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     declare getGallery: HasManyGetAssociationsMixin<DestinationImage>;
     declare createGallery: HasManyCreateAssociationMixin<DestinationImage, 'destinationID'>;
     destinationPersonalities?: any[];
+    recommendedTimes?: any[];
     catalogs?: any[];
     isBookmarked?: boolean;
+    personalityCount?: number = 0;
+    dateCount?: number = 0;
+    point?: number = 0;
+    cost?: number = 0;
 }
 
 Destination.init({
