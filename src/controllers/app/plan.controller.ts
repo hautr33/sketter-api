@@ -22,9 +22,16 @@ export const createPlan = catchAsync(async (req, res, next) => {
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
     await validate(req.body)
-    const { name, fromDate, toDate, isPublic, details } = req.body;
-    const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
+    const { name, isPublic, details } = req.body;
+    const fromDate = new Date(req.body.fromDate)
+    const toDate = new Date(req.body.toDate)
 
+    const today = Math.floor((Date.now() - fromDate.getTime()) / (1000 * 3600 * 24))
+    if (today > 0)
+        return next(new AppError('Ngày bắt đầu không được trước hôm nay', StatusCodes.BAD_REQUEST))
+
+    const date = (toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24) + 1
+    const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
         attributes: ['id', 'lowestPrice', 'highestPrice'],
@@ -39,68 +46,76 @@ export const createPlan = catchAsync(async (req, res, next) => {
             { name: name, fromDate: fromDate, toDate: toDate, stayDestinationID: stayDestinationID, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
         let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
-        for (let i = 0; i < details.length; i++) {
-            let hh = 8
-            let mm = 0
-            for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status'] })
-                if (!destination || destination === null)
-                    throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
+        for (let i = 0; i < date; i++) {
+            if (details[i]) {
+                const tmpDate = new Date(fromDate.getTime() + 1000 * 60 * 60 * 24 * i)
+                if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
+                    throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
+                let hh = 8
+                let mm = 0
+                for (let j = 0; j < details[i].destinations.length; j++) {
+                    const destination = await Destination.findOne({ where: { id: details[i].destinations[j].destinationID }, attributes: ['lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status'] })
+                    if (!destination || destination === null)
+                        throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
 
-                if (destination.status !== Status.open)
-                    throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa hoặc ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+                    if (destination.status !== Status.open)
+                        throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa hoặc ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
 
-                cost += (destination.lowestPrice + destination.highestPrice) / 2
-                const planDestination = new PlanDestination(details[i].destinations[j]);
-                planDestination.planID = plan.id;
-                planDestination.date = details[i].date;
-                planDestination.destinationName = destination.name
-                planDestination.destinationImage = destination.image
+                    cost += (destination.lowestPrice + destination.highestPrice) / 2
+                    const planDestination = new PlanDestination(details[i].destinations[j]);
+                    planDestination.planID = plan.id;
+                    planDestination.date = details[i].date;
+                    planDestination.destinationName = destination.name
+                    planDestination.destinationImage = destination.image
 
-                if (j !== 0) {
-                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
-                    if (!distance)
-                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
+                    if (j !== 0) {
+                        const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
+                        if (!distance)
+                            throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
 
-                    hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
-                    mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
-                    planDestination.distance = distance.distance
-                    planDestination.duration = distance.duration
-                    planDestination.distanceText = distance.distanceText
-                    planDestination.durationText = distance.durationText
-                } else {
-                    planDestination.distance = 0
-                    planDestination.duration = 0
-                    planDestination.distanceText = '0m'
-                    planDestination.durationText = '0s'
+                        hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
+                        mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
+                        planDestination.distance = distance.distance
+                        planDestination.duration = distance.duration
+                        planDestination.distanceText = distance.distanceText
+                        planDestination.durationText = distance.durationText
+                    } else {
+                        planDestination.distance = 0
+                        planDestination.duration = 0
+                        planDestination.distanceText = '0m'
+                        planDestination.durationText = '0s'
+                    }
+                    if (hh == 23 && mm > 1 || hh > 23)
+                        throw new AppError('Thời gian không đủ', StatusCodes.BAD_REQUEST)
+                    const fromTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
+                    hh += Math.floor((destination.estimatedTimeStay + mm) / 60)
+                    mm = destination.estimatedTimeStay + mm - Math.floor((destination.estimatedTimeStay + mm) / 60) * 60
+                    const toTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
+                    planDestination.fromTime = new Date(fromTime)
+                    planDestination.toTime = new Date(toTime)
+
+                    await planDestination.save({ transaction: create })
+
+                    if (!user || !user.travelerPersonalities)
+                        throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
+
+                    for (let i = 0; i < user.travelerPersonalities.length; i++) {
+                        await DestinationPersonalites.findOrCreate({
+                            where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
+                        })
+                        await DestinationPersonalites.
+                            increment(
+                                { planCount: 1 },
+                                { where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name } }
+                            )
+                    }
                 }
-                if (hh == 23 && mm > 1 || hh > 23)
-                    throw new AppError('Thời gian không đủ', StatusCodes.BAD_REQUEST)
-                const fromTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
-                hh += Math.floor((destination.estimatedTimeStay + mm) / 60)
-                mm = destination.estimatedTimeStay + mm - Math.floor((destination.estimatedTimeStay + mm) / 60) * 60
-                const toTime = details[i].date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
-                planDestination.fromTime = new Date(fromTime)
-                planDestination.toTime = new Date(toTime)
-
-                await planDestination.save({ transaction: create })
-
-                if (!user || !user.travelerPersonalities)
-                    throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
-
-                for (let i = 0; i < user.travelerPersonalities.length; i++) {
-                    await DestinationPersonalites.findOrCreate({
-                        where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
-                    })
-                    await DestinationPersonalites.
-                        increment(
-                            { planCount: 1 },
-                            { where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name } }
-                        )
-                }
+            } else {
+                plan.toDate = new Date(fromDate.getTime() + 1000 * 60 * 60 * 24 * (i - 1))
             }
         }
-        await Plan.update({ estimatedCost: cost }, { where: { id: plan.id }, transaction: create })
+        plan.estimatedCost = cost
+        await plan.save({ transaction: create })
         return plan
     })
 
@@ -121,13 +136,21 @@ export const updatePlan = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: [{ model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] }]
     })
-    const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id } });
+    const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id, status: 'Draft' } });
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
     await validate(req.body)
 
-    const { name, fromDate, toDate, isPublic, details } = req.body;
+    const { name, isPublic, details } = req.body;
+
+    const fromDate = new Date(req.body.fromDate)
+    const toDate = new Date(req.body.toDate)
+    const today = Math.floor((Date.now() - new Date(fromDate).getTime()) / (1000 * 3600 * 24))
+    if (today > 0)
+        return next(new AppError('Ngày bắt đầu không được trước hôm nay', StatusCodes.BAD_REQUEST))
+
+    const date = (toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24) + 1
     const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
@@ -149,83 +172,94 @@ export const updatePlan = catchAsync(async (req, res, next) => {
         await PlanDestination.destroy({ where: { planID: plan.id }, transaction: update })
         let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
 
-        for (let i = 0; i < details.length; i++) {
-            let hh = 0
-            let mm = 0
-            for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({
-                    where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
-                    include: [
-                        { model: Catalog, as: 'catalogs', where: { name: { [Op.notILike]: '%lưu trú%' }, parent: { [Op.notILike]: '%lưu trú%' } } }
-                    ]
-                })
+        for (let i = 0; i < date; i++) {
+            if (details[i]) {
+                const tmpDate = new Date(fromDate.getTime() + 1000 * 60 * 60 * 24 * i)
 
-                if (!destination || destination === null)
-                    throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
-
-                if (destination.status === Status.closed)
-                    throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
-
-                if (destination.status === Status.deactivated)
-                    return next(new AppError(`Địa điểm '${destination.name}' đã bị ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST))
-                cost += (destination.lowestPrice + destination.highestPrice) / 2
-                const planDestination = new PlanDestination(details[i].destinations[j]);
-                planDestination.planID = plan.id;
-                planDestination.destinationID = details[i].destinations[j].destinationID;
-                planDestination.destinationName = destination.name
-                planDestination.destinationImage = destination.image
-                planDestination.date = details[i].date;
-                planDestination.fromTime = new Date(details[i].destinations[j].fromTime)
-                planDestination.toTime = new Date(details[i].destinations[j].toTime)
-                if (!(planDestination.fromTime instanceof Date && !isNaN(planDestination.fromTime.getTime())))
-                    throw new AppError(`Thời gian đến địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
-                if (!(planDestination.toTime instanceof Date && !isNaN(planDestination.toTime.getTime())))
-                    throw new AppError(`Thời gian rời địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-                if (j !== 0) {
-                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
-                    if (!distance)
-                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
-
-                    // console.log(Math.ceil(distance.duration / 60));
-
-                    hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
-                    mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
-                    const preToTime = new Date(planDestination.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm))
-
-
-                    if (planDestination.fromTime < preToTime)
-                        throw new AppError(`Thời gian đến địa điểm '${destination.name}' không được trước ${preToTime.toLocaleString()}`, StatusCodes.BAD_REQUEST)
-
-                    planDestination.distance = distance.distance
-                    planDestination.duration = distance.duration
-                    planDestination.distanceText = distance.distanceText
-                    planDestination.durationText = distance.durationText
-                } else {
-                    planDestination.distance = 0
-                    planDestination.duration = 0
-                    planDestination.distanceText = '0m'
-                    planDestination.durationText = '0s'
-                }
-                hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
-                mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
-                await planDestination.save({ transaction: update })
-                if (!user || !user.travelerPersonalities)
-                    throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
-
-                for (let i = 0; i < user.travelerPersonalities.length; i++) {
-                    await DestinationPersonalites.findOrCreate({
-                        where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
+                if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
+                    throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
+                let hh = 0
+                let mm = 0
+                for (let j = 0; j < details[i].destinations.length; j++) {
+                    const destination = await Destination.findOne({
+                        where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
+                        include: [
+                            { model: Catalog, as: 'catalogs', where: { name: { [Op.notILike]: '%lưu trú%' }, parent: { [Op.notILike]: '%lưu trú%' } } }
+                        ]
                     })
-                    await DestinationPersonalites.
-                        increment(
-                            { planCount: 1 },
-                            { where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name } }
-                        )
+
+                    if (!destination || destination === null)
+                        throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
+
+                    if (destination.status === Status.closed)
+                        throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+
+                    if (destination.status === Status.deactivated)
+                        return next(new AppError(`Địa điểm '${destination.name}' đã bị ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST))
+                    cost += (destination.lowestPrice + destination.highestPrice) / 2
+                    const planDestination = new PlanDestination(details[i].destinations[j]);
+                    planDestination.planID = plan.id;
+                    planDestination.destinationID = details[i].destinations[j].destinationID;
+                    planDestination.destinationName = destination.name
+                    planDestination.destinationImage = destination.image
+                    planDestination.date = details[i].date;
+                    const from = details[i].destinations[j].fromTime.split(' ');
+                    const to = details[i].destinations[j].toTime.split(' ');
+                    planDestination.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
+                    planDestination.toTime = new Date(tmpDate.toLocaleDateString() + ' ' + to[to.length - 1])
+                    if (!(planDestination.fromTime instanceof Date && !isNaN(planDestination.fromTime.getTime())))
+                        throw new AppError(`Thời gian đến địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+                    if (!(planDestination.toTime instanceof Date && !isNaN(planDestination.toTime.getTime())))
+                        throw new AppError(`Thời gian rời địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+                    if (j !== 0) {
+                        const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
+                        if (!distance)
+                            throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
+
+                        // console.log(Math.ceil(distance.duration / 60));
+
+                        hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
+                        mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
+                        const preToTime = new Date(planDestination.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm))
+
+
+                        if (planDestination.fromTime < preToTime)
+                            throw new AppError(`Thời gian đến địa điểm '${destination.name}' không được trước ${preToTime.toLocaleString()}`, StatusCodes.BAD_REQUEST)
+
+                        planDestination.distance = distance.distance
+                        planDestination.duration = distance.duration
+                        planDestination.distanceText = distance.distanceText
+                        planDestination.durationText = distance.durationText
+                    } else {
+                        planDestination.distance = 0
+                        planDestination.duration = 0
+                        planDestination.distanceText = '0m'
+                        planDestination.durationText = '0s'
+                    }
+                    hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
+                    mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
+                    await planDestination.save({ transaction: update })
+                    if (!user || !user.travelerPersonalities)
+                        throw new AppError('Vui lòng cập nhật thông tin tài khoản về "Tính cách du lịch" để sử dụng tính năng này', StatusCodes.BAD_REQUEST)
+
+                    for (let i = 0; i < user.travelerPersonalities.length; i++) {
+                        await DestinationPersonalites.findOrCreate({
+                            where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name }
+                        })
+                        await DestinationPersonalites.
+                            increment(
+                                { planCount: 1 },
+                                { where: { destinationID: planDestination.destinationID, personality: user?.travelerPersonalities[i].name } }
+                            )
+                    }
                 }
+            } else {
+                plan.toDate = new Date(fromDate.getTime() + 1000 * 60 * 60 * 24 * (i - 1))
             }
         }
-        await Plan.update({ estimatedCost: cost }, { where: { id: plan.id }, transaction: update })
+        plan.estimatedCost = cost
+        await plan.save({ transaction: update })
     });
     const result = await Plan.findOne(
         {

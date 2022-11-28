@@ -17,15 +17,17 @@ import { TimeFrame } from "../../models/time_frame.model";
 export const createSmartPlan = catchAsync(async (req, res, next) => {
     await Plan.destroy({ where: { status: 'Smart' } })
     const now = Date.now()
-
-    // const { name, fromDate, toDate, fromPrice, toPrice } = req.body;
     const { name, cityID, start, end, dailyStayCost, personalities } = req.body;
     const fromDate = new Date(req.body.fromDate)
     const toDate = new Date(req.body.toDate)
+    const today = Math.floor((now - fromDate.getTime()) / (1000 * 3600 * 24))
+    if (today > 0)
+        return next(new AppError('Ngày bắt đầu không được trước hôm nay', StatusCodes.BAD_REQUEST))
+
     const date = (toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24) + 1
-    if (date > 4) {
+    if (date > 4)
         return next(new AppError('Lịch trình tối đa 4 ngày', StatusCodes.BAD_REQUEST))
-    }
+
     const maxTime = date * 10 * 60
     if (dailyStayCost * date / req.body.cost > 0.5)
         return next(new AppError('Chi phí lưu trú không được quá 50% chi phí chuyến đi', StatusCodes.BAD_REQUEST))

@@ -62,7 +62,12 @@ export const createDestination = catchAsync(async (req, res, next) => {
 
 export const updateDestination = catchAsync(async (req, res, next) => {
     const query = res.locals.user.roleID === Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id, status: { [Op.ne]: Status.deactivated } } : { id: req.params.id, status: { [Op.ne]: Status.deactivated } }
-    const destination = await Destination.findOne({ where: query })
+    const destination = await Destination.findOne({
+        where: query,
+        include: [
+            { model: TimeFrame, as: 'recommendedTimes', through: { attributes: [] }, attributes: ['from', 'to'] },
+        ]
+    })
     if (!destination)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
@@ -102,7 +107,12 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     const result = await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         catalogs ? await destination.setCatalogs(catalogs, { transaction: update }) : 0
-        recommendedTimes ? await destination.setRecommendedTimes(recommendedTimes, { transaction: update }) : 0
+        if (recommendedTimes) {
+            if (destination.recommendedTimes?.length !== 0)
+                await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
+            else
+                await destination.addRecommendedTimes(recommendedTimes, { transaction: update })
+        }
         if (gallery) {
             await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
             for (let i = 0; i < gallery.length; i++) {
