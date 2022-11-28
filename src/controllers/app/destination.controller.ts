@@ -76,7 +76,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
 
-    const recommendedTimes: (number)[] = [];
+    const recommendedTimes: number[] = [];
     (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
         const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
         if (!timeFrame)
