@@ -81,9 +81,12 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
         if (!timeFrame)
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
+        console.log(timeFrame);
+
         recommendedTimes.push(timeFrame.id)
+        console.log(recommendedTimes);
+
     });
-    console.log(recommendedTimes);
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
