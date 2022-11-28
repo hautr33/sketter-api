@@ -233,7 +233,19 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-
+export const saveSmartPlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Smart' } })
+    if (!plan)
+        return next(new AppError('Không tìm thấy lịch trình', StatusCodes.BAD_REQUEST))
+    await sequelizeConnection.transaction(async (save) => {
+        plan.name = plan.name.split(' (')[0]
+        plan.status = 'Draft'
+        await plan.save({ transaction: save })
+        await Plan.destroy({ where: { status: 'Smart' }, transaction: save })
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Lưu lịch trình thành công', null)
+    next()
+})
 
 const calcPoint = (des: Destination[], now: number): Destination[] => {
     let maxView = 0
