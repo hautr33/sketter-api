@@ -36,6 +36,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
         recommendedTimes.push(timeFrame.id)
     });
 
+
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
     const createdBy = res.locals.user.id;
@@ -82,6 +83,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
         recommendedTimes.push(timeFrame.id)
     });
+    console.log(recommendedTimes);
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
@@ -108,10 +110,15 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         await destination.save({ transaction: update })
         catalogs ? await destination.setCatalogs(catalogs, { transaction: update }) : 0
         if (recommendedTimes) {
-            if (destination.recommendedTimes?.length !== 0)
+            if (destination.recommendedTimes?.length !== 0) {
                 await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
-            else
+                console.log(1);
+
+            }
+            else {
+                console.log(2);
                 await destination.addRecommendedTimes(recommendedTimes, { transaction: update })
+            }
         }
         if (gallery) {
             await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
