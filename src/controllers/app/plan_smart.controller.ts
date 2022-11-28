@@ -243,7 +243,7 @@ export const saveSmartPlan = catchAsync(async (req, res, next) => {
         await plan.save({ transaction: save })
         await Plan.destroy({ where: { status: 'Smart' }, transaction: save })
     })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Lưu lịch trình thành công', null)
+    res.resDocument = new RESDocument(StatusCodes.OK, `Lịch trình "${plan.name}" đã được lưu vào bản nháp`, null)
     next()
 })
 

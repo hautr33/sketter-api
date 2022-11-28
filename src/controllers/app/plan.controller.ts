@@ -8,7 +8,6 @@ import { Personalities } from "../../models/personalities.model";
 import { Roles, Status } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
-import _ from "lodash";
 import { PlanPrivateFields } from "../../utils/private_field";
 import { User } from "../../models/user.model";
 import { Op } from "sequelize";
@@ -55,6 +54,8 @@ export const createPlan = catchAsync(async (req, res, next) => {
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
                 planDestination.date = details[i].date;
+                planDestination.destinationName = destination.name
+                planDestination.destinationImage = destination.image
 
                 if (j !== 0) {
                     const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
@@ -171,6 +172,8 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                 const planDestination = new PlanDestination(details[i].destinations[j]);
                 planDestination.planID = plan.id;
                 planDestination.destinationID = details[i].destinations[j].destinationID;
+                planDestination.destinationName = destination.name
+                planDestination.destinationImage = destination.image
                 planDestination.date = details[i].date;
                 planDestination.fromTime = new Date(details[i].destinations[j].fromTime)
                 planDestination.toTime = new Date(details[i].destinations[j].toTime)
@@ -320,10 +323,41 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-export const deletePlan = catchAsync(async (req, res, next) => {
-    const plan = await Plan.findByPk(req.params.id);
 
-    if (!plan || (res.locals.user.roleID == Roles.Traveler && plan.travelerID != res.locals.user.id))
+export const saveDraftPlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Draft', travelerID: res.locals.user.id } });
+
+    if (!plan)
+        return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
+
+    const planDes = await PlanDestination.findAll({ where: { planID: plan.id } })
+    let maxDate = plan.fromDate
+    await sequelizeConnection.transaction(async (activate) => {
+        planDes.forEach(async des => {
+            if (des.date > maxDate)
+                maxDate = des.date
+
+            const destination = await Destination.findOne({ where: { id: des.destinationID } })
+            if (!destination || destination.status !== 'Open')
+                throw new AppError(`Địa điểm '${destination ? destination.name : des.destinationName}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+            des.destinationName = destination.name
+            des.destinationImage = destination.image
+            await des.save({ transaction: activate })
+        });
+        plan.toDate = maxDate
+        plan.status = 'Planned'
+        await plan.save({ transaction: activate })
+    })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất việc lên kế hoạch cho "${plan.name}"`, null);
+    next();
+})
+
+
+export const deletePlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Draft', travelerID: res.locals.user.id } });
+
+    if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
     await plan.destroy()
