@@ -28,7 +28,7 @@ export const createDestination = catchAsync(async (req, res, next) => {
     const { cityID, name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
-    const recommendedTimes: (number)[] = [];
+    const recommendedTimes: number[] = [];
     (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
         const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
         if (!timeFrame)
@@ -76,16 +76,14 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
 
-    const recommendedTimes: number[] = [];
+    let recommendedTimes: number[] = [];
     (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
         const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
         if (!timeFrame)
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
         recommendedTimes.push(timeFrame.id)
         console.log(recommendedTimes);
-
     });
-    console.log(recommendedTimes);
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
@@ -108,16 +106,18 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     closingTime ? destination.closingTime = closingTime : 0
     estimatedTimeStay || estimatedTimeStay === 0 ? destination.estimatedTimeStay = estimatedTimeStay : 0;
     [Status.open, Status.closed].includes(status as string) ? destination.status = status : 0
-    const result = await sequelizeConnection.transaction(async (update) => {
+    await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         catalogs ? await destination.setCatalogs(catalogs, { transaction: update }) : 0
         if (recommendedTimes) {
             if (destination.recommendedTimes?.length !== 0) {
-                await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
+                console.log(recommendedTimes);
                 console.log(1);
+                await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
 
             }
             else {
+                console.log(recommendedTimes);
                 console.log(2);
                 await destination.addRecommendedTimes(recommendedTimes, { transaction: update })
             }
@@ -131,7 +131,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         return destination
     })
 
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật địa điểm thành công', { destination: result })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật địa điểm thành công', null)
     next()
 })
 
