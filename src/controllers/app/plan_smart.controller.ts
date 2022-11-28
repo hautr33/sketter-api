@@ -231,7 +231,7 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['name', 'ASC']],
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plans });
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { count: plans.length, plans: plans });
     next();
 })
 

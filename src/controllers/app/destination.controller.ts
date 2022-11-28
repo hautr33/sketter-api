@@ -28,13 +28,13 @@ export const createDestination = catchAsync(async (req, res, next) => {
     const { cityID, name, address, phone, email, description, longitude, latitude, lowestPrice, highestPrice,
         openingTime, closingTime, estimatedTimeStay, catalogs, destinationPersonalities
     } = req.body;
-    const recommendedTimes: number[] = [];
-    (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
-        const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
+    const recommendedTimes: (number)[] = [];
+    for (let i = 0; i < req.body.recommendedTimes.length; i++) {
+        const timeFrame = await TimeFrame.findOne({ where: { from: req.body.recommendedTimes[i].from, to: req.body.recommendedTimes[i].to } })
         if (!timeFrame)
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
         recommendedTimes.push(timeFrame.id)
-    });
+    }
 
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
@@ -76,14 +76,13 @@ export const updateDestination = catchAsync(async (req, res, next) => {
         openingTime, closingTime, catalogs, estimatedTimeStay, status
     } = req.body;
 
-    let recommendedTimes: number[] = [];
-    (req.body.recommendedTimes as TimeFrame[]).forEach(async time => {
-        const timeFrame = await TimeFrame.findOne({ where: { from: time.from, to: time.to } })
+    const recommendedTimes: (number)[] = [];
+    for (let i = 0; i < req.body.recommendedTimes.length; i++) {
+        const timeFrame = await TimeFrame.findOne({ where: { from: req.body.recommendedTimes[i].from, to: req.body.recommendedTimes[i].to } })
         if (!timeFrame)
             throw new AppError('Khung thời gian không hợp lệ', StatusCodes.BAD_REQUEST)
         recommendedTimes.push(timeFrame.id)
-        console.log(recommendedTimes);
-    });
+    }
 
     const latinName = removeVI(name, { replaceSpecialCharacters: false })
     const gallery = req.body.gallery as DestinationImage[]
@@ -109,19 +108,7 @@ export const updateDestination = catchAsync(async (req, res, next) => {
     await sequelizeConnection.transaction(async (update) => {
         await destination.save({ transaction: update })
         catalogs ? await destination.setCatalogs(catalogs, { transaction: update }) : 0
-        if (recommendedTimes) {
-            if (destination.recommendedTimes?.length !== 0) {
-                console.log(recommendedTimes);
-                console.log(1);
-                await destination.setRecommendedTimes(recommendedTimes, { transaction: update })
-
-            }
-            else {
-                console.log(recommendedTimes);
-                console.log(2);
-                await destination.addRecommendedTimes(recommendedTimes, { transaction: update })
-            }
-        }
+        recommendedTimes ? await destination.setRecommendedTimes(recommendedTimes, { transaction: update }) : 0
         if (gallery) {
             await DestinationImage.destroy({ where: { destinationID: destination.id }, transaction: update })
             for (let i = 0; i < gallery.length; i++) {
