@@ -15,7 +15,7 @@ import { getDestinationDistanceService } from "../../services/destination.servic
 import { TimeFrame } from "../../models/time_frame.model";
 
 export const createSmartPlan = catchAsync(async (req, res, next) => {
-    await Plan.destroy({ where: { status: 'Smart' } })
+    await Plan.destroy({ where: { status: 'Smart', travelerID: res.locals.user.id }, force: true })
     const now = Date.now()
     const { name, cityID, start, end, dailyStayCost, personalities } = req.body;
     const fromDate = new Date(req.body.fromDate)
@@ -236,14 +236,14 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
 })
 
 export const saveSmartPlan = catchAsync(async (req, res, next) => {
-    const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Smart' } })
+    const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id, status: 'Smart' } })
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình', StatusCodes.BAD_REQUEST))
     await sequelizeConnection.transaction(async (save) => {
         plan.name = plan.name.split(' (')[0]
         plan.status = 'Draft'
         await plan.save({ transaction: save })
-        await Plan.destroy({ where: { status: 'Smart' }, transaction: save })
+        await Plan.destroy({ where: { status: 'Smart', travelerID: res.locals.user.id }, force: true, transaction: save })
     })
     res.resDocument = new RESDocument(StatusCodes.OK, `Lịch trình "${plan.name}" đã được lưu vào bản nháp`, null)
     next()

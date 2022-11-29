@@ -273,11 +273,14 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 });
 
 export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
+    const date = Date.now()
+    await Plan.update({ status: 'Activated' }, { where: { fromDate: { [Op.lte]: date }, status: 'Planned' } })
+    await Plan.update({ status: 'Skipped' }, { where: { toDate: { [Op.lte]: (date - 1000 * 3600 * 24 * 2) }, status: 'Activated' } })
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = ['Draft', 'Planned', 'Activated', 'Completed'].includes(req.query.status as string) ? req.query.status as string : 'Draft'
     const plans = await Plan.findAll(
         {
-            where: { travelerID: res.locals.user.id, status: status },
+            where: { travelerID: res.locals.user.id, status: status == 'Completed' ? { [Op.or]: ['Completed', 'Skipped'] } : status },
             attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['createdAt', 'DESC']],
@@ -286,7 +289,7 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
         });
     const count = await Plan.findAll(
         {
-            where: { travelerID: res.locals.user.id, status: status },
+            where: { travelerID: res.locals.user.id, status: status == 'Completed' ? { [Op.or]: ['Completed', 'Skipped'] } : status },
             attributes: ['id'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: [] }],
         });
@@ -363,6 +366,10 @@ export const saveDraftPlan = catchAsync(async (req, res, next) => {
 
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
+
+    const date = Date.now()
+    if (Math.floor((date - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) > 0)
+        throw new AppError(`Ngày bắt đầu không được trước hôm nay`, StatusCodes.BAD_REQUEST)
 
     const planDes = await PlanDestination.findAll({ where: { planID: plan.id } })
     let maxDate = plan.fromDate

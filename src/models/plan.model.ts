@@ -90,7 +90,7 @@ Plan.init({
         defaultValue: 'Draft',
         validate: {
             isIn: {
-                args: [['Draft', 'Planned', 'Activated', 'Completed', 'Smart']],
+                args: [['Draft', 'Planned', 'Activated', 'Completed', 'Skipped', 'Smart']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
