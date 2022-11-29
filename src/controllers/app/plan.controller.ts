@@ -341,6 +341,9 @@ export const getAllPublicPlan = catchAsync(async (req, res, next) => {
 });
 
 export const getOnePlan = catchAsync(async (req, res, next) => {
+    const date = Date.now()
+    await Plan.update({ status: 'Activated' }, { where: { fromDate: { [Op.lte]: date }, status: 'Planned' } })
+    await Plan.update({ status: 'Skipped' }, { where: { toDate: { [Op.lte]: (date - 1000 * 3600 * 24 * 2) }, status: 'Activated' } })
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
     }
