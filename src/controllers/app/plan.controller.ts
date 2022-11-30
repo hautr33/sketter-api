@@ -46,7 +46,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, stayDestinationID: stayDestinationID, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
-        let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
+        let cost = stay ? Math.ceil((stay.lowestPrice + stay.highestPrice) / 2) : 0;
         for (let i = 0; i < date; i++) {
             if (details[i]) {
                 const tmpDate = new Date(fromDate.getTime() + 1000 * 60 * 60 * 24 * i)
@@ -62,7 +62,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
                     if (destination.status !== Status.open)
                         throw new AppError(`Địa điểm '${destination.name}' hiện đang đóng cửa hoặc ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
 
-                    cost += (destination.lowestPrice + destination.highestPrice) / 2
+                    cost += Math.ceil((destination.lowestPrice + destination.highestPrice) / 2)
                     const planDestination = new PlanDestination(details[i].destinations[j]);
                     planDestination.planID = plan.id;
                     planDestination.date = details[i].date;
@@ -171,7 +171,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     await sequelizeConnection.transaction(async (update) => {
         await plan.save({ transaction: update });
         await PlanDestination.destroy({ where: { planID: plan.id }, transaction: update })
-        let cost = stay ? (stay.lowestPrice + stay.highestPrice) / 2 : 0;
+        let cost = stay ? Math.ceil((stay.lowestPrice + stay.highestPrice) / 2) : 0;
 
         for (let i = 0; i < date; i++) {
             if (details[i]) {
@@ -197,7 +197,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 
                     if (destination.status === Status.deactivated)
                         return next(new AppError(`Địa điểm '${destination.name}' đã bị ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST))
-                    cost += (destination.lowestPrice + destination.highestPrice) / 2
+                    cost += Math.ceil((destination.lowestPrice + destination.highestPrice) / 2)
                     const planDestination = new PlanDestination(details[i].destinations[j]);
                     planDestination.planID = plan.id;
                     planDestination.destinationID = details[i].destinations[j].destinationID;
@@ -531,8 +531,8 @@ const validate = async (body: any) => {
 
 const includeDetailGetOne = [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
         where: { isPlan: true },
@@ -550,7 +550,7 @@ const includeDetailGetOne = [
 const includeDetailGetOneCompleted = [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
         where: { isPlan: true },
