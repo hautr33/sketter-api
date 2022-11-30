@@ -53,7 +53,6 @@ export const UserPrivateFields = [
         "gender",
         "dob",
         "phone",
-        "address",
         "owner",
         "isActive",
         "authType",
@@ -161,6 +160,7 @@ export class PlanPrivateFields {
         "isActive",
         "travelerID",
         "stayDestinationID",
+        "actualStayDestinationID",
         "deletedAt",
         "updatedAt"
     ];

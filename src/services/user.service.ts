@@ -96,20 +96,19 @@ export const updateUserService = async (id: string, body: any, isAdmin?: boolean
     const user = await User.findByPk(id)
     if (!user)
         return null
-    const { name, avatar, travelerPersonalities, status } = body;
+    const { name, avatar, travelerPersonalities, status, address } = body;
     name ? user.name = name : 0
     avatar ? user.avatar = avatar : 0
+    address ? user.address = address : 0
     isAdmin ? status ? user.status = status : 0 : 0
     if (user.roleID == Roles.Traveler) {
-        const { gender, dob, phone, address } = body;
+        const { gender, dob, phone } = body;
         phone ? user.phone = phone : 0
-        address ? user.address = address : 0
         gender ? user.gender = gender : 0
         dob ? user.dob = dob : 0
     } else if (user.roleID == Roles.Supplier) {
-        const { owner, phone, address, commissionRate } = body;
+        const { owner, phone, commissionRate } = body;
         phone ? user.phone = phone : 0
-        address ? user.address = address : 0
         owner ? user.owner = owner : 0
         isAdmin && commissionRate ? user.commissionRate = commissionRate : 0
     }

@@ -8,6 +8,7 @@ import { Personalities } from "../../models/personalities.model";
 import { Roles, Status } from "../../utils/constant";
 import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
+import _ from "lodash"
 import { PlanPrivateFields } from "../../utils/private_field";
 import { User } from "../../models/user.model";
 import { Op } from "sequelize";
@@ -25,7 +26,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
     const { name, isPublic, details } = req.body;
     const fromDate = new Date(req.body.fromDate)
     const toDate = new Date(req.body.toDate)
-
+    details.sort((a: { date: number; }, b: { date: number; }) => (a.date < b.date) ? -1 : 1)
     const today = Math.floor((Date.now() - fromDate.getTime()) / (1000 * 3600 * 24))
     if (today > 0)
         return next(new AppError('Ngày bắt đầu không được trước hôm nay', StatusCodes.BAD_REQUEST))
@@ -143,7 +144,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
     await validate(req.body)
 
     const { name, isPublic, details } = req.body;
-
+    details.sort((a: { date: number; }, b: { date: number; }) => (a.date < b.date) ? -1 : 1)
     const fromDate = new Date(req.body.fromDate)
     const toDate = new Date(req.body.toDate)
     const today = Math.floor((Date.now() - new Date(fromDate).getTime()) / (1000 * 3600 * 24))
@@ -347,22 +348,29 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
     }
-    const plan = await Plan.findOne(
+    const check = await Plan.findOne({
+        where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
+        attributes: ['status']
+    })
+
+    if (!check)
+        return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
+    const result = await Plan.findOne(
         {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
-            include: includeDetailGetOne,
+            include: check.status == 'Completed' ? includeDetailGetOneCompleted : includeDetailGetOne,
             order: [['details', 'fromTime', 'ASC']]
         });
 
-    if (!plan)
+    if (!result)
         return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
-
-
+    const plan = _.omit(result.toJSON(), []);
+    if (check.status !== 'Completed')
+        plan.travelDetails = null
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
     next();
 })
-
 
 export const saveDraftPlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Draft', travelerID: res.locals.user.id } });
@@ -377,17 +385,18 @@ export const saveDraftPlan = catchAsync(async (req, res, next) => {
     const planDes = await PlanDestination.findAll({ where: { planID: plan.id } })
     let maxDate = plan.fromDate
     await sequelizeConnection.transaction(async (activate) => {
-        planDes.forEach(async des => {
-            if (des.date > maxDate)
-                maxDate = des.date
+        for (let i = 0; i < planDes.length; i++) {
 
-            const destination = await Destination.findOne({ where: { id: des.destinationID } })
+            if (planDes[i].date > maxDate)
+                maxDate = planDes[i].date
+
+            const destination = await Destination.findOne({ where: { id: planDes[i].destinationID } })
             if (!destination || destination.status !== 'Open')
-                throw new AppError(`Địa điểm '${destination ? destination.name : des.destinationName}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
-            des.destinationName = destination.name
-            des.destinationImage = destination.image
-            await des.save({ transaction: activate })
-        });
+                throw new AppError(`Địa điểm '${destination ? destination.name : planDes[i].destinationName}' hiện đang đóng cửa, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST)
+            planDes[i].destinationName = destination.name
+            planDes[i].destinationImage = destination.image
+            await planDes[i].save({ transaction: activate })
+        }
         plan.toDate = maxDate
         plan.status = 'Planned'
         await plan.save({ transaction: activate })
@@ -397,6 +406,106 @@ export const saveDraftPlan = catchAsync(async (req, res, next) => {
     next();
 })
 
+export const completePlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Activated', travelerID: res.locals.user.id } });
+
+    if (!plan)
+        return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
+
+    // const now = Date.now()
+    // if (Math.floor((now - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) < 0)
+    //     throw new AppError(`Ngày bắt đầu không được trước hôm nay`, StatusCodes.BAD_REQUEST)
+    const date = (new Date(plan.toDate).getTime() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24) + 1
+    const { stayDestinationID, totalCost, details } = req.body;
+
+    plan.actualStayDestinationID = stayDestinationID
+    plan.actualCost = totalCost
+    plan.status = "Completed"
+
+    const checkinDes: PlanDestination[] = []
+    for (let i = 0; i < date; i++) {
+        if (details[i]) {
+            const tmpDate = new Date(new Date(plan.fromDate).getTime() + 1000 * 60 * 60 * 24 * i)
+            if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
+                throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
+
+            for (let j = 0; j < details[i].destinations.length; j++) {
+                const destination = await Destination.findOne({
+                    where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
+                    include: [
+                        { model: Catalog, as: 'catalogs', where: { name: { [Op.notILike]: '%lưu trú%' }, parent: { [Op.notILike]: '%lưu trú%' } } }
+                    ]
+                })
+
+                if (!destination || destination === null)
+                    throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
+
+                const from = details[i].destinations[j].fromTime.split(' ');
+                const to = details[i].destinations[j].toTime.split(' ');
+                const des = new PlanDestination()
+                des.planID = plan.id
+                des.destinationID = details[i].destinations[j].destinationID
+                des.date = tmpDate
+                des.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
+                des.toTime = new Date(tmpDate.toLocaleDateString() + ' ' + to[to.length - 1])
+                des.profile = 'driving'
+                des.status = 'New'
+                des.destinationName = destination.name
+                des.destinationImage = destination.image
+                des.rating = details[i].destinations[j].rating
+                des.description = details[i].destinations[j].description
+                des.isPlan = false
+                if (j !== 0) {
+                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, des.profile)
+                    if (!distance)
+                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
+
+                    des.distance = distance.distance
+                    des.duration = distance.duration
+                    des.distanceText = distance.distanceText
+                    des.durationText = distance.durationText
+                } else {
+                    des.distance = 0
+                    des.duration = 0
+                    des.distanceText = '0m'
+                    des.durationText = '0s'
+                }
+                checkinDes.push(des)
+            }
+        } else {
+            throw new AppError(`Chi tiết lịch trình ngày thứ ${i} không hợp lệ`, StatusCodes.BAD_REQUEST)
+        }
+
+    }
+
+
+    const planDes = await PlanDestination.findAll({ where: { planID: plan.id } })
+    for (let i = 0; i < planDes.length; i++) {
+        planDes[i].status = 'Skipped'
+        let isCheck = false
+        for (let j = 0; j < checkinDes.length && !isCheck; j++) {
+            if (Math.floor((new Date(planDes[i].date).getTime() - new Date(checkinDes[j].date).getTime()) / (1000 * 3600 * 24)) == 0 && planDes[i].destinationID == checkinDes[j].destinationID) {
+                planDes[i].status = 'Checked-in'
+                checkinDes[j].status = 'Checked-in'
+                isCheck = true
+            }
+        }
+    }
+
+    await sequelizeConnection.transaction(async (complete) => {
+
+        for (let i = 0; i < planDes.length; i++)
+            await planDes[i].save({ transaction: complete })
+
+        for (let i = 0; i < checkinDes.length; i++)
+            await checkinDes[i].save({ transaction: complete })
+
+        await plan.save({ transaction: complete })
+    })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, null);
+    next();
+})
 
 export const deletePlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Draft', travelerID: res.locals.user.id } });
@@ -422,9 +531,39 @@ const validate = async (body: any) => {
 
 const includeDetailGetOne = [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image'] },
     {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText'], include: [
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        where: { isPlan: true },
+        include: [
+            {
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+            }
+        ]
+    },
+    {
+        model: PlanDestination, as: 'travelDetails', attributes: ['date'],
+    }
+]
+
+const includeDetailGetOneCompleted = [
+    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image'] },
+    {
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        where: { isPlan: true },
+        include: [
+            {
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+            }
+        ]
+    },
+    {
+        model: PlanDestination, as: 'travelDetails', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        where: { isPlan: false },
+        include: [
             {
                 model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
             }

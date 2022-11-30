@@ -12,7 +12,9 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     fromDate!: Date;
     toDate!: Date;
     stayDestinationID?: ForeignKey<Destination['id']>;
+    actualStayDestinationID?: ForeignKey<Destination['id']>;
     estimatedCost?: number;
+    actualCost?: number;
     isPublic!: boolean;
     view?: number;
     status?: string;
@@ -24,6 +26,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     planPersonalities?: any[];
     destinations?: any[];
     details?: any[];
+    travelDetails?: any[] | null;
 
 }
 
@@ -69,6 +72,15 @@ Plan.init({
             isUUID: 4
         }
     },
+    actualStayDestinationID: {
+        type: DataTypes.UUID,
+        validate: {
+            isUUID: 4
+        }
+    },
+    actualCost: {
+        type: DataTypes.DOUBLE,
+    },
     estimatedCost: {
         type: DataTypes.DOUBLE,
     },
@@ -98,7 +110,7 @@ Plan.init({
     travelerID: {
         type: DataTypes.UUID,
         allowNull: false
-    },
+    }
 }, {
     // Other model options go here
     timestamps: true,
@@ -110,11 +122,17 @@ Plan.init({
 Plan.hasMany(PlanDestination, { foreignKey: 'planID', as: "details" })
 PlanDestination.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
 
+Plan.hasMany(PlanDestination, { foreignKey: 'planID', as: "travelDetails" })
+PlanDestination.belongsTo(Plan, { foreignKey: 'planID', as: "travelDetails" })
+
 User.hasMany(Plan, { foreignKey: "travelerID", as: "traveler" });
 Plan.belongsTo(User, { foreignKey: 'travelerID', as: "traveler" })
 
 Destination.hasMany(Plan, { foreignKey: "stayDestinationID", as: "stayDestination" });
 Plan.belongsTo(Destination, { foreignKey: 'stayDestinationID', as: "stayDestination" })
+
+Destination.hasMany(Plan, { foreignKey: "actualStayDestinationID", as: "actualStayDestination" });
+Plan.belongsTo(Destination, { foreignKey: 'actualStayDestinationID', as: "actualStayDestination" })
 
 Destination.belongsToMany(Plan, { through: PlanDestination, foreignKey: "destinationID", as: 'destinations' });
 Plan.belongsToMany(Destination, { through: PlanDestination, foreignKey: "planID", as: 'destinations' });

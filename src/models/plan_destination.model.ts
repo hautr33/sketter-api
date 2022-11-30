@@ -18,10 +18,9 @@ export class PlanDestination extends Model<InferAttributes<PlanDestination>, Inf
     status?: string;
     destinationName?: string;
     destinationImage?: string;
-    checkinTime?: Date;
-    checkoutTime?: Date;
     rating?: number;
     description?: string;
+    isPlan?: boolean;
 }
 
 PlanDestination.init({
@@ -75,7 +74,7 @@ PlanDestination.init({
     },
     profile: {
         type: DataTypes.STRING,
-        defaultValue:'driving'
+        defaultValue: 'driving'
     },
     distanceText: {
         type: DataTypes.STRING,
@@ -85,27 +84,39 @@ PlanDestination.init({
         type: DataTypes.STRING,
         allowNull: false
     },
-    checkinTime: {
-        type: DataTypes.DATE,
-        validate: {
-            isDate: { msg: 'Thời gian đến địa điểm không hợp lệ', args: true }
-        }
-    },
-    checkoutTime: {
-        type: DataTypes.DATE,
-        validate: {
-            isDate: { msg: 'Thời gian rời địa điểm không hợp lệ', args: true }
-        }
-    },
     status: {
         type: DataTypes.STRING,
         defaultValue: 'Planned',
         validate: {
             isIn: {
-                args: [['Planned', 'Checked-in', 'New']],
+                args: [['Planned', 'Checked-in', 'New', 'Skipped']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
+    },
+    destinationName: {
+        type: DataTypes.STRING
+    },
+    destinationImage: {
+        type: DataTypes.STRING
+    },
+    rating: {
+        type: DataTypes.INTEGER,
+        validate: {
+            isInt: { msg: 'Số sao đánh giá không hợp lệ' },
+            min: { msg: 'Bạn chỉ có thể đánh giá từ 1 đến 5 sao', args: [1] },
+            max: { msg: 'Bạn chỉ có thể đánh giá từ 1 đến 5 sao', args: [5] },
+        }
+    },
+    description: {
+        type: DataTypes.TEXT,
+        validate: {
+            len: { msg: 'Mô tả trải nghiệm của bạn không quá 500 ký tự', args: [0, 500] }
+        }
+    },
+    isPlan: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
 }, {
     // Other model options go here
@@ -117,7 +128,3 @@ PlanDestination.init({
 
 Destination.hasMany(PlanDestination, { foreignKey: 'destinationID', as: 'destination' })
 PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destination' })
-
-PlanDestination.beforeSave(async () => {
-
-});
