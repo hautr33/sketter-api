@@ -216,7 +216,12 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                         }
                     }
                 } else {
-                    throw new AppError('Có lỗi xảy ra khi tạo lịch trình! Xin vui lòng thử lại sau!', StatusCodes.BAD_GATEWAY)
+                    if (mm < 30) {
+                        mm = 30
+                    } else {
+                        hh += 1
+                        mm = 0
+                    }
                 }
             }
             plan.estimatedCost = cost
