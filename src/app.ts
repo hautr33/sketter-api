@@ -31,38 +31,38 @@ app.set('view engine', 'pug');
 
 // Production config
 if (ENVIRONMENT === 'production') {
-	const whitelistOrg = [
-		'localhost',
-		'localhost:3123',
-		'localhost:3000',
-		'sketter-smart-planner.herokuapp.com',
-		'sketter-fe.pages.dev',
-		'http://localhost',
-		'http://localhost:3123',
-		'http://localhost:3000',
-		'http://sketter-smart-planner.herokuapp.com',
-		'https://localhost',
-		'https://localhost:3123',
-		'https://localhost:3000',
-		'https://sketter-smart-planner.herokuapp.com',
-		'https://sketter-fe.pages.dev'
-	];
-	// Only same origin and localhost
-	const corsOptions: CorsOptions = {
-		origin(origin, callback) {
-			console.log(origin)
-			if (whitelistOrg.indexOf(origin as string) !== -1)
-				callback(null, true);
-			else
-				callback(
-					new AppError('Not allowed by CORS', StatusCodes.FORBIDDEN)
-				);
-		}
-	};
-	app.use(cors(corsOptions));
+	// const whitelistOrg = [
+	// 	'localhost',
+	// 	'localhost:3123',
+	// 	'localhost:3000',
+	// 	'sketter-smart-planner.herokuapp.com',
+	// 	'sketter-fe.pages.dev',
+	// 	'http://localhost',
+	// 	'http://localhost:3123',
+	// 	'http://localhost:3000',
+	// 	'http://sketter-smart-planner.herokuapp.com',
+	// 	'https://localhost',
+	// 	'https://localhost:3123',
+	// 	'https://localhost:3000',
+	// 	'https://sketter-smart-planner.herokuapp.com',
+	// 	'https://sketter-fe.pages.dev'
+	// ];
+	// // Only same origin and localhost
+	// const corsOptions: CorsOptions = {
+	// 	origin(origin, callback) {
+	// 		console.log(origin)
+	// 		if (whitelistOrg.indexOf(origin as string) !== -1)
+	// 			callback(null, true);
+	// 		else
+	// 			callback(
+	// 				new AppError('Not allowed by CORS', StatusCodes.FORBIDDEN)
+	// 			);
+	// 	}
+	// };
+	// app.use(cors(corsOptions));
 
-	// Use helmetJS for security
-	app.use(helmet());
+	// // Use helmetJS for security
+	// app.use(helmet());
 
 	// Set limit-rate
 	const limiter = rateLimit({
