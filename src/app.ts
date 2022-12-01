@@ -36,6 +36,7 @@ if (ENVIRONMENT === 'production') {
 		'localhost:3123',
 		'localhost:3000',
 		'sketter-smart-planner.herokuapp.com',
+		'sketter-fe.pages.dev',
 		'http://localhost',
 		'http://localhost:3123',
 		'http://localhost:3000',
@@ -43,7 +44,8 @@ if (ENVIRONMENT === 'production') {
 		'https://localhost',
 		'https://localhost:3123',
 		'https://localhost:3000',
-		'https://sketter-smart-planner.herokuapp.com'
+		'https://sketter-smart-planner.herokuapp.com',
+		'https://sketter-fe.pages.dev'
 	];
 	// Only same origin and localhost
 	const corsOptions: CorsOptions = {
