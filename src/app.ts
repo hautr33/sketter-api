@@ -1,6 +1,6 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import cors, { CorsOptions } from 'cors';
+// import cors, { CorsOptions } from 'cors';
 import express from 'express';
 import fileUpload from 'express-fileupload';
 import rateLimit from 'express-rate-limit';
@@ -61,8 +61,8 @@ if (ENVIRONMENT === 'production') {
 	// };
 	// app.use(cors(corsOptions));
 
-	// // Use helmetJS for security
-	// app.use(helmet());
+	// Use helmetJS for security
+	app.use(helmet());
 
 	// Set limit-rate
 	const limiter = rateLimit({
