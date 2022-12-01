@@ -37,6 +37,7 @@ if (ENVIRONMENT === 'production') {
 		'localhost:3000',
 		'sketter-smart-planner.herokuapp.com',
 		'sketter-fe.pages.dev',
+		'sketter-mobile',
 		'http://localhost',
 		'http://localhost:3123',
 		'http://localhost:3000',
