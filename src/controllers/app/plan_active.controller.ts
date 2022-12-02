@@ -48,7 +48,6 @@ export const saveDraftPlan = catchAsync(async (req, res, next) => {
             cloneDes.profile = planDes[i].profile
             cloneDes.distanceText = planDes[i].distanceText
             cloneDes.durationText = planDes[i].durationText
-            cloneDes.status = planDes[i].status
             cloneDes.destinationName = planDes[i].destinationName
             cloneDes.destinationImage = planDes[i].destinationImage
             cloneDes.status = planDes[i].status
@@ -102,9 +101,6 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
 
                 if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
                     throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
-                let hh = 0
-                let mm = 0
-
                 for (let j = 0; j < details[i].destinations.length; j++) {
                     const destination = await Destination.findOne({
                         where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
@@ -126,6 +122,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                     planDestination.destinationID = details[i].destinations[j].destinationID;
                     planDestination.destinationName = destination.name
                     planDestination.destinationImage = destination.image
+                    planDestination.profile = 'driving'
+                    planDestination.status = 'Planned'
                     planDestination.date = details[i].date;
                     const from = details[i].destinations[j].fromTime.split(' ');
                     const to = details[i].destinations[j].toTime.split(' ');
@@ -141,16 +139,6 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                         if (!distance)
                             throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
 
-                        // console.log(Math.ceil(distance.duration / 60));
-
-                        hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
-                        mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
-                        const preToTime = new Date(planDestination.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm))
-
-
-                        if (planDestination.fromTime < preToTime)
-                            throw new AppError(`Thời gian đến địa điểm '${destination.name}' không được trước ${preToTime.toLocaleString()}`, StatusCodes.BAD_REQUEST)
-
                         planDestination.distance = distance.distance
                         planDestination.duration = distance.duration
                         planDestination.distanceText = distance.distanceText
@@ -161,8 +149,6 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                         planDestination.distanceText = '0m'
                         planDestination.durationText = '0s'
                     }
-                    hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
-                    mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
                     await planDestination.save({ transaction: checkin })
                 }
             }

@@ -42,7 +42,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
     })
     if (stayDestinationID && !stay)
         return next(new AppError('Địa điểm lưu trú không hợp lệ', StatusCodes.BAD_REQUEST))
-    const plan = await sequelizeConnection.transaction(async (create) => {
+    const id = await sequelizeConnection.transaction(async (create) => {
         const plan = await Plan.create(
             { name: name, fromDate: fromDate, toDate: toDate, stayDestinationID: stayDestinationID, isPublic: isPublic, travelerID: res.locals.user.id },
             { transaction: create })
@@ -117,17 +117,19 @@ export const createPlan = catchAsync(async (req, res, next) => {
         }
         plan.estimatedCost = cost
         await plan.save({ transaction: create })
-        return plan
+        return plan.id
     })
 
     const result = await Plan.findOne(
         {
-            where: { id: plan.id },
+            where: { id: id },
             attributes: { exclude: PlanPrivateFields.default },
             include: getOneInclude('Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: result });
+    const plan = _.omit(result?.toJSON(), []);
+    plan.travelDetails = null
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo lịch trình thành công', { plan: plan });
     next();
 });
 
@@ -212,8 +214,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                         throw new AppError(`Thời gian đến địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
                     if (!(planDestination.toTime instanceof Date && !isNaN(planDestination.toTime.getTime())))
                         throw new AppError(`Thời gian rời địa điểm '${destination.name}' không hợp lệ`, StatusCodes.BAD_REQUEST)
-                    console.log('----------------------');
-                    console.log(planDestination.destinationName);
+
                     if (j !== 0) {
                         const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, planDestination.profile)
                         if (!distance)
@@ -225,14 +226,6 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                         hh += Math.floor((Math.ceil(distance.duration / 60) + mm) / 60)
                         mm = Math.ceil(distance.duration / 60) + mm - Math.floor((Math.ceil(distance.duration / 60) + mm) / 60) * 60
                         const preToTime = new Date(planDestination.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm))
-
-
-                        console.log(preToTime.toLocaleString());
-                        console.log(Math.ceil(distance.duration / 60));
-                        console.log(planDestination.fromTime.toLocaleString());
-                        console.log(planDestination.toTime.toLocaleString());
-                        console.log('----------------------');
-
 
                         if (planDestination.fromTime < preToTime)
                             throw new AppError(`Thời gian đến địa điểm '${destination.name}' không được trước ${preToTime.toLocaleString()}`, StatusCodes.BAD_REQUEST)
@@ -274,14 +267,17 @@ export const updatePlan = catchAsync(async (req, res, next) => {
         plan.estimatedCost = cost
         await plan.save({ transaction: update })
     });
-    const result = await Plan.findOne(
+    let result = await Plan.findOne(
         {
             where: { id: plan.id },
             attributes: { exclude: PlanPrivateFields.default },
             include: getOneInclude(plan.status ?? 'Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: result });
+
+    const updated = _.omit(result?.toJSON(), []);
+    updated.travelDetails = null
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: updated });
     next();
 });
 
