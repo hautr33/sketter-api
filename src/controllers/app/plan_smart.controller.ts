@@ -167,7 +167,7 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                     planDes.destinationID = des.id
                     planDes.profile = 'driving'
                     if (!isFirst && preDes) {
-                        const distance = await getDestinationDistanceService(des.id as string, preDes.destinationID as string, 'driving')
+                        const distance = await getDestinationDistanceService(preDes.destinationID as string, des.id as string, 'driving')
                         if (!distance)
                             throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa các địa điểm! Xin vui lòng thử lại sau!', StatusCodes.BAD_GATEWAY)
 

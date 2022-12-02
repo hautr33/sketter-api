@@ -4,8 +4,9 @@ import { deserializeUser } from "../middlewares/deserialize_user";
 import { requireUser } from "../middlewares/require_user";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { completePlan, createPlan, deletePlan, getAllCreatedPlan, getAllPublicPlan, getOnePlan, saveDraftPlan, updatePlan } from "../controllers/app/plan.controller";
+import { createPlan, deletePlan, getAllCreatedPlan, getAllPublicPlan, getOnePlan, updatePlan } from "../controllers/app/plan.controller";
 import { createSmartPlan, saveSmartPlan } from "../controllers/app/plan_smart.controller";
+import { completePlan, saveDraftPlan } from "../controllers/app/plan_active.controller";
 
 const router = Router();
 
