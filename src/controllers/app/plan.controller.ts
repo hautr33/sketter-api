@@ -356,15 +356,10 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
     }
-    console.log(req.params.id);
-    console.log(res.locals.user.id);
-
     const check = await Plan.findOne({
         where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
         attributes: ['id', 'status']
     })
-    console.log(check);
-
     if (!check)
         return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
     const result = await Plan.findOne(
@@ -405,7 +400,7 @@ const validate = async (body: any) => {
     };
 }
 
-const getOneInclude = (status: string) => status == 'Draft' ? [
+const getOneInclude = (status: string) => status == 'Draft' || status == 'Smart' ? [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
