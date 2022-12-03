@@ -356,10 +356,14 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
     }
+    console.log(req.params.id);
+    console.log(res.locals.user.id);
+
     const check = await Plan.findOne({
         where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
-        attributes: ['status']
+        attributes: ['id', 'status']
     })
+    console.log(check);
 
     if (!check)
         return next(new AppError('Không tìm thấy lịch trình này này', StatusCodes.NOT_FOUND));
