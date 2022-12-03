@@ -21,8 +21,8 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
     const fromDate = new Date(req.body.fromDate)
     const toDate = new Date(req.body.toDate)
     const today = Math.floor((now - fromDate.getTime()) / (1000 * 3600 * 24))
-    if (today > 0)
-        return next(new AppError('Ngày bắt đầu không được trước hôm nay', StatusCodes.BAD_REQUEST))
+    if (today >= 0)
+        return next(new AppError('Ngày bắt đầu kể từ ngày mai', StatusCodes.BAD_REQUEST))
 
     const date = (toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24) + 1
     if (date > 4)
