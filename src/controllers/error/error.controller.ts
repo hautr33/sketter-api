@@ -143,7 +143,7 @@ const sendErrorProd = (err: AppError, res: Response) => {
 		logger.error('*****ERROR*****\n', err);
 
 		if (err.message.includes('notNull Violation') || err.message.includes('Validation error') || err.message.includes('exist')) {
-			const message = err.message.split(': ')[1].split(',')[0]
+			const message = err.message.split(': ')[1].split(',')[0] ?? err.message
 			const statusCode = StatusCodes.BAD_REQUEST
 			const status = 'fail'
 			res.status(statusCode).json({
