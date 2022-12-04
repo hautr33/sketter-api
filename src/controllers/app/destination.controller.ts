@@ -277,12 +277,12 @@ export const deactivateDestination = catchAsync(async (req, res, next) => {
 })
 
 export const deleteOneDestination = catchAsync(async (req, res, next) => {
-    const query = res.locals.user.roleID == Roles.Supplier ? { id: req.params.id, supplierID: res.locals.user.id } : { id: req.params.id, supplierID: null }
-    const count = await Destination.count({ where: query })
-
-    if (count !== 1)
+    const des = await Destination.findOne({ where: { id: req.params.id }, attributes: ['id', 'supplierID'] })
+    if (!des || (res.locals.user.roleID == Roles.Supplier && des.supplierID !== res.locals.user.id))
         return next(new AppError('Không tìm thấy địa điểm với ID này', StatusCodes.NOT_FOUND))
 
+    if (res.locals.user.roleID === Roles.Manager && des.supplierID !== null)
+        return next(new AppError('Không thể xoá địa điểm có chủ sở hữu', StatusCodes.BAD_REQUEST))
 
     await Destination.destroy({ where: { id: req.params.id } })
     res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Đã xoá địa điểm', null)
