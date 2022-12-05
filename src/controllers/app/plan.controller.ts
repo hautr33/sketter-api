@@ -319,12 +319,13 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
 
 export const getAllPublicPlan = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const orderBy = ['view', 'createdAt'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'createdAt';
     const plans = await Plan.findAll(
         {
             where: { isPublic: true },
             attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
-            order: [['createdAt', 'DESC']],
+            order: [[orderBy, 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
             limit: PAGE_LIMIT,
         });
