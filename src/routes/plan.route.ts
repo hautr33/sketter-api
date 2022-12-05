@@ -6,7 +6,7 @@ import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
 import { createPlan, deletePlan, getAllCreatedPlan, getAllPublicPlan, getOnePlan, updatePlan } from "../controllers/app/plan.controller";
 import { createSmartPlan, saveSmartPlan } from "../controllers/app/plan_smart.controller";
-import { completePlan, saveDraftPlan } from "../controllers/app/plan_active.controller";
+import { checkinPlan, completePlan, saveDraftPlan } from "../controllers/app/plan_active.controller";
 
 const router = Router();
 
@@ -22,6 +22,7 @@ router.route('/smart/:id')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), saveSmartPlan))
 
 router.route('/checkin/:id')
+    .patch(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), checkinPlan))
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), completePlan))
 
 router.route('/smart')

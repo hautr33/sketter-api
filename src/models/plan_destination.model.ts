@@ -18,7 +18,7 @@ export class PlanDestination extends Model<InferAttributes<PlanDestination>, Inf
     status?: string;
     destinationName?: string;
     destinationImage?: string;
-    rating?: number;
+    rating?: number | null;
     description?: string;
     isPlan?: boolean;
 }

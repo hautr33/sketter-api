@@ -9,10 +9,10 @@ import sequelizeConnection from "../../db/sequelize.db";
 import { Destination } from "../../models/destination.model";
 import _ from "lodash"
 import { PlanPrivateFields } from "../../utils/private_field";
-import { User } from "../../models/user.model";
 import { Op } from "sequelize";
 import { getDestinationDistanceService } from "../../services/destination.service";
 import { Catalog } from "../../models/catalog.model";
+import { getOnePlanInclude } from "./plan.controller";
 
 export const saveDraftPlan = catchAsync(async (req, res, next) => {
     const plan = await Plan.findOne({ where: { id: req.params.id, status: 'Draft', travelerID: res.locals.user.id } });
@@ -66,7 +66,6 @@ export const saveDraftPlan = catchAsync(async (req, res, next) => {
     next();
 })
 
-
 export const checkinPlan = catchAsync(async (req, res, next) => {
 
     const plan = await Plan.findOne({ where: { id: req.params.id, travelerID: res.locals.user.id, status: 'Activated' } });
@@ -76,7 +75,7 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
     const { totalCost, details } = req.body;
     details.sort((a: { date: number; }, b: { date: number; }) => (a.date < b.date) ? -1 : 1)
 
-    const date = Math.floor((Date.now() - plan.fromDate.getTime()) / (1000 * 3600 * 24)) + 1
+    const date = Math.floor((Date.now() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) + 1
     const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
@@ -94,13 +93,11 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
         await plan.save({ transaction: checkin });
 
         for (let i = 0; i < date; i++) {
-            if (details[i]) {
+            const tmpDate = new Date(new Date(plan.fromDate).getTime() + 1000 * 3600 * 24 * i)
+            if (details[i] && (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) == 0)) {
 
-                const tmpDate = new Date(plan.fromDate.getTime() + 1000 * 3600 * 24 * i)
+
                 await PlanDestination.destroy({ where: { planID: plan.id, isPlan: false, date: tmpDate }, transaction: checkin })
-
-                if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
-                    throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
                 for (let j = 0; j < details[i].destinations.length; j++) {
                     const destination = await Destination.findOne({
                         where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
@@ -117,14 +114,17 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
 
                     if (destination.status === Status.deactivated)
                         return next(new AppError(`Địa điểm '${destination.name}' đã bị ngưng hoạt động, vui lòng chọn địa điểm khác`, StatusCodes.BAD_REQUEST))
-                    const planDestination = new PlanDestination(details[i].destinations[j]);
+                    const planDestination = new PlanDestination();
                     planDestination.planID = plan.id;
                     planDestination.destinationID = details[i].destinations[j].destinationID;
+                    planDestination.status = details[i].destinations[j].status;
                     planDestination.destinationName = destination.name
                     planDestination.destinationImage = destination.image
                     planDestination.profile = 'driving'
-                    planDestination.status = 'Planned'
                     planDestination.date = details[i].date;
+                    planDestination.isPlan = false
+                    planDestination.rating = details[i].destinations[j].rating;
+                    planDestination.description = details[i].destinations[j].description;
                     const from = details[i].destinations[j].fromTime.split(' ');
                     const to = details[i].destinations[j].toTime.split(' ');
                     planDestination.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
@@ -151,7 +151,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                     }
                     await planDestination.save({ transaction: checkin })
                 }
-            }
+            } else
+                throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
         }
         await plan.save({ transaction: checkin })
     });
@@ -159,10 +160,12 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
         {
             where: { id: plan.id },
             attributes: { exclude: PlanPrivateFields.default },
-            include: getOneInclude(plan.status ?? 'Draft'),
+            include: getOnePlanInclude(plan.status ?? 'Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: result });
+    const onePlan = _.omit(result?.toJSON(), []);
+    onePlan.travelDetails = null
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Cập nhật lịch trình thành công', { plan: onePlan });
     next();
 });
 
@@ -173,197 +176,43 @@ export const completePlan = catchAsync(async (req, res, next) => {
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
-    // const now = Date.now()
-    // if (Math.floor((now - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) < 0)
-    //     throw new AppError(`Ngày bắt đầu không được trước hôm nay`, StatusCodes.BAD_REQUEST)
-    const date = (new Date(plan.toDate).getTime() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24) + 1
-    const { stayDestinationID, totalCost, details } = req.body;
+    // if (Math.floor((Date.now() - new Date(plan.toDate).getTime()) / (1000 * 3600 * 24)) < 0)
+    //     throw new AppError(`Bạn không thể hoàn tất khi chưa hết lịch trình`, StatusCodes.BAD_REQUEST)
+    const index: number[] = []
 
-    plan.actualStayDestinationID = stayDestinationID
-    plan.actualCost = totalCost
-    plan.status = "Completed"
-
-    const checkinDes: PlanDestination[] = []
-    for (let i = 0; i < date; i++) {
-        if (details[i]) {
-            const tmpDate = new Date(new Date(plan.fromDate).getTime() + 1000 * 60 * 60 * 24 * i)
-            if (Math.floor((tmpDate.getTime() - new Date(details[i].date).getTime()) / (1000 * 3600 * 24)) != 0)
-                throw new AppError(`Ngày thứ ${i + 1} không hợp lệ`, StatusCodes.BAD_REQUEST)
-
-            for (let j = 0; j < details[i].destinations.length; j++) {
-                const destination = await Destination.findOne({
-                    where: { id: details[i].destinations[j].destinationID }, attributes: ['name', 'lowestPrice', 'highestPrice', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status'],
-                    include: [
-                        { model: Catalog, as: 'catalogs', where: { name: { [Op.notILike]: '%lưu trú%' }, parent: { [Op.notILike]: '%lưu trú%' } } }
-                    ]
-                })
-
-                if (!destination || destination === null)
-                    throw new AppError(`Không tìm thấy địa điểm với id: ${details[i].destinations[j].destinationID}`, StatusCodes.BAD_REQUEST)
-
-                const from = details[i].destinations[j].fromTime.split(' ');
-                const to = details[i].destinations[j].toTime.split(' ');
-                const des = new PlanDestination()
-                des.planID = plan.id
-                des.destinationID = details[i].destinations[j].destinationID
-                des.date = tmpDate
-                des.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
-                des.toTime = new Date(tmpDate.toLocaleDateString() + ' ' + to[to.length - 1])
-                des.profile = 'driving'
-                des.status = 'New'
-                des.destinationName = destination.name
-                des.destinationImage = destination.image
-                des.rating = details[i].destinations[j].rating
-                des.description = details[i].destinations[j].description
-                des.isPlan = false
-                if (j !== 0) {
-                    const distance = await getDestinationDistanceService(details[i].destinations[j - 1].destinationID, details[i].destinations[j].destinationID, des.profile)
-                    if (!distance)
-                        throw new AppError('Có lỗi xảy ra khi tính khoảng cách giữa 2 địa điểm', StatusCodes.BAD_REQUEST)
-
-                    des.distance = distance.distance
-                    des.duration = distance.duration
-                    des.distanceText = distance.distanceText
-                    des.durationText = distance.durationText
-                } else {
-                    des.distance = 0
-                    des.duration = 0
-                    des.distanceText = '0m'
-                    des.durationText = '0s'
-                }
-                checkinDes.push(des)
-            }
-        } else {
-            throw new AppError(`Chi tiết lịch trình ngày thứ ${i} không hợp lệ`, StatusCodes.BAD_REQUEST)
-        }
-
-    }
-
-
-    const planDes = await PlanDestination.findAll({ where: { planID: plan.id } })
-    for (let i = 0; i < planDes.length; i++) {
-        planDes[i].status = 'Skipped'
+    const planned = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: true } })
+    const activated = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: false } })
+    for (let i = 0; i < activated.length; i++) {
+        activated[i].status = 'New'
         let isCheck = false
-        for (let j = 0; j < checkinDes.length && !isCheck; j++) {
-            if (Math.floor((new Date(planDes[i].date).getTime() - new Date(checkinDes[j].date).getTime()) / (1000 * 3600 * 24)) == 0 && planDes[i].destinationID == checkinDes[j].destinationID) {
-                planDes[i].status = 'Checked-in'
-                checkinDes[j].status = 'Checked-in'
-                isCheck = true
+        for (let j = 0; j < planned.length && !isCheck; j++) {
+            if (!index.includes(j) && activated[i].destinationID === planned[j].destinationID && activated[i].date === planned[j].date) {
+                activated[i].status = 'Checked-in'
+                planned[j].status = 'Checked-in'
+                index.push(j)
             }
         }
     }
+
+    for (let i = 0; i < planned.length; i++)
+        if (!index.includes(i))
+            planned[i].status = 'Skipped'
 
     await sequelizeConnection.transaction(async (complete) => {
+        // await Plan.update({ status: 'Completed' }, { where: { id: req.params.id }, transaction: complete })
+        for (let i = 0; i < planned.length; i++)
+            await planned[i].save({ transaction: complete })
 
-        for (let i = 0; i < planDes.length; i++)
-            await planDes[i].save({ transaction: complete })
+        for (let i = 0; i < activated.length; i++) {
+            await activated[i].save({ transaction: complete })
+            const sum = await PlanDestination.sum("rating", { where: { destinationID: activated[i].destinationID, isPlan: false, rating: { [Op.ne]: null } }, transaction: complete })
+            const count = await PlanDestination.count({ where: { destinationID: activated[i].destinationID, isPlan: false, rating: { [Op.ne]: null } }, transaction: complete })
+            const avgRating = count > 0 ? Math.floor(sum * 10 / count) / 10 : 0
+            await Destination.update({ avgRating: avgRating, totalRating: count }, { where: { id: activated[i].destinationID } })
+        }
 
-        for (let i = 0; i < checkinDes.length; i++)
-            await checkinDes[i].save({ transaction: complete })
-
-        await plan.save({ transaction: complete })
     })
 
-    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, null);
+    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, { planned: planned, activated: activated });
     next();
 })
-
-
-const getOneInclude = (status: string) => status == 'Draft' ? [
-    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-        where: { isPlan: true },
-        include: [
-            {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-            }
-        ]
-    },
-    {
-        model: PlanDestination, as: 'travelDetails', attributes: ['date'],
-    }
-] : (status == 'Completed' ? [
-    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-        where: { isPlan: true },
-        include: [
-            {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-            }
-        ]
-    },
-    {
-        model: PlanDestination, as: 'travelDetails', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-        where: { isPlan: false },
-        include: [
-            {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-            }
-        ]
-    }
-] : [
-    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-        where: { isPlan: false },
-        include: [
-            {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-            }
-        ]
-    },
-    {
-        model: PlanDestination, as: 'travelDetails', attributes: ['date'],
-    }
-])
-
-
-// const includeDetailGetOne = [
-//     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-//     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-//     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-//     {
-//         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-//         where: { isPlan: true },
-//         include: [
-//             {
-//                 model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-//             }
-//         ]
-//     },
-//     {
-//         model: PlanDestination, as: 'travelDetails', attributes: ['date'],
-//     }
-// ]
-
-// const includeDetailGetOneCompleted = [
-//     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-//     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-//     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-//     {
-//         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-//         where: { isPlan: true },
-//         include: [
-//             {
-//                 model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-//             }
-//         ]
-//     },
-//     {
-//         model: PlanDestination, as: 'travelDetails', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
-//         where: { isPlan: false },
-//         include: [
-//             {
-//                 model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
-//             }
-//         ]
-//     }
-// ]

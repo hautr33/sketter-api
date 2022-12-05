@@ -124,7 +124,7 @@ export const createPlan = catchAsync(async (req, res, next) => {
         {
             where: { id: id },
             attributes: { exclude: PlanPrivateFields.default },
-            include: getOneInclude('Draft'),
+            include: getOnePlanInclude('Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
     const plan = _.omit(result?.toJSON(), []);
@@ -271,7 +271,7 @@ export const updatePlan = catchAsync(async (req, res, next) => {
         {
             where: { id: plan.id },
             attributes: { exclude: PlanPrivateFields.default },
-            include: getOneInclude(plan.status ?? 'Draft'),
+            include: getOnePlanInclude(plan.status ?? 'Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
 
@@ -366,7 +366,7 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
         {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
-            include: getOneInclude(check.status ?? 'Draft'),
+            include: getOnePlanInclude(check.status ?? 'Draft'),
             order: [['details', 'fromTime', 'ASC']]
         });
 
@@ -400,12 +400,12 @@ const validate = async (body: any) => {
     };
 }
 
-const getOneInclude = (status: string) => status == 'Draft' || status == 'Smart' ? [
+export const getOnePlanInclude = (status: string) => status == 'Draft' || status == 'Smart' ? [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: true },
         include: [
             {
@@ -421,7 +421,7 @@ const getOneInclude = (status: string) => status == 'Draft' || status == 'Smart'
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: true },
         include: [
             {
@@ -430,7 +430,7 @@ const getOneInclude = (status: string) => status == 'Draft' || status == 'Smart'
         ]
     },
     {
-        model: PlanDestination, as: 'travelDetails', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        model: PlanDestination, as: 'travelDetails', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: false },
         include: [
             {
@@ -443,7 +443,7 @@ const getOneInclude = (status: string) => status == 'Draft' || status == 'Smart'
     { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
     {
-        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status'],
+        model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: false },
         include: [
             {
