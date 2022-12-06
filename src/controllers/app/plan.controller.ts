@@ -410,7 +410,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -426,7 +426,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -435,7 +435,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
             }
         ]
     }
@@ -448,7 +448,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
             }
         ]
     },
