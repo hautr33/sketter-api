@@ -403,8 +403,8 @@ const validate = async (body: any) => {
 
 export const getOnePlanInclude = (status: string) => status == 'Draft' || status == 'Smart' ? [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: true },
@@ -419,8 +419,8 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
     }
 ] : (status == 'Completed' ? [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: true },
@@ -441,8 +441,8 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
     }
 ] : [
     { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] },
-    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
-    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'status'] },
+    { model: Destination, as: 'stayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
+    { model: Destination, as: 'actualStayDestination', attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'status'] },
     {
         model: PlanDestination, as: 'details', attributes: ['date', 'fromTime', 'toTime', 'distance', 'duration', 'distanceText', 'durationText', 'status', 'rating', 'description'],
         where: { isPlan: false },
