@@ -21,6 +21,8 @@ export class PlanDestination extends Model<InferAttributes<PlanDestination>, Inf
     rating?: number | null;
     description?: string;
     isPlan?: boolean;
+    readonly createdAt?: Date;
+    readonly updatedAt?: Date;
 }
 
 PlanDestination.init({
@@ -118,9 +120,14 @@ PlanDestination.init({
         type: DataTypes.BOOLEAN,
         defaultValue: true,
     },
+    createdAt: DataTypes.DATE,
+    updatedAt: {
+        type: DataTypes.DATE,
+        defaultValue: Date.now(),
+    },
 }, {
     // Other model options go here
-    timestamps: false,
+    timestamps: true,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'PlanDestination' // We need to choose the model name
 });

@@ -6,7 +6,7 @@ import { standardPipeline } from "../pipes";
 import { restrictTo } from "../controllers/app/auth.controller";
 import { Roles } from "../utils/constant";
 import { getAllSupplier } from "../controllers/app/user_supplier_manager.controller";
-import { createUser, deactivateUser, getAllUser, getOneUser, updateUser } from "../controllers/app/user_admin.controller";
+import { createUser, deactivateUser, getAllUser, getOneUser, resetNewPassword, updateUser } from "../controllers/app/user_admin.controller";
 
 const router = Router();
 
@@ -25,7 +25,10 @@ router.route('/me/verify')
     .post(standardPipeline(restrictTo(Roles.Traveler), sendVerifyEmail))
     .patch(standardPipeline(restrictTo(Roles.Traveler), verifyEmail))
 
-router.patch('/update_password', standardPipeline(updatePassword));
+router.patch('/update_password', standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), updatePassword));
+
+router.route('/renewPassword')
+    .post(standardPipeline(restrictTo(Roles.Admin), resetNewPassword))
 
 router.get('/supplier', standardPipeline(restrictTo(Roles.Manager), getAllSupplier));
 

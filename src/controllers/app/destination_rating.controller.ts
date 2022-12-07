@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes"
-import { Op } from "sequelize"
-import { Roles } from "../../utils/constant"
+import { PlanDestination } from "../../models/plan_destination.model"
+import { Plan } from "../../models/plan.model"
 import sequelizeConnection from "../../db/sequelize.db"
 import { Destination } from "../../models/destination.model"
 import { DestinationRating } from "../../models/destination_rating.model"
@@ -8,6 +8,7 @@ import AppError from "../../utils/app_error"
 import catch_async from "../../utils/catch_async"
 import RESDocument from "../factory/res_document"
 import { User } from "../../models/user.model"
+import { Op } from "sequelize"
 
 export const ratingDestination = catch_async(async (req, res, next) => {
     const { star, description } = req.body
@@ -63,48 +64,79 @@ export const deleteRating = catch_async(async (req, res, next) => {
 })
 
 export const getAllRating = catch_async(async (req, res, next) => {
-    const role = res.locals.user.roleID
-    const rating = await Destination.findOne({
+    const overview = await Destination.findOne({
         where: { id: req.params.id },
         attributes: ['avgRating', 'totalRating']
     })
 
-    if (!rating)
+    if (!overview)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
-    const otherRating = await DestinationRating.findAll({
-        where: { destinationID: req.params.id, userID: { [Op.ne]: res.locals.user.id } },
+    const myRating = await PlanDestination.findAll({
+        where: { destinationID: req.params.id, isPlan: false },
+        attributes: ['rating', 'description', 'updatedAt'],
         include: [
-            { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
-        ],
-        attributes: ['star', 'description', 'updatedAt']
+            {
+                model: Plan, as: 'details', where: { travelerID: res.locals.user.id }, attributes: ['id', 'name'],
+                include: [
+                    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] }
+                ]
+            }
+        ]
     })
 
-    if (role === Roles.Traveler) {
-        const myRating = await DestinationRating.findOne({
-            where: { destinationID: req.params.id, userID: res.locals.user.id },
-            include: [
-                { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
-            ],
-            attributes: ['star', 'description', 'updatedAt']
-        })
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
-            rating: {
-                'avgRating': rating.avgRating,
-                'totalRating': rating.totalRating,
-                'myRating': myRating,
-                'otherRating': otherRating
+    const rating = await PlanDestination.findAll({
+        where: { destinationID: req.params.id, isPlan: false },
+        attributes: ['rating', 'description', 'updatedAt'],
+        include: [
+            {
+                model: Plan, as: 'details', where: { travelerID: { [Op.ne]: res.locals.user.id } }, attributes: ['id', 'name'],
+                include: [
+                    { model: User, as: 'traveler', attributes: ['email', 'name', 'avatar'] }
+                ]
             }
-        })
-    } else {
-        res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
-            rating: {
-                'avgRating': rating.avgRating,
-                'totalRating': rating.totalRating,
-                'travelerRating': otherRating
-            }
-        })
-    }
+        ]
+    })
+    // const otherRating = await DestinationRating.findAll({
+    //     where: { destinationID: req.params.id, userID: { [Op.ne]: res.locals.user.id } },
+    //     include: [
+    //         { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
+    //     ],
+    //     attributes: ['star', 'description', 'updatedAt']
+    // })
 
+    // if (role === Roles.Traveler) {
+    //     const myRating = await DestinationRating.findOne({
+    //         where: { destinationID: req.params.id, userID: res.locals.user.id },
+    //         include: [
+    //             { model: User, as: 'ratingBy', attributes: ['name', 'avatar'] }
+    //         ],
+    //         attributes: ['star', 'description', 'updatedAt']
+    //     })
+    //     res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
+    //         rating: {
+    //             'avgRating': rating.avgRating,
+    //             'totalRating': rating.totalRating,
+    //             'myRating': myRating,
+    //             'otherRating': otherRating
+    //         }
+    //     })
+    // } else {
+    //     res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
+    //         rating: {
+    //             'avgRating': rating.avgRating,
+    //             'totalRating': rating.totalRating,
+    //             'travelerRating': otherRating
+    //         }
+    //     })
+    // }
+
+    res.resDocument = new RESDocument(StatusCodes.OK, 'success', {
+        overview: {
+            'avgRating': overview.avgRating,
+            'totalRating': overview.totalRating,
+        },
+        myRating, rating
+    })
     next()
 })

@@ -9,6 +9,8 @@ import _ from "lodash"
 import { Op } from "sequelize";
 import { checkPassword, getAllUserService, getUserService, updateUserService } from "../../services/user.service";
 import { signUpFirebase } from "../../services/firebase/firebase_admin.service";
+import sequelizeConnection from "../../db/sequelize.db";
+import { sendEmail } from "../../services/mail.service";
 
 export const createUser = catchAsync(async (req, res, next) => {
     const { name, email, password, confirmPassword, roleName } = req.body;
@@ -76,5 +78,37 @@ export const deactivateUser = catchAsync(async (req, res, next) => {
 
     await User.update({ status: Status.deactivated }, { where: { id: id } })
     res.resDocument = new RESDocument(StatusCodes.OK, 'Huỷ kích hoạt tài khoản thành công', null);
+    next();
+});
+
+
+/**
+ * This controller is resetNewPassword that send an email 
+ * to user a new reset password
+ *
+ * @author HauTr
+ * @version 0.0.1
+ *
+ */
+export const resetNewPassword = catchAsync(async (req, res, next) => {
+
+    const user = await User.findOne({ where: { email: req.body.email, roleID: { [Op.ne]: Roles.Admin } } });
+    if (!user)
+        return next(new AppError('Không tìm thấy tài khoản với email này', StatusCodes.NOT_FOUND));
+
+    const password = Math.random().toString(36).substring(2, 10)
+    const message = `Xin chào ${user.name},\nChúng tôi đã nhận được yêu cầu cấp lại mật khẩu của bạn.
+        \nMật khẩu mới của bạn là: ${password}`;
+    await sequelizeConnection.transaction(async (update) => {
+        user.password = password
+        await user.save({ transaction: update });
+        await sendEmail({
+            email: user.email,
+            subject: 'Cấp lại mật khẩu Sketter',
+            message
+        });
+    })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Cấp lại mật khẩu thành công', null);
     next();
 });

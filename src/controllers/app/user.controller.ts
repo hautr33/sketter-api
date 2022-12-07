@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { FORGOT_PASSWORD_URL } from '../../config/default';
 import { StatusCodes } from "http-status-codes";
-import { Status } from "../../utils/constant";
+import { Roles, Status } from "../../utils/constant";
 import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import AppError from "../../utils/app_error";
@@ -79,7 +79,7 @@ export const updatePassword = catchAsync(async (req, res, next) => {
  */
 export const forgotPassword = catchAsync(async (req, res, next) => {
 
-    const user = await User.findOne({ where: { email: req.body.email ?? '' } });
+    const user = await User.findOne({ where: { email: req.body.email, roleID: { [Op.or]: [Roles.Traveler, Roles.Supplier] } } });
     if (!user)
         return next(new AppError('Không tìm thấy tài khoản với email này', StatusCodes.NOT_FOUND));
 

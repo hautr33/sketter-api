@@ -96,7 +96,9 @@ export const updateUserService = async (id: string, body: any, isAdmin?: boolean
     const user = await User.findByPk(id)
     if (!user)
         return null
+
     const { name, avatar, travelerPersonalities, status, address, phone } = body;
+    user.isCheck = true
     name ? user.name = name : 0
     avatar ? user.avatar = avatar : 0
     address ? user.address = address : 0
