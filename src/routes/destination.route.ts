@@ -22,7 +22,7 @@ router.route('/search')
     .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Manager), searchDestination))
 
 router.route('/distance')
-    .get(standardPipeline(restrictTo(Roles.Traveler), getDistance))
+    .post(standardPipeline(restrictTo(Roles.Traveler), getDistance))
 
 router.route('/bookmark')
     .get(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), getBookmarkDestination))
