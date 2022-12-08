@@ -159,10 +159,13 @@ Voucher.init({
     modelName: 'Voucher' // We need to choose the model name
 });
 
+Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'destinationApply' });
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destinationApply' })
 
+Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'vouchers' });
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'vouchers' })
 
+Voucher.hasMany(VoucherDetail, { foreignKey: "voucherID", as: 'details' });
 VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'details' });
 
 Voucher.beforeSave(async (voucher) => {

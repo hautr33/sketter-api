@@ -181,11 +181,13 @@ User.init({
     modelName: 'User' // We need to choose the model name
 });
 
+Role.hasMany(User, { foreignKey: "roleID", as: 'role' });
 User.belongsTo(Role, { foreignKey: 'roleID', as: 'role' })
 
 User.belongsToMany(Personalities, { through: TravelerPersonalities, foreignKey: "userID", as: 'travelerPersonalities' });
 Personalities.belongsToMany(User, { through: TravelerPersonalities, foreignKey: "personality", as: 'travelerPersonalities' });
 
+User.hasMany(Session, { foreignKey: "userID", as: 'session' });
 Session.belongsTo(User, { foreignKey: "userID", as: 'session' })
 
 User.beforeSave(async (user) => {

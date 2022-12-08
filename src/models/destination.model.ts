@@ -261,12 +261,16 @@ Personalities.belongsToMany(Destination, { through: DestinationPersonalites, for
 Destination.belongsToMany(TimeFrame, { through: DestinationRecommendedTime, foreignKey: "destinationID", as: 'recommendedTimes' });
 TimeFrame.belongsToMany(Destination, { through: DestinationRecommendedTime, foreignKey: "timeFrameID", as: 'recommendedTimes' });
 
+Destination.hasMany(DestinationImage, { foreignKey: "destinationID", as: 'gallery' });
 DestinationImage.belongsTo(Destination, { foreignKey: "destinationID", as: 'gallery' });
 
+User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
 Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
 
+User.hasMany(Destination, { foreignKey: "createdBy", as: "creater" });
 Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
 
+City.hasMany(Destination, { foreignKey: "cityID", as: "city" });
 Destination.belongsTo(City, { foreignKey: 'cityID', as: "city" })
 
 Destination.beforeSave(async (destination) => {
