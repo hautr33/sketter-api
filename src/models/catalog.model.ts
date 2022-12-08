@@ -58,4 +58,4 @@ Catalog.init({
     modelName: 'Catalog' // We need to choose the model name
 });
 
-Catalog.hasMany(Catalog, { foreignKey: 'parent', as: 'sub' });
+Catalog.belongsTo(Catalog, { foreignKey: 'parent', as: 'sub' });

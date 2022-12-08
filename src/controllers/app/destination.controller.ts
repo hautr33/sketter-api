@@ -16,6 +16,7 @@ import { Personalities } from "../../models/personalities.model";
 import { City } from "../../models/city.model";
 import { DestinationBookmark } from "../../models/destination_bookmark.model";
 import { DestinationPrivateFields } from "../../utils/private_field";
+import { Voucher } from "../../models/voucher.model";
 const jsrmvi = require('jsrmvi');
 const { removeVI } = jsrmvi;
 
@@ -160,20 +161,30 @@ export const searchDestination = catchAsync(async (req, res, next) => {
         )`)
         }
     }
-    const destinations = await Destination.findAll({
+    const result = await Destination.findAll({
         where: destinationQuery,
         attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view', 'status', 'createdAt'],
         include: defaultInclude(false, skipStay),
         order: [[orderBy, orderDirection]],
         offset: (page - 1) * PAGE_LIMIT,
-        limit: PAGE_LIMIT,
+        limit: PAGE_LIMIT
     })
+
+    const destinations = []
+    for (let i = 0; i < result.length; i++) {
+        const destination = _.omit(result[i].toJSON(), []);
+        const check = await Voucher.count({ where: { destinationID: destination.id, status: 'Activated' } })
+        const isHavePromotion = check > 0 ? true : false
+        destination.isHavePromotion = isHavePromotion
+        destinations.push(destination)
+    }
 
     const count = await Destination.findAll({
         where: destinationQuery,
         attributes: ['id'],
         include: defaultInclude(true, skipStay),
     })
+
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
@@ -195,14 +206,15 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
     const roleID = res.locals.user.roleID;
     let option = {}
     let privatFields = DestinationPrivateFields.default
+
     if (roleID == Roles.Supplier) {
         option = { supplierID: res.locals.user.id }
         privatFields = DestinationPrivateFields.getAllSupplier
     } else if (roleID == Roles.Traveler) {
         option = { status: Status.open }
         privatFields = DestinationPrivateFields.getAllTraveler
-
     }
+
     const destinations = await Destination.findAll(
         {
             where: option,
@@ -213,6 +225,7 @@ export const getAllDestination = catchAsync(async (req, res, next) => {
             limit: PAGE_LIMIT,
         }
     )
+
     const count = await Destination.findAll(
         {
             where: option,
@@ -258,6 +271,11 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
 
     if (role === Roles.Traveler) {
         const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id, isBookmark: true } })
+        const vouchers = await Voucher.findAll({
+            where: { destinationID: destination.id, status: 'Activated' },
+            attributes: ['id', 'name', 'image', 'value', 'salePrice', 'discountPercent']
+        })
+        destination.vouchers = vouchers
         count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
     }
 

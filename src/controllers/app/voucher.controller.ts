@@ -6,6 +6,8 @@ import RESDocument from "../factory/res_document";
 import { Voucher } from "../../models/voucher.model";
 import { Roles, Status } from "../../utils/constant";
 import { PAGE_LIMIT } from "../../config/default";
+import { Op } from "sequelize";
+import { User } from "../../models/user.model";
 
 /**
  * This controller is createVoucher that create new voucher of destination
@@ -14,10 +16,14 @@ import { PAGE_LIMIT } from "../../config/default";
 export const createVoucher = catchAsync(async (req, res, next) => {
     const { name, image, destinationID, description, quantity, value, salePrice, refundRate, fromDate, toDate } = req.body;
 
+    const today = Math.floor((Date.now() - new Date(fromDate).getTime()) / (1000 * 3600 * 24))
+    if (today >= 0)
+        return next(new AppError('Bạn phải khuyến mãi trước khi khuyến mãi bắt đầu 1 ngày', StatusCodes.BAD_REQUEST))
+
     const destination = await Destination.findOne({ where: { id: destinationID, supplierID: res.locals.user.id, status: Status.open }, attributes: ['name'] });
     if (!destination || destination === null)
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND));
-
+    const user = await User.findOne({ where: { id: res.locals.user.id }, attributes: ['commissionRate'] })
     const voucher = new Voucher();
     voucher.name = name
     voucher.image = image
@@ -29,6 +35,7 @@ export const createVoucher = catchAsync(async (req, res, next) => {
     voucher.refundRate = refundRate
     voucher.fromDate = fromDate
     voucher.toDate = toDate
+    user ? voucher.commissionRate = user.commissionRate : 0
     await voucher.save()
     const result = await Voucher.findOne({
         where: { id: voucher.id },
@@ -50,7 +57,11 @@ export const createVoucher = catchAsync(async (req, res, next) => {
  */
 export const getAllVoucher = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const name = req.query.name as string ?? '';
+    const status = ['Draft', 'Activated'].includes(req.query.status as string) ? req.query.status as string : 'Draft';
+
     const vouchers = await Voucher.findAll({
+        where: { name: { [Op.iLike]: `%${name}%` }, status: status },
         attributes: ['id', 'name', 'quantity', 'totalSold', 'status', 'updatedAt'], include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -60,8 +71,10 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
         ],
         order: [['updatedAt', 'DESC']]
     })
+
     const count = await Voucher.findAll(
         {
+            where: { name: { [Op.iLike]: `%${name}%` }, status: status },
             attributes: ['id'],
             include: [
                 {
@@ -71,12 +84,14 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
                 }
             ],
         });
+
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
         { count: count.length, vouchers: vouchers }
     )
+
     if (count.length != 0) {
         const maxPage = Math.ceil(count.length / PAGE_LIMIT)
         resDocument.setCurrentPage(page)
@@ -106,6 +121,27 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+/**
+ * This controller is activeVoucher that active a draft voucher
+ *
+ */
+export const activeVoucher = catchAsync(async (req, res, next) => {
+    const voucher = await Voucher.findOne({
+        where: { id: req.params.id, status: 'Draft' },
+    })
+
+    if (!voucher || voucher === null)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+
+    const today = Math.floor((Date.now() - new Date(voucher.fromDate).getTime()) / (1000 * 3600 * 24))
+    if (today >= 0)
+        return next(new AppError('Bạn phải kích hoạt trước khi khuyến mãi bắt đầu 1 ngày', StatusCodes.BAD_REQUEST))
+
+    await Voucher.update({ status: 'Activated' }, { where: { id: req.params.id } })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Kích hoạt khuyến mãi thành cônng', null)
+    next()
+})
 
 /**
  * This controller is updateVoucher that update a draft voucher
@@ -186,6 +222,29 @@ export const deleteVoucher = catchAsync(async (req, res, next) => {
 })
 
 
+/**
+ * This controller is deleteVoucher that delete a draft voucher
+ *
+ */
+ export const buyVoucher = catchAsync(async (req, res, next) => {
+    const voucher = await Voucher.findOne({
+        where: { id: req.params.id, status: Status.draft },
+        attributes: ['id'],
+        include: [
+            {
+                model: Destination, as: 'destinationApply',
+                where: { supplierID: res.locals.user.id },
+                attributes: []
+            }
+        ]
+    })
+    if (!voucher || voucher === null)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND));
+
+    await voucher.destroy()
+    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Xoá khuyến mãi thành công', null)
+    next()
+})
 
 /**
  * This controller is updateVoucher that update a draft voucher
