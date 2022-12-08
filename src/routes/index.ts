@@ -12,7 +12,7 @@ import { StatusCodes } from "http-status-codes";
 
 const router = express.Router();
 
-router.get("/", (_req, res) => res.status(StatusCodes.OK).send({ "status": "success", "message": "Welcome to Sketter API" }));
+router.get("/", (_req, res) => res.status(StatusCodes.OK).send({ "status": "success", "message": "Welcome to Sketter" }));
 
 router.use('/api/v1/auth', auth);
 router.use('/api/v1/users', user);
