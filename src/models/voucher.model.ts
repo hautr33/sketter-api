@@ -4,6 +4,7 @@ import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 import AppError from '../utils/app_error';
 import { StatusCodes } from 'http-status-codes';
+import { VoucherDetail } from './voucher_detail.model';
 
 export class Voucher extends Model<InferAttributes<Voucher>, InferCreationAttributes<Voucher>> {
     declare id?: string;
@@ -13,12 +14,14 @@ export class Voucher extends Model<InferAttributes<Voucher>, InferCreationAttrib
     description!: string;
     quantity!: number;
     totalSold?: number;
+    totalUsed?: number;
     value!: number;
     salePrice!: number;
     refundRate!: number;
     discountPercent!: number;
     fromDate!: Date;
     toDate!: Date;
+    commissionRate?: number;
     status?: string;
     readonly createdAt?: Date;
     readonly updatedAt?: Date;
@@ -73,6 +76,10 @@ Voucher.init({
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
+    totalUsed: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
     salePrice: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -95,7 +102,7 @@ Voucher.init({
     },
     refundRate: {
         type: DataTypes.INTEGER,
-        defaultValue:50,
+        defaultValue: 50,
         // allowNull: false,
         validate: {
             // notNull: { msg: 'Vui lòng nhập tỷ lệ hoàn tiền' },
@@ -123,6 +130,10 @@ Voucher.init({
             notEmpty: { msg: 'Vui lòng chọn ngày kết thúc' }
         }
     },
+    commissionRate: {
+        type: DataTypes.INTEGER,
+        defaultValue: 5
+    },
     status: {
         type: DataTypes.STRING,
         defaultValue: Status.draft,
@@ -148,8 +159,11 @@ Voucher.init({
     modelName: 'Voucher' // We need to choose the model name
 });
 
-Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'destinationApply' });
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destinationApply' })
+
+Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'vouchers' })
+
+VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'details' });
 
 Voucher.beforeSave(async (voucher) => {
     const { value, salePrice, fromDate, toDate

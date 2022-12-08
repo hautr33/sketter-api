@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { createVoucher, deleteVoucher, duplicateVoucher, getAllVoucher, getListDestnation, getOneVoucher, updateVoucher } from "../controllers/app/voucher.controller";
+import { activeVoucher, createVoucher, deleteVoucher, duplicateVoucher, getAllVoucher, getListDestnation, getOneVoucher, updateVoucher } from "../controllers/app/voucher.controller";
 
 const router = Router();
 
@@ -19,6 +19,9 @@ router.route('/destinations')
 
 router.route('/:id/duplicate')
     .post(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), duplicateVoucher))
+
+router.route('/active/:id')
+    .post(standardPipeline(restrictTo(Roles.Supplier), activeVoucher))
 
 router.route('/:id')
     .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier), getOneVoucher))
