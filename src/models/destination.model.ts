@@ -267,9 +267,6 @@ DestinationImage.belongsTo(Destination, { foreignKey: "destinationID", as: 'gall
 User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
 Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
 
-User.hasMany(Destination, { foreignKey: "createdBy", as: "creater" });
-Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
-
 City.hasMany(Destination, { foreignKey: "cityID", as: "city" });
 Destination.belongsTo(City, { foreignKey: 'cityID', as: "city" })
 

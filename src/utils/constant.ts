@@ -37,7 +37,6 @@ export class Auth {
 
 export class Status {
     public static readonly draft = 'Draft';
-
     public static readonly unverified = 'Unverified';
 
     public static readonly verified = 'Verified';
@@ -55,6 +54,19 @@ export class Status {
     public static readonly pending = 'Pending';
 
     public static readonly cancel = 'Cancel';
+
+    public static readonly inStock = 'In Stock';
+
+    public static readonly paying = 'Paying';
+
+    public static readonly sold = 'Sold';
+
+    public static readonly processing = 'Processing';
+
+    public static readonly success = 'Success';
+
+    public static readonly failed = 'Failed';
+
 
 }
 

@@ -3,7 +3,7 @@ import sequelize from '../db/sequelize.db';
 import { Destination } from './destination.model';
 
 export class Distance extends Model<InferAttributes<Distance>, InferCreationAttributes<Distance>> {
-    declare id: number;
+    declare id: string;
     fromDestination!: ForeignKey<Destination['id']>;
     toDestination!: ForeignKey<Destination['id']>;
     count?: number;

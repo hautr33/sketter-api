@@ -71,7 +71,7 @@ export const getAllRating = catch_async(async (req, res, next) => {
         return next(new AppError('Không tìm thấy địa điểm này', StatusCodes.NOT_FOUND))
 
     const myRating = await PlanDestination.findAll({
-        where: { destinationID: req.params.id, isPlan: false },
+        where: { destinationID: req.params.id, isPlan: false, rating: { [Op.ne]: null } },
         attributes: ['rating', 'description', 'updatedAt'],
         include: [
             {
@@ -84,7 +84,7 @@ export const getAllRating = catch_async(async (req, res, next) => {
     })
 
     const rating = await PlanDestination.findAll({
-        where: { destinationID: req.params.id, isPlan: false },
+        where: { destinationID: req.params.id, isPlan: false, rating: { [Op.ne]: null } },
         attributes: ['rating', 'description', 'updatedAt'],
         include: [
             {

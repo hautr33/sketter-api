@@ -5,9 +5,13 @@ import catchAsync from "../../utils/catch_async";
 import RESDocument from "../factory/res_document";
 import { Voucher } from "../../models/voucher.model";
 import { Roles, Status } from "../../utils/constant";
-import { PAGE_LIMIT } from "../../config/default";
+import { PAGE_LIMIT, VNP_HASH_SECRET, VNP_RETURN_URL, VNP_TMN_CODE, VNP_URL } from "../../config/default";
+import crypto from 'crypto';
 import { Op } from "sequelize";
 import { User } from "../../models/user.model";
+import sequelizeConnection from "../../db/sequelize.db";
+import { VoucherDetail } from "../../models/voucher_detail.model";
+import { Transaction } from "../../models/transaction.model";
 
 /**
  * This controller is createVoucher that create new voucher of destination
@@ -69,7 +73,9 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
                 attributes: ['id', 'name', 'address', 'image', 'status']
             }
         ],
-        order: [['updatedAt', 'DESC']]
+        order: [['updatedAt', 'DESC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
     })
 
     const count = await Voucher.findAll(
@@ -100,6 +106,101 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
     res.resDocument = resDocument;
     next()
 })
+
+
+/**
+ * This controller is getAllVoucher that get all vouchers of supplier
+ *
+ */
+export const getAllVoucherDetail = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const code = req.query.code as string ?? '';
+
+    const vouchers = await VoucherDetail.findAll({
+        where: { voucherID: req.params.id, code: { [Op.iLike]: `%${code}%` } },
+        attributes: ['code', 'status', 'soldAt', 'usedAt'], include: [
+            {
+                model: User, as: 'travelerInfo',
+                attributes: ['email', 'name', 'avatar']
+            }
+        ],
+        order: [['usedAt', 'ASC'], ['soldAt', 'ASC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
+    })
+
+    const count = await VoucherDetail.findAll(
+        {
+            where: { voucherID: req.params.id, code: { [Op.iLike]: `%${code}%` } },
+            attributes: ['id'],
+        });
+
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { count: count.length, vouchers: vouchers }
+    )
+
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+    next()
+})
+
+
+/**
+ * This controller is getAllVoucher that get all vouchers of supplier
+ *
+ */
+export const getOwnVoucher = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const vouchers = await VoucherDetail.findAll({
+        where: { travelerID: res.locals.user.id },
+        attributes: ['code', 'soldAt'], include: [
+            {
+                model: Voucher, as: 'details',
+                where: { status: Status.activated },
+                attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'refundRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
+                include: getOneInclude(true, res.locals.user.id)
+            }
+        ],
+        order: [['soldAt', 'ASC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
+    })
+
+    const count = await VoucherDetail.findAll(
+        {
+            where: { travelerID: res.locals.user.id },
+            attributes: ['status'], include: [
+                {
+                    model: Voucher, as: 'details',
+                    where: { status: Status.activated },
+                    attributes: []
+                }
+            ],
+        });
+
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { count: count.length, vouchers: vouchers }
+    )
+
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+    next()
+})
+
 
 /**
  * This controller is getOneVoucher that get all vouchers of supplier
@@ -138,6 +239,21 @@ export const activeVoucher = catchAsync(async (req, res, next) => {
         return next(new AppError('Bạn phải kích hoạt trước khi khuyến mãi bắt đầu 1 ngày', StatusCodes.BAD_REQUEST))
 
     await Voucher.update({ status: 'Activated' }, { where: { id: req.params.id } })
+    for (let i = 0; i < voucher.quantity; i++) {
+        const code = Math.random().toString(36).toUpperCase().substring(2, 8)
+        const count = await VoucherDetail.count({ where: { voucherID: req.params.id, code: code } })
+        if (count > 0)
+            i -= 1
+        else {
+            const detail = new VoucherDetail()
+            detail.voucherID = voucher.id
+            detail.price = voucher.salePrice
+            detail.refundRate = voucher.refundRate
+            detail.commissionRate = voucher.commissionRate ?? 5
+            detail.code = code
+            await detail.save()
+        }
+    }
 
     res.resDocument = new RESDocument(StatusCodes.OK, 'Kích hoạt khuyến mãi thành cônng', null)
     next()
@@ -226,24 +342,170 @@ export const deleteVoucher = catchAsync(async (req, res, next) => {
  * This controller is deleteVoucher that delete a draft voucher
  *
  */
- export const buyVoucher = catchAsync(async (req, res, next) => {
-    const voucher = await Voucher.findOne({
-        where: { id: req.params.id, status: Status.draft },
-        attributes: ['id'],
-        include: [
-            {
-                model: Destination, as: 'destinationApply',
-                where: { supplierID: res.locals.user.id },
-                attributes: []
-            }
-        ]
+export const buyVoucher = catchAsync(async (req, res, next) => {
+    const voucher = await VoucherDetail.findOne({
+        where: { voucherID: req.params.id, status: Status.inStock }
     })
     if (!voucher || voucher === null)
-        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND));
+        throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
 
-    await voucher.destroy()
-    res.resDocument = new RESDocument(StatusCodes.NO_CONTENT, 'Xoá khuyến mãi thành công', null)
+    const url = await sequelizeConnection.transaction(async (payment) => {
+        voucher.status = Status.paying
+        voucher.travelerID = res.locals.user.id
+        await voucher.save({ transaction: payment })
+
+        const transaction = new Transaction();
+        transaction.voucherDetailID = voucher.id
+        // const ipAddr = req.socket.remoteAddress; | '127.0.0.1'
+        var ipAddr = req.socket.remoteAddress
+        while (ipAddr?.includes(':'))
+            ipAddr = ipAddr.replace(':', '%3A')
+
+        var tmnCode = VNP_TMN_CODE;
+        var secretKey = VNP_HASH_SECRET;
+        var vnpUrl = VNP_URL;
+        var returnUrl = VNP_RETURN_URL;
+        // var returnUrl = 'https%3A%2F%2Fdomainmerchant.vn%2FReturnUrl'
+
+        var date = new Date();
+        var format = require('date-format');
+
+        var createDate = format('yyyyMMddhhmmss', date);
+        var orderId = format('hhmmss', date);
+        transaction.orderID = orderId
+
+        var amount = voucher.price * 1000;
+        transaction.amount = amount
+        var bankCode = '';
+
+        var orderInfo = 'V+' + Math.random().toString(36).toUpperCase().substring(2, 8)
+        transaction.orderInfo = orderInfo.replace('+', ' ')
+        var orderType = 'other';
+        var locale = 'vn';
+        if (locale === null || locale === '') {
+            locale = 'vn';
+        }
+        var currCode = 'VND';
+        var vnp_Params: any = {};
+        vnp_Params['vnp_Version'] = '2.1.0';
+        vnp_Params['vnp_Command'] = 'pay';
+        vnp_Params['vnp_TmnCode'] = tmnCode;
+        // vnp_Params['vnp_Merchant'] = ''
+        vnp_Params['vnp_Locale'] = locale;
+        vnp_Params['vnp_CurrCode'] = currCode;
+        vnp_Params['vnp_TxnRef'] = orderId;
+        vnp_Params['vnp_OrderInfo'] = orderInfo;
+        vnp_Params['vnp_OrderType'] = orderType;
+        vnp_Params['vnp_Amount'] = amount * 100;
+        vnp_Params['vnp_ReturnUrl'] = returnUrl;
+        vnp_Params['vnp_IpAddr'] = ipAddr;
+        vnp_Params['vnp_CreateDate'] = createDate;
+        if (bankCode !== null && bankCode !== '') {
+            vnp_Params['vnp_BankCode'] = bankCode;
+        }
+
+        const sorted = Object.keys(vnp_Params)
+            .sort()
+            .reduce((accumulator: any, key) => {
+                accumulator[key] = vnp_Params[key];
+
+                return accumulator;
+            }, {});
+        vnp_Params = sorted
+
+        console.log(vnp_Params);
+
+        var querystring = require('qs');
+        var signData = querystring.stringify(vnp_Params, { encode: false });
+        var hmac = crypto.createHmac("sha512", secretKey);
+        var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+        console.log(signed);
+
+        vnp_Params['vnp_SecureHash'] = signed;
+        console.log(vnp_Params);
+
+        vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+        await transaction.save({ transaction: payment })
+        return vnpUrl
+    })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Tạo đơn hàng thành công', url)
     next()
+})
+
+
+/**
+ * This controller is getVnpReturn that return of VNPAY payment return
+ *
+ */
+export const getVnpReturn = catchAsync(async (req, res, next) => {
+
+    // const text = 'V+' + Math.random().toString(36).toUpperCase().substring(2, 8)
+    let vnp_Params = req.query;
+
+    var secureHash = vnp_Params['vnp_SecureHash'];
+
+    delete vnp_Params['vnp_SecureHash'];
+    delete vnp_Params['vnp_SecureHashType'];
+
+    vnp_Params['vnp_OrderInfo'] = (vnp_Params['vnp_OrderInfo'] as string).replace(' ', '+')
+    const sorted = Object.keys(vnp_Params)
+        .sort()
+        .reduce((accumulator: any, key) => {
+            accumulator[key] = vnp_Params[key];
+
+            return accumulator;
+        }, {});
+    vnp_Params = sorted
+
+    var secretKey = VNP_HASH_SECRET;
+
+    console.log(vnp_Params);
+
+    var querystring = require('qs');
+    var signData = querystring.stringify(vnp_Params, { encode: false });
+    var crypto = require("crypto");
+    var hmac = crypto.createHmac("sha512", secretKey);
+    var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+
+    if (secureHash === signed) {
+        //Kiem tra xem du lieu trong db co hop le hay khong va thong bao ket qua
+        const amount = req.query.vnp_Amount ? parseInt(req.query.vnp_Amount as string) : 0
+
+        const transaction = await Transaction.findOne({
+            where: {
+                orderID: req.query.vnp_TxnRef as string,
+                orderInfo: (req.query.vnp_OrderInfo as string).replace('+', ' '),
+                amount: Math.floor(amount / 100),
+                status: 'Processing'
+            }
+        })
+
+        if (!transaction)
+            return next(new AppError('Không tìm thấy giao dịch này', StatusCodes.NOT_FOUND))
+        await sequelizeConnection.transaction(async (payment) => {
+            transaction.vnpTransactionNo = vnp_Params['vnp_TransactionNo'] as string
+            transaction.vnpTransactionStatus = vnp_Params['vnp_TransactionStatus'] as string
+            if (vnp_Params['vnp_ResponseCode'] == '00') {
+                transaction.status = Status.success
+                await transaction.save({ transaction: payment })
+                await VoucherDetail.update({ status: Status.sold, soldAt: new Date(Date.now()) }, { where: { id: transaction.voucherDetailID }, transaction: payment })
+            } else {
+                transaction.status = Status.failed
+                await transaction.save({ transaction: payment })
+                await VoucherDetail.update({ status: Status.inStock, travelerID: undefined }, { where: { id: transaction.voucherDetailID }, transaction: payment })
+            }
+        })
+        if (vnp_Params['vnp_ResponseCode'] == '00') {
+            res.resDocument = new RESDocument(StatusCodes.OK, 'Thanh toán thành công', null)
+            next()
+        }
+        else {
+            return next(new AppError('Thanh toán thất bại', StatusCodes.BAD_REQUEST))
+        }
+    } else {
+        return next(new AppError('Fail checksum', StatusCodes.BAD_REQUEST))
+    }
 })
 
 /**

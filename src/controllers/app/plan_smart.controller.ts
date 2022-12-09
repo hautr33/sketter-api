@@ -257,6 +257,8 @@ export const saveSmartPlan = catchAsync(async (req, res, next) => {
 const calcPoint = (des: Destination[], now: number): Destination[] => {
     let maxView = 0
     let maxPersonality = 0
+    let maxCost = 0
+    let maxTime = 0
     let maxDate = 0
     des.forEach(des => {
         if (des.view && maxView < des.view)
@@ -269,6 +271,10 @@ const calcPoint = (des: Destination[], now: number): Destination[] => {
 
         if (maxPersonality < des.personalityCount)
             maxPersonality = des.personalityCount
+        if (maxTime < des.estimatedTimeStay)
+            maxTime = des.estimatedTimeStay
+        if (maxCost < (des.highestPrice + des.lowestPrice) / 2)
+            maxCost = (des.highestPrice + des.lowestPrice) / 2
         des.dateCount = des.createdAt?.getTime() ? (now - des.createdAt?.getTime()) / (1000 * 3600 * 24) : -1
         if (maxDate < des.dateCount)
             maxDate = des.dateCount
@@ -281,7 +287,7 @@ const calcPoint = (des: Destination[], now: number): Destination[] => {
             ((des.dateCount ? maxDate - des.dateCount : 0) / maxDate) * 2 +
             (((des.personalityCount && des.personalityCount > 0 ? des.personalityCount / maxPersonality : Math.random() * 0.5 + 0.25) +
                 (des.avgRating && des.avgRating > 0 ? des.avgRating / 5 : Math.random() * 0.5 + 0.25)) / 2) * 3
-        ) / 6
+        ) / ((des.estimatedTimeStay / maxTime) * 3 + ((des.highestPrice + des.lowestPrice) / (2 * maxCost)) * 3)
     });
 
     return des

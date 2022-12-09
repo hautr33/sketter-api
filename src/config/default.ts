@@ -55,6 +55,11 @@ export const REDIS_CONNECT_HOST = process.env.REDIS_CONNECT_HOST ?? 'redis';
 export const REDIS_CONNECT_PORT = process.env.REDIS_CONNECT_PORT ?? '6379';
 export const REDIS_TIMEOUT_SECONDS = parseInt(process.env.REDIS_TIMEOUT_SECONDS as string, 10) ?? 3600;
 
+export const VNP_TMN_CODE = process.env.VNP_TMN_CODE as string
+export const VNP_HASH_SECRET = process.env.VNP_HASH_SECRET as string
+export const VNP_URL = process.env.VNP_URL as string
+export const VNP_RETURN_URL = process.env.VNP_RETURN_URL as string
+
 export const DATABASE_UNITTEST = process.env.DATABASE_UNITTEST as string;
 export const DATABASE_UNITTEST_USERNAME = process.env.DATABASE_UNITTEST_USERNAME as string;
 export const DATABASE_UNITTEST_PASSWORD = process.env.DATABASE_UNITTEST_PASSWORD as string;

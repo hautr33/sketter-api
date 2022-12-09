@@ -213,6 +213,6 @@ export const completePlan = catchAsync(async (req, res, next) => {
 
     })
 
-    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, { planned: planned, activated: activated });
+    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, null);
     next();
 })

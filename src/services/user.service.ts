@@ -12,6 +12,7 @@ import { Op } from "sequelize"
 import RESDocument from "../controllers/factory/res_document"
 import { StatusCodes } from "http-status-codes"
 import AppError from "../utils/app_error"
+import { TravelerPersonalities } from "../models/traveler_personalites.model"
 
 /**
  * This method get User's information
@@ -26,14 +27,13 @@ export const getUserService = async (id: string) => {
         id,
         {
             include: [
-                { model: Personalities, as: 'travelerPersonalities', through: { attributes: [] }, attributes: ['name'] },
+                { model: Personalities, as: 'travelerPersonalities', through: { where: { isActive: true }, attributes: [] }, attributes: ['name'] },
                 { model: Role, as: 'role', attributes: { exclude: ['id'] } }
             ]
         }
     )
     if (!user)
         return null
-    console.log(user.roleID);
 
     return _.omit(user.toJSON(), UserPrivateFields[user.roleID ?? 0])
 }
@@ -115,8 +115,21 @@ export const updateUserService = async (id: string, body: any, isAdmin?: boolean
     }
     await sequelizeConnection.transaction(async (update) => {
         await user.save({ transaction: update })
-        if (user.roleID === Roles.Traveler && travelerPersonalities)
-            await user.setTravelerPersonalities(travelerPersonalities, { transaction: update })
+        if (user.roleID === Roles.Traveler && travelerPersonalities) {
+            await TravelerPersonalities.update({ isActive: false }, { where: { userID: id }, transaction: update })
+            for (let i = 0; i < travelerPersonalities.length; i++) {
+                const count = await TravelerPersonalities.count({ where: { userID: id, personality: travelerPersonalities[i] } })
+                if (count > 0) {
+                    await TravelerPersonalities.increment({ count: 1 }, { where: { userID: id, personality: travelerPersonalities[i] }, transaction: update })
+                    await TravelerPersonalities.update({ isActive: true }, { where: { userID: id, personality: travelerPersonalities[i] }, transaction: update })
+                } else {
+                    const tmp = new TravelerPersonalities()
+                    tmp.userID = id
+                    tmp.personality = travelerPersonalities[i]
+                    await tmp.save({ transaction: update })
+                }
+            }
+        }
     })
     return user
 }
