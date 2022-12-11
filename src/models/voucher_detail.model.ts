@@ -7,7 +7,7 @@ import { Voucher } from './voucher.model';
 export class VoucherDetail extends Model<InferAttributes<VoucherDetail>, InferCreationAttributes<VoucherDetail>> {
     declare id?: string;
     voucherID!: ForeignKey<Voucher['id']>;
-    travelerID?: ForeignKey<User['id']>;
+    travelerID?: ForeignKey<User['id']>|null;
     code!: string;
     price!: number;
     refundRate!: number;

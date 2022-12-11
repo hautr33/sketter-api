@@ -493,7 +493,7 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
             } else {
                 transaction.status = Status.failed
                 await transaction.save({ transaction: payment })
-                await VoucherDetail.update({ status: Status.inStock, travelerID: undefined }, { where: { id: transaction.voucherDetailID }, transaction: payment })
+                await VoucherDetail.update({ status: Status.inStock, travelerID: null }, { where: { id: transaction.voucherDetailID }, transaction: payment })
             }
         })
         if (vnp_Params['vnp_ResponseCode'] == '00') {
