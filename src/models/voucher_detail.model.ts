@@ -34,6 +34,7 @@ VoucherDetail.init({
     },
     travelerID: {
         type: DataTypes.UUID,
+        allowNull: true,
     },
     code: {
         type: DataTypes.STRING,
