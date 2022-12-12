@@ -107,6 +107,41 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+/**
+ * This controller is getAllVoucher that get all vouchers of supplier
+ *
+ */
+export const getDestinationVoucher = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const vouchers = await Voucher.findAll({
+        where: { status: Status.activated, destinationID: req.params.id },
+        attributes: ['id', 'name', 'image', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate'],
+        order: [['name', 'ASC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
+    })
+
+    const count = await Voucher.findAll(
+        {
+            where: { status: Status.activated, destinationID: req.params.id },
+            attributes: ['id'],
+        });
+
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { count: count.length, vouchers: vouchers }
+    )
+
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+    next()
+})
 
 /**
  * This controller is getAllVoucher that get all vouchers of supplier
@@ -378,7 +413,7 @@ export const buyVoucher = catchAsync(async (req, res, next) => {
         transaction.amount = amount
         var bankCode = '';
 
-        var orderInfo = 'V+' + Math.random().toString(36).toUpperCase().substring(2, 8)
+        var orderInfo = 'V+' + voucher.code
         transaction.orderInfo = orderInfo.replace('+', ' ')
         var orderType = 'other';
         var locale = 'vn';
@@ -482,14 +517,25 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
         })
 
         if (!transaction)
-            return next(new AppError('Không tìm thấy giao dịch này', StatusCodes.NOT_FOUND))
+            return res.redirect('https://sketter-fe.pages.dev/transactionResult?result=fail')
         await sequelizeConnection.transaction(async (payment) => {
             transaction.vnpTransactionNo = vnp_Params['vnp_TransactionNo'] as string
             transaction.vnpTransactionStatus = vnp_Params['vnp_TransactionStatus'] as string
             if (vnp_Params['vnp_ResponseCode'] == '00') {
                 transaction.status = Status.success
                 await transaction.save({ transaction: payment })
+                const voucherDetail = await VoucherDetail.findOne({ where: { id: transaction.voucherDetailID }, attributes: ['voucherID'], transaction: payment });
+                if (!voucherDetail)
+                    throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
                 await VoucherDetail.update({ status: Status.sold, soldAt: new Date(Date.now()) }, { where: { id: transaction.voucherDetailID }, transaction: payment })
+                const count = await VoucherDetail.count({ where: { status: Status.sold, voucherID: voucherDetail.voucherID }, transaction: payment })
+                const voucher = await Voucher.findOne({ where: { id: voucherDetail.voucherID } });
+                if (!voucher)
+                    throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
+                voucher.totalSold = count;
+                if (voucher.quantity == count)
+                    voucher.status = Status.soldOut
+                await voucher.save({ transaction: payment })
             } else {
                 transaction.status = Status.failed
                 await transaction.save({ transaction: payment })
@@ -497,11 +543,10 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
             }
         })
         if (vnp_Params['vnp_ResponseCode'] == '00') {
-            res.resDocument = new RESDocument(StatusCodes.OK, 'Thanh toán thành công', null)
-            next()
+            return res.redirect('https://sketter-fe.pages.dev/transactionResult?result=success')
         }
         else {
-            return next(new AppError('Thanh toán thất bại', StatusCodes.BAD_REQUEST))
+            return res.redirect('https://sketter-fe.pages.dev/transactionResult?result=fail')
         }
     } else {
         return next(new AppError('Fail checksum', StatusCodes.BAD_REQUEST))

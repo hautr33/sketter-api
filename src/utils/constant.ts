@@ -67,6 +67,11 @@ export class Status {
 
     public static readonly failed = 'Failed';
 
+    public static readonly soldOut = 'Sold Out';
+
+    public static readonly completed = 'Completed';
+
+    public static readonly stop = 'Stop';
 
 }
 

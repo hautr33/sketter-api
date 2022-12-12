@@ -139,7 +139,7 @@ Voucher.init({
         defaultValue: Status.draft,
         validate: {
             isIn: {
-                args: [[Status.draft, Status.activated]],
+                args: [[Status.draft, Status.activated, Status.stop, Status.soldOut, Status.completed]],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
