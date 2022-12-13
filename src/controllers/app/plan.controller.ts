@@ -282,9 +282,6 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 });
 
 export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
-    const date = Date.now()
-    await Plan.update({ status: 'Activated' }, { where: { fromDate: { [Op.lte]: date }, status: 'Planned' } })
-    await Plan.update({ status: 'Skipped' }, { where: { toDate: { [Op.lte]: (date - 1000 * 3600 * 24 * 2) }, status: 'Activated' } })
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = ['Draft', 'Planned', 'Activated', 'Completed'].includes(req.query.status as string) ? req.query.status as string : 'Draft'
     const plans = await Plan.findAll(

@@ -176,8 +176,8 @@ export const completePlan = catchAsync(async (req, res, next) => {
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
-    // if (Math.floor((Date.now() - new Date(plan.toDate).getTime()) / (1000 * 3600 * 24)) < 0)
-    //     throw new AppError(`Bạn không thể hoàn tất khi chưa hết lịch trình`, StatusCodes.BAD_REQUEST)
+    if (Math.floor((Date.now() - new Date(plan.toDate).getTime()) / (1000 * 3600 * 24)) < 0)
+        throw new AppError(`Bạn chỉ có thể hoàn tất lịch trình kể từ ngày cuối`, StatusCodes.BAD_REQUEST)
     const index: number[] = []
 
     const planned = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: true } })
@@ -199,7 +199,7 @@ export const completePlan = catchAsync(async (req, res, next) => {
             planned[i].status = 'Skipped'
 
     await sequelizeConnection.transaction(async (complete) => {
-        // await Plan.update({ status: 'Completed' }, { where: { id: req.params.id }, transaction: complete })
+        await Plan.update({ status: 'Completed' }, { where: { id: req.params.id }, transaction: complete })
         for (let i = 0; i < planned.length; i++)
             await planned[i].save({ transaction: complete })
 

@@ -7,10 +7,11 @@ import { Roles, Status } from "../utils/constant";
 import { createPlan, deletePlan, getAllCreatedPlan, getAllPublicPlan, getOnePlan, updatePlan } from "../controllers/app/plan.controller";
 import { createSmartPlan, saveSmartPlan } from "../controllers/app/plan_smart.controller";
 import { checkinPlan, completePlan, saveDraftPlan } from "../controllers/app/plan_active.controller";
+import { checkPlanStatus } from "../middlewares/plan.middleware";
 
 const router = Router();
 
-router.use(deserializeUser, requireUser);
+router.use(deserializeUser, requireUser, checkPlanStatus);
 
 
 router.route('/')
