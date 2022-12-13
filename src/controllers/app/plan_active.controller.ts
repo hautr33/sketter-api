@@ -123,8 +123,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                     planDestination.profile = 'driving'
                     planDestination.date = details[i].date;
                     planDestination.isPlan = false
-                    planDestination.rating = details[i].destinations[j].rating;
-                    planDestination.description = details[i].destinations[j].description;
+                    planDestination.rating = details[i].destinations[j].rating == 0 ? null : details[i].destinations[j].rating;
+                    planDestination.description = details[i].destinations[j].description == '' ? null : details[i].destinations[j].description;
                     const from = details[i].destinations[j].fromTime.split(' ');
                     const to = details[i].destinations[j].toTime.split(' ');
                     planDestination.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
