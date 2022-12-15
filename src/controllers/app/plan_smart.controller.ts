@@ -25,12 +25,12 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
         return next(new AppError('Ngày bắt đầu kể từ ngày mai', StatusCodes.BAD_REQUEST))
 
     const date = (toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24) + 1
-    if (date > 4)
-        return next(new AppError('Lịch trình tối đa 4 ngày', StatusCodes.BAD_REQUEST))
+    if (date > 7)
+        return next(new AppError('Lịch trình tối đa 7 ngày', StatusCodes.BAD_REQUEST))
 
     const maxTime = date * 10 * 60
     if (dailyStayCost * date / req.body.cost > 0.5)
-        return next(new AppError('Chi phí lưu trú không được quá 50% chi phí chuyến đi', StatusCodes.BAD_REQUEST))
+        return next(new AppError(`Chi phí lưu trú không được quá ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.floor(req.body.cost * 0.5 / date) * 1000)}`, StatusCodes.BAD_REQUEST))
     for (let i = 0; i < 3; i++) {
         const stay = await Destination.findAll({
             where: { status: Status.open, cityID: cityID },

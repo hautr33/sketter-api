@@ -75,7 +75,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
     const { totalCost, details } = req.body;
     details.sort((a: { date: number; }, b: { date: number; }) => (a.date < b.date) ? -1 : 1)
 
-    const date = Math.floor((Date.now() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) + 1
+    const now = Date.now() < new Date(plan.toDate).getTime() ? Date.now() : new Date(plan.toDate).getTime();
+    const date = Math.floor((now - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) + 1
     const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
