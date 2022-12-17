@@ -296,7 +296,7 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
     const query = isTraveler ? { id: req.params.id, status: Status.activated } : { id: req.params.id }
     const voucher = await Voucher.findOne({
         where: query,
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'totalUsed', 'value', 'salePrice', 'refundRate', ' commissionRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'totalUsed', 'value', 'salePrice', 'refundRate', 'commissionRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: getOneInclude(isTraveler, res.locals.user.id)
     })
 
