@@ -649,11 +649,11 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
 })
 
 /**
- * This controller is getListDestnation that get all destinatiion of a supplier to create voucher
+ * This controller is useVoucher that to use voucher
  *
  */
 export const useVoucher = catchAsync(async (req, res, next) => {
-    const count = await VoucherDetail.count({ where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string } })
+    const count = await VoucherDetail.count({ where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string, status: 'Sold' } })
     if (count != 1)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
     await VoucherDetail.update(
@@ -667,6 +667,32 @@ export const useVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+/**
+ * This controller is confirmUseVoucher that allow supplier to confirm used voucher
+ *
+ */
+export const confirmUseVoucher = catchAsync(async (req, res, next) => {
+    const count = await VoucherDetail.count({
+        where: { code: req.query.code as string, voucherID: req.query.id as string, status: 'Pending' },
+        include: [
+            {
+                model: Voucher, as: 'details',
+                attributes: ['id'],
+                include: [
+                    {
+                        model: Destination, as: 'destinationApply',
+                        where: { supplierID: res.locals.user.id },
+                        attributes: ['id']
+                    }
+                ]
+            }
+        ]
+    })
+    // if (count != 1)
+    //     return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi của bạn đang được xác nhận để sử dụng', count)
+    next()
+})
 
 /**
  * This controller is getListDestnation that get all destinatiion of a supplier to create voucher

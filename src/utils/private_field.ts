@@ -110,7 +110,6 @@ export class DestinationPrivateFields {
         'latinName',
         'image',
         'cityID',
-        'isHavePromotion'
     ];
     static getAllTraveler = [
         'cityID',
@@ -134,7 +133,7 @@ export class DestinationPrivateFields {
         "createdAt",
         "updatedAt",
         "deletedAt",
-        'isHavePromotion'
+        'isHaveVoucher'
     ]
     static getAllSupplier = [
         'cityID',
@@ -154,7 +153,7 @@ export class DestinationPrivateFields {
         "createdAt",
         "updatedAt",
         "deletedAt",
-        'isHavePromotion'
+        'isHaveVoucher'
     ]
 }
 

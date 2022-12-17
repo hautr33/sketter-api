@@ -355,9 +355,9 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
             { model: Voucher, as: 'vouchers', where: { status: 'Activated' }, attributes: [] }
         ]
     })
-    await Destination.update({ isHavePromotion: false }, { where: { isHavePromotion: true } })
+    await Destination.update({ isHaveVoucher: false }, { where: { isHaveVoucher: true } })
     for (let i = 0; i < des.length; i++) {
-        await Destination.update({ isHavePromotion: true }, { where: { id: des[i].id } })
+        await Destination.update({ isHaveVoucher: true }, { where: { id: des[i].id } })
     }
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
@@ -415,7 +415,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHavePromotion', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -431,7 +431,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHavePromotion', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -440,7 +440,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHavePromotion', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     }
@@ -453,7 +453,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHavePromotion', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },

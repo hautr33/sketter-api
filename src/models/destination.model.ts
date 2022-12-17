@@ -33,7 +33,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     avgRating?: number;
     view?: number;
     totalRating?: number;
-    isHavePromotion?: boolean;
+    isHaveVoucher?: boolean;
     cityID!: ForeignKey<City['id']>;
     supplierID?: ForeignKey<User['id']> | null;
     createdBy!: ForeignKey<User['id']>;
@@ -235,7 +235,7 @@ Destination.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-    isHavePromotion: {
+    isHaveVoucher: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     },

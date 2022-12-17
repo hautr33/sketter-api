@@ -131,9 +131,9 @@ export const searchDestination = catchAsync(async (req, res, next) => {
             { model: Voucher, as: 'vouchers', where: { status: 'Activated' }, attributes: [] }
         ]
     })
-    await Destination.update({ isHavePromotion: false }, { where: { isHavePromotion: true } })
+    await Destination.update({ isHaveVoucher: false }, { where: { isHaveVoucher: true } })
     for (let i = 0; i < des.length; i++) {
-        await Destination.update({ isHavePromotion: true }, { where: { id: des[i].id } })
+        await Destination.update({ isHaveVoucher: true }, { where: { id: des[i].id } })
     }
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const cityID = isNaN(Number(req.query.cityID)) || !req.query.cityID ? 1 : Number(req.query.cityID)
@@ -174,7 +174,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     }
     const result = await Destination.findAll({
         where: destinationQuery,
-        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view', 'isHavePromotion', 'status', 'createdAt'],
+        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view', 'isHaveVoucher', 'status', 'createdAt'],
         include: defaultInclude(false, skipStay),
         order: [[orderBy, orderDirection]],
         offset: (page - 1) * PAGE_LIMIT,
@@ -185,8 +185,8 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     // for (let i = 0; i < result.length; i++) {
     //     const destination = _.omit(result[i].toJSON(), []);
     //     const check = await Voucher.count({ where: { destinationID: destination.id, status: 'Activated' } })
-    //     const isHavePromotion = check > 0 ? true : false
-    //     destination.isHavePromotion = isHavePromotion
+    //     const isHaveVoucher = check > 0 ? true : false
+    //     destination.isHaveVoucher = isHaveVoucher
     //     destinations.push(destination)
     // }
 
@@ -282,11 +282,6 @@ export const getOneDestination = catchAsync(async (req, res, next) => {
 
     if (role === Roles.Traveler) {
         const count = await DestinationBookmark.count({ where: { destinationID: result.id, travelerID: res.locals.user.id, isBookmark: true } })
-        const vouchers = await Voucher.findAll({
-            where: { destinationID: destination.id, status: 'Activated' },
-            attributes: ['id', 'name', 'image', 'value', 'salePrice', 'discountPercent']
-        })
-        destination.vouchers = vouchers
         count === 1 ? destination.isBookmarked = true : destination.isBookmarked = false
     }
 
