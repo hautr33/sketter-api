@@ -33,6 +33,9 @@ Transaction.init({
         type: DataTypes.UUID,
         allowNull: false
     },
+    travelerID: {
+        type: DataTypes.UUID,
+    },
     orderID: {
         type: DataTypes.STRING,
         allowNull: false
@@ -56,7 +59,7 @@ Transaction.init({
         defaultValue: 'Order',
         validate: {
             isIn: {
-                args: [["Payment", "Refund", "Order"]],
+                args: [["Income", "Refund", "Order"]],
                 msg: 'Trạng thái không hợp lệ'
             }
         }

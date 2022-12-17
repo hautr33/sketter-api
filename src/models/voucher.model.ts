@@ -150,7 +150,6 @@ Voucher.init({
     },
     updatedAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
 }, {
     // Other model options go here

@@ -203,7 +203,7 @@ export const getAllVoucherDetail = catchAsync(async (req, res, next) => {
 
     const vouchers = await VoucherDetail.findAll({
         where: { voucherID: req.params.id, code: { [Op.iLike]: `%${code}%` } },
-        attributes: ['code', 'status', 'soldAt', 'usedAt'], include: [
+        attributes: ['code', 'finalPrice', 'status', 'soldAt', 'usedAt'], include: [
             {
                 model: User, as: 'travelerInfo',
                 attributes: ['email', 'name', 'avatar']
@@ -243,12 +243,12 @@ export const getAllVoucherDetail = catchAsync(async (req, res, next) => {
  */
 export const getOwnVoucher = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const isViewHistory = req.query.isViewHistory == 'true' ? true : false
     const vouchers = await VoucherDetail.findAll({
-        where: { travelerID: res.locals.user.id, status: { [Op.or]: ['Sold', 'Pending'] } },
+        where: { travelerID: res.locals.user.id, status: isViewHistory ? { [Op.or]: ['Used', 'Refunded'] } : { [Op.or]: ['Sold', 'Pending'] } },
         attributes: ['code', 'status', 'soldAt'], include: [
             {
                 model: Voucher, as: 'details',
-                where: { status: Status.activated },
                 attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'refundRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
                 include: getOneInclude(true, res.locals.user.id)
             }
@@ -260,11 +260,11 @@ export const getOwnVoucher = catchAsync(async (req, res, next) => {
 
     const count = await VoucherDetail.findAll(
         {
-            where: { travelerID: res.locals.user.id },
+            where: { travelerID: res.locals.user.id, status: isViewHistory ? { [Op.or]: ['Used', 'Refunded'] } : { [Op.or]: ['Sold', 'Pending'] } },
             attributes: ['status'], include: [
                 {
                     model: Voucher, as: 'details',
-                    where: { status: Status.activated },
+                    where: isViewHistory ? {} : { status: Status.activated },
                     attributes: []
                 }
             ],
@@ -428,6 +428,9 @@ export const deleteVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const buyVoucher = catchAsync(async (req, res, next) => {
+    const count = await Voucher.count({ where: { id: req.params.id as string, status: 'Activated' } })
+    if (count !== 1)
+        throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
     const voucher = await VoucherDetail.findOne({
         where: { voucherID: req.params.id, status: Status.inStock }
     })
@@ -609,7 +612,7 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
  */
 export const duplicateVoucher = catchAsync(async (req, res, next) => {
     const targetVoucher = await Voucher.findOne({
-        where: { id: req.params.id, status: Status.draft },
+        where: { id: req.params.id },
         attributes: ['id', 'destinationID', 'name', 'image', 'description', 'quantity', 'value', 'salePrice', 'refundRate', 'fromDate', 'toDate'],
         include: [
             {
@@ -653,6 +656,9 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const useVoucher = catchAsync(async (req, res, next) => {
+    const check = await Voucher.count({ where: { id: req.query.id as string, status: { [Op.or]: ['Activated', 'Sold Out'] } } })
+    if (check != 1)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
     const count = await VoucherDetail.count({ where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string, status: 'Sold' } })
     if (count != 1)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
@@ -672,12 +678,44 @@ export const useVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const confirmUseVoucher = catchAsync(async (req, res, next) => {
-    const count = await VoucherDetail.findOne({ where: { code: req.query.code as string, voucherID: req.query.id as string, status: 'Pending' } })
-    if (count == null)
+    const voucher = await Voucher.findOne({
+        where: { id: req.query.id as string, status: { [Op.or]: ['Activated', 'Sold Out'] } }, include: [
+            {
+                model: Destination, as: 'destinationApply',
+                where: { supplierID: res.locals.user.id, status: 'Open' },
+                attributes: ['id']
+            }
+        ]
+    })
+    if (voucher == null)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+    const detail = await VoucherDetail.findOne({ where: { code: req.query.code as string, voucherID: req.query.id as string, status: 'Pending' } })
+
+    if (detail == null)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
 
-    // await VoucherDetail.update({ status: 'Used' })
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi đã được sử dụng thành công', count)
+    detail.finalPrice = Math.ceil(detail.price * (100 - detail.commissionRate) * 10) / 1000
+    detail.status = 'Used'
+    await sequelizeConnection.transaction(async (confirm) => {
+        await detail.save({ transaction: confirm })
+        await Voucher.increment({ totalUsed: 1 }, { where: { id: detail.voucherID }, transaction: confirm })
+        const transaction = new Transaction()
+        transaction.voucherDetailID = detail.id
+        transaction.travelerID = res.locals.user.id
+        var date = new Date();
+        var format = require('date-format');
+        var orderId = format('hhmmss', date);
+        transaction.orderID = orderId
+        transaction.orderInfo = 'Income ' + detail.code
+        transaction.amount = (detail.finalPrice ?? 0) * 1000
+        transaction.vnpTransactionNo = (Date.now() + '').substring(5)
+        transaction.vnpTransactionStatus = '00'
+        transaction.transactionType = 'Income'
+        transaction.status = 'Success'
+        await transaction.save({ transaction: confirm })
+
+    })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi đã được sử dụng thành công', null)
     next()
 })
 

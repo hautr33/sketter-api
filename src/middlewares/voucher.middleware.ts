@@ -15,12 +15,23 @@ export const checkVoucherOrder = async (
         const now = Date.now()
         const transactions = await Transaction.findAll({ where: { createdAt: { [Op.lte]: now }, status: Status.processing } });
         await sequelizeConnection.transaction(async (order) => {
-            await Voucher.update({ status: Status.expired }, { where: { toDate: { [Op.lte]: (now - 1000 * 3600 * 24) }, status: Status.activated }, transaction: order });
-            await VoucherDetail.update({ status: 'Sold', usedAt: null }, { where: { status: 'Pending', usedAt: { [Op.lte]: now - 1000 * 60 * 5 } } })
+
+            await VoucherDetail.update({ status: 'Sold', usedAt: null }, { where: { status: 'Pending', usedAt: { [Op.lte]: now - 1000 * 60 * 15 } } })
             for (let i = 0; i < transactions.length; i++)
                 await VoucherDetail.update({ status: Status.inStock, travelerID: null }, { where: { id: transactions[i].voucherDetailID }, transaction: order })
             await Transaction.update({ status: Status.failed }, { where: { createdAt: { [Op.lte]: now - 1000 * 60 * 15 }, status: Status.processing }, transaction: order })
         })
+        const voucher = await Voucher.findAll({ where: { toDate: { [Op.lte]: (now - 1000 * 3600 * 24) }, status: { [Op.and]: [{ [Op.ne]: Status.draft }, { [Op.ne]: Status.expired }] } } });
+        for (let i = 0; i < voucher.length; i++) {
+            console.log('---------------------');
+
+            const detail = await VoucherDetail.findAll({ where: { voucherID: voucher[i].id, status: 'Sold' } })
+            for (let j = 0; j < detail.length; j++) {
+                detail[j].finalPrice = Math.ceil(detail[j].price * (100 - detail[j].refundRate) * (100 - detail[j].commissionRate) / 10) / 1000
+                console.log(detail[j].code + ' - ' + detail[j].finalPrice);
+            }
+        }
+
         next();
     } catch (err: any) {
         next(err);
