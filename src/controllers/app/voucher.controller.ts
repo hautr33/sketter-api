@@ -656,12 +656,31 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const useVoucher = catchAsync(async (req, res, next) => {
-    const check = await Voucher.count({ where: { id: req.query.id as string, status: { [Op.or]: ['Activated', 'Sold Out'] } } })
-    if (check != 1)
+    const check = await Voucher.findOne({
+        where: {
+            id: req.query.id as string,
+            status: { [Op.or]: ['Activated', 'Sold Out'] },
+            attribute: ['id', 'fromDate', 'toDate']
+        }
+    })
+    if (!check)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
-    const count = await VoucherDetail.count({ where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string, status: 'Sold' } })
+
+    const count = await VoucherDetail.count({
+        where: {
+            travelerID: res.locals.user.id,
+            code: req.query.code as string,
+            voucherID: req.query.id as string,
+            status: 'Sold',
+        }
+    })
     if (count != 1)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+
+
+    if (check.fromDate > new Date(Date.now()))
+        return next(new AppError('Chương trình khuyến mãi chưa bắt đầu, vui lòng thử lại sau', StatusCodes.BAD_REQUEST))
+
     await VoucherDetail.update(
         {
             usedAt: new Date(Date.now()), status: 'Pending'
