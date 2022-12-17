@@ -659,9 +659,9 @@ export const useVoucher = catchAsync(async (req, res, next) => {
     const check = await Voucher.findOne({
         where: {
             id: req.query.id as string,
-            status: { [Op.or]: ['Activated', 'Sold Out'] },
-            attribute: ['id', 'fromDate', 'toDate']
-        }
+            status: { [Op.or]: ['Activated', 'Sold Out'] }
+        },
+        attributes: ['id', 'fromDate', 'toDate']
     })
     if (!check)
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
