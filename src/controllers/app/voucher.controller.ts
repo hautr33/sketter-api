@@ -296,7 +296,7 @@ export const getOneVoucher = catchAsync(async (req, res, next) => {
     const query = isTraveler ? { id: req.params.id, status: Status.activated } : { id: req.params.id }
     const voucher = await Voucher.findOne({
         where: query,
-        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'value', 'salePrice', 'refundRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
+        attributes: ['id', 'name', 'image', 'description', 'quantity', 'totalSold', 'totalUsed', 'value', 'salePrice', 'refundRate', ' commissionRate', 'discountPercent', 'fromDate', 'toDate', 'status'],
         include: getOneInclude(isTraveler, res.locals.user.id)
     })
 
@@ -581,7 +581,7 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
                 if (!voucherDetail)
                     throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
                 await VoucherDetail.update({ status: Status.sold, soldAt: new Date(Date.now()) }, { where: { id: transaction.voucherDetailID }, transaction: payment })
-                const count = await VoucherDetail.count({ where: { status: Status.sold, voucherID: voucherDetail.voucherID }, transaction: payment })
+                const count = await VoucherDetail.count({ where: { status: { [Op.or]: [{ [Op.ne]: Status.inStock }, { [Op.ne]: Status.paying }] }, voucherID: voucherDetail.voucherID }, transaction: payment })
                 const voucher = await Voucher.findOne({ where: { id: voucherDetail.voucherID } });
                 if (!voucher)
                     throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
