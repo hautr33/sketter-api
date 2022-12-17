@@ -23,7 +23,9 @@ router.route('/all')
 
 router.route('/use')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), useVoucher))
-    .patch(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), confirmUseVoucher))
+
+router.route('/confirm')
+    .post(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), confirmUseVoucher))
 
 router.route('/destinations/:id')
     .get(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), getDestinationVoucher))

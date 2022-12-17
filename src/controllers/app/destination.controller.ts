@@ -200,7 +200,7 @@ export const searchDestination = catchAsync(async (req, res, next) => {
     const resDocument = new RESDocument(
         StatusCodes.OK,
         'success',
-        { count: count.length, result }
+        { count: count.length, destinations: result }
     )
     if (count.length != 0) {
         const maxPage = Math.ceil(count.length / PAGE_LIMIT)

@@ -672,25 +672,12 @@ export const useVoucher = catchAsync(async (req, res, next) => {
  *
  */
 export const confirmUseVoucher = catchAsync(async (req, res, next) => {
-    const count = await VoucherDetail.count({
-        where: { code: req.query.code as string, voucherID: req.query.id as string, status: 'Pending' },
-        include: [
-            {
-                model: Voucher, as: 'details',
-                attributes: ['id'],
-                include: [
-                    {
-                        model: Destination, as: 'destinationApply',
-                        where: { supplierID: res.locals.user.id },
-                        attributes: ['id']
-                    }
-                ]
-            }
-        ]
-    })
-    // if (count != 1)
-    //     return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
-    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi của bạn đang được xác nhận để sử dụng', count)
+    const count = await VoucherDetail.findOne({ where: { code: req.query.code as string, voucherID: req.query.id as string, status: 'Pending' } })
+    if (count == null)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+
+    // await VoucherDetail.update({ status: 'Used' })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi đã được sử dụng thành công', count)
     next()
 })
 
