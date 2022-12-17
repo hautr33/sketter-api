@@ -581,7 +581,7 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
                 if (!voucherDetail)
                     throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
                 await VoucherDetail.update({ status: Status.sold, soldAt: new Date(Date.now()) }, { where: { id: transaction.voucherDetailID }, transaction: payment })
-                const count = await VoucherDetail.count({ where: { status: { [Op.or]: [{ [Op.ne]: Status.inStock }, { [Op.ne]: Status.paying }] }, voucherID: voucherDetail.voucherID }, transaction: payment })
+                const count = await VoucherDetail.count({ where: { status: { [Op.and]: [{ [Op.ne]: Status.inStock }, { [Op.ne]: Status.paying }] }, voucherID: voucherDetail.voucherID }, transaction: payment })
                 const voucher = await Voucher.findOne({ where: { id: voucherDetail.voucherID } });
                 if (!voucher)
                     throw new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND)
