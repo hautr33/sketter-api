@@ -30,7 +30,7 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
 
     const maxTime = date * 10 * 60
     if (dailyStayCost * date / req.body.cost > 0.5)
-        return next(new AppError(`Chi phí lưu trú không được quá ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.floor(req.body.cost * 0.5 / date) * 1000)}`, StatusCodes.BAD_REQUEST))
+        return next(new AppError(`Chi phí lưu trú của 1 ngày không được quá ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.floor(req.body.cost * 0.5 / date) * 1000)}`, StatusCodes.BAD_REQUEST))
     for (let i = 0; i < 3; i++) {
         const stay = await Destination.findAll({
             where: { status: Status.open, cityID: cityID },
@@ -99,8 +99,7 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
 
 
         des = calcPoint(des, now)
-
-        des.sort((a, b) => ((a.point ?? 0) > (b.point ?? 0)) ? -1 : 1).slice(0, date * 15);
+        des = des.sort((a, b) => ((a.point ?? 0) > (b.point ?? 0)) ? -1 : 1)
 
         let sorted: Destination[] = [];
         let cost = 0;

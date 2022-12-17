@@ -55,6 +55,56 @@ export const createVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+
+/**
+ * This controller is getAllVoucher that get all vouchers of supplier
+ *
+ */
+export const getActiveVoucher = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+    const name = req.query.name as string ?? '';
+
+    const vouchers = await Voucher.findAll({
+        where: { name: { [Op.iLike]: `%${name}%` }, status: 'Activated' },
+        attributes: ['id', 'name', 'quantity', 'totalSold', 'status', 'updatedAt'], include: [
+            {
+                model: Destination, as: 'destinationApply',
+                attributes: ['id', 'name', 'address', 'image', 'status']
+            }
+        ],
+        order: [['updatedAt', 'DESC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
+    })
+
+    const count = await Voucher.findAll(
+        {
+            where: { name: { [Op.iLike]: `%${name}%` }, status: 'Activated' },
+            attributes: ['id'],
+            include: [
+                {
+                    model: Destination, as: 'destinationApply',
+                    attributes: []
+                }
+            ],
+        });
+
+    // Create a response object
+    const resDocument = new RESDocument(
+        StatusCodes.OK,
+        'success',
+        { count: count.length, vouchers: vouchers }
+    )
+
+    if (count.length != 0) {
+        const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+        resDocument.setCurrentPage(page)
+        resDocument.setMaxPage(maxPage)
+    }
+    res.resDocument = resDocument;
+    next()
+})
+
 /**
  * This controller is getAllVoucher that get all vouchers of supplier
  *
@@ -62,10 +112,10 @@ export const createVoucher = catchAsync(async (req, res, next) => {
 export const getAllVoucher = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const name = req.query.name as string ?? '';
-    const status = ['Draft', 'Activated'].includes(req.query.status as string) ? req.query.status as string : 'Draft';
+    const isDraft = req.query.isDraft == 'true' ? true : false
 
     const vouchers = await Voucher.findAll({
-        where: { name: { [Op.iLike]: `%${name}%` }, status: status },
+        where: { name: { [Op.iLike]: `%${name}%` }, status: isDraft ? 'Draft' : { [Op.ne]: 'Draft' } },
         attributes: ['id', 'name', 'quantity', 'totalSold', 'status', 'updatedAt'], include: [
             {
                 model: Destination, as: 'destinationApply',
@@ -80,7 +130,7 @@ export const getAllVoucher = catchAsync(async (req, res, next) => {
 
     const count = await Voucher.findAll(
         {
-            where: { name: { [Op.iLike]: `%${name}%` }, status: status },
+            where: { name: { [Op.iLike]: `%${name}%` }, status: isDraft ? 'Draft' : { [Op.ne]: 'Draft' } },
             attributes: ['id'],
             include: [
                 {
@@ -159,7 +209,7 @@ export const getAllVoucherDetail = catchAsync(async (req, res, next) => {
                 attributes: ['email', 'name', 'avatar']
             }
         ],
-        order: [['usedAt', 'ASC'], ['soldAt', 'ASC']],
+        order: [['status', 'DESC'], ['usedAt', 'DESC'], ['soldAt', 'DESC']],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT
     })
@@ -194,8 +244,8 @@ export const getAllVoucherDetail = catchAsync(async (req, res, next) => {
 export const getOwnVoucher = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const vouchers = await VoucherDetail.findAll({
-        where: { travelerID: res.locals.user.id },
-        attributes: ['code', 'soldAt'], include: [
+        where: { travelerID: res.locals.user.id, status: { [Op.or]: ['Sold', 'Pending'] } },
+        attributes: ['code', 'status', 'soldAt'], include: [
             {
                 model: Voucher, as: 'details',
                 where: { status: Status.activated },
@@ -203,7 +253,7 @@ export const getOwnVoucher = catchAsync(async (req, res, next) => {
                 include: getOneInclude(true, res.locals.user.id)
             }
         ],
-        order: [['soldAt', 'ASC']],
+        order: [['status', 'ASC'], ['details', 'toDate', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
         limit: PAGE_LIMIT
     })
@@ -409,7 +459,7 @@ export const buyVoucher = catchAsync(async (req, res, next) => {
         var orderId = format('hhmmss', date);
         transaction.orderID = orderId
 
-        var amount = voucher.price * 1000;
+        var amount = Math.ceil(voucher.price * 1000);
         transaction.amount = amount
         var bankCode = '';
 
@@ -595,6 +645,25 @@ export const duplicateVoucher = catchAsync(async (req, res, next) => {
         ]
     })
     res.resDocument = new RESDocument(StatusCodes.OK, `Đã tạo bản sao của khuyến mãi '${targetVoucher.name}'`, { voucher: result });
+    next()
+})
+
+/**
+ * This controller is getListDestnation that get all destinatiion of a supplier to create voucher
+ *
+ */
+export const useVoucher = catchAsync(async (req, res, next) => {
+    const count = await VoucherDetail.count({ where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string } })
+    if (count != 1)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+    await VoucherDetail.update(
+        {
+            usedAt: new Date(Date.now()), status: 'Pending'
+        },
+        {
+            where: { travelerID: res.locals.user.id, code: req.query.code as string, voucherID: req.query.id as string }
+        })
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi của bạn đang được xác nhận để sử dụng', null)
     next()
 })
 

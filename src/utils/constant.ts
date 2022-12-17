@@ -71,6 +71,8 @@ export class Status {
 
     public static readonly completed = 'Completed';
 
+    public static readonly expired = 'Expired';
+
     public static readonly stop = 'Stop';
 
 }

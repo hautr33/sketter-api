@@ -7,7 +7,7 @@ import { Voucher } from './voucher.model';
 export class VoucherDetail extends Model<InferAttributes<VoucherDetail>, InferCreationAttributes<VoucherDetail>> {
     declare id?: string;
     voucherID!: ForeignKey<Voucher['id']>;
-    travelerID?: ForeignKey<User['id']>|null;
+    travelerID?: ForeignKey<User['id']> | null;
     code!: string;
     price!: number;
     refundRate!: number;
@@ -15,7 +15,7 @@ export class VoucherDetail extends Model<InferAttributes<VoucherDetail>, InferCr
     finalPrice?: number;
     status?: string;
     readonly soldAt?: Date;
-    readonly usedAt?: Date;
+    readonly usedAt?: Date| null;
 }
 
 VoucherDetail.init({
@@ -53,14 +53,14 @@ VoucherDetail.init({
         allowNull: false
     },
     finalPrice: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
     },
     status: {
         type: DataTypes.STRING,
         defaultValue: Status.inStock,
         validate: {
             isIn: {
-                args: [[Status.inStock, Status.paying, Status.sold]],
+                args: [[Status.inStock, Status.paying, Status.sold, 'Pending', 'Used', 'Refunded']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
