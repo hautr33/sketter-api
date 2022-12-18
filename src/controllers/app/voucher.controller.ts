@@ -66,7 +66,7 @@ export const getActiveVoucher = catchAsync(async (req, res, next) => {
 
     const vouchers = await Voucher.findAll({
         where: { name: { [Op.iLike]: `%${name}%` }, status: 'Activated' },
-        attributes: ['id', 'name', 'quantity', 'totalSold', 'status', 'updatedAt'], include: [
+        attributes: ['id', 'name', 'image', 'quantity', 'totalSold', 'value', 'salePrice', 'discountPercent', 'fromDate', 'toDate'], include: [
             {
                 model: Destination, as: 'destinationApply',
                 attributes: ['id', 'name', 'address', 'image', 'status']
