@@ -88,3 +88,9 @@ Transaction.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Transaction' // We need to choose the model name
 });
+
+VoucherDetail.hasMany(Transaction, { foreignKey: "voucherDetailID", as: 'detail' });
+Transaction.belongsTo(VoucherDetail, { foreignKey: 'voucherDetailID', as: 'detail' });
+
+User.hasMany(Transaction, { foreignKey: "travelerID", as: 'user' });
+Transaction.belongsTo(User, { foreignKey: 'travelerID', as: 'user' });

@@ -167,6 +167,9 @@ Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'vouchers' })
 Voucher.hasMany(VoucherDetail, { foreignKey: "voucherID", as: 'details' });
 VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'details' });
 
+Voucher.hasMany(VoucherDetail, { foreignKey: "voucherID", as: 'voucherInfo' });
+VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'voucherInfo' });
+
 Voucher.beforeSave(async (voucher) => {
     const { value, salePrice, fromDate, toDate
     } = voucher;

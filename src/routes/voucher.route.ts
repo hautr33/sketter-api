@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { activeVoucher, buyVoucher, confirmUseVoucher, createVoucher, deleteVoucher, duplicateVoucher, getActiveVoucher, getAllVoucher, getAllVoucherDetail, getDestinationVoucher, getListDestnation, getOneVoucher, getOwnVoucher, getVnpReturn, updateVoucher, useVoucher } from "../controllers/app/voucher.controller";
+import { activeVoucher, buyVoucher, confirmUseVoucher, createVoucher, deleteVoucher, duplicateVoucher, getActiveVoucher, getAllVoucher, getAllVoucherDetail, getDestinationVoucher, getListDestnation, getOneVoucher, getOwnVoucher, getTransactions, getVnpReturn, updateVoucher, useVoucher } from "../controllers/app/voucher.controller";
 import { checkVoucherOrder } from "../middlewares/voucher.middleware";
 
 const router = Router();
@@ -20,6 +20,9 @@ router.route('/')
 
 router.route('/all')
     .get(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), getActiveVoucher))
+
+router.route('/transactions')
+    .get(standardPipeline(restrictTo(Roles.Traveler, Roles.Supplier, Roles.Admin), requireStatus(Status.verified), getTransactions))
 
 router.route('/use')
     .post(standardPipeline(restrictTo(Roles.Traveler), requireStatus(Status.verified), useVoucher))

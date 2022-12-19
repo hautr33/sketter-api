@@ -5,6 +5,9 @@ import { Transaction } from '../models/transaction.model';
 import sequelizeConnection from '../db/sequelize.db';
 import { VoucherDetail } from '../models/voucher_detail.model';
 import { Voucher } from '../models/voucher.model';
+import { Destination } from '../models/destination.model';
+import AppError from '../utils/app_error';
+import { StatusCodes } from 'http-status-codes';
 
 export const checkVoucherOrder = async (
     _req: Request,
@@ -46,7 +49,13 @@ export const checkVoucherOrder = async (
 
                     const income = new Transaction()
                     income.voucherDetailID = detail[j].id
-                    income.travelerID = detail[j].travelerID as string
+                    const voucher = await Voucher.findOne({ where: { id: detail[j].voucherID }, attributes: ['destinationID'] })
+                    if (!voucher)
+                        throw new AppError('Có lỗi xảy ra!', StatusCodes.INTERNAL_SERVER_ERROR)
+                    const des = await Destination.findOne({ where: { id: voucher.destinationID }, attributes: ['supplierID'] })
+                    if (!des)
+                        throw new AppError('Có lỗi xảy ra!', StatusCodes.INTERNAL_SERVER_ERROR)
+                    income.travelerID = des.supplierID ?? ''
                     orderId = format('hhmmss', new Date())
                     income.orderID = orderId
                     income.orderInfo = 'Income ' + detail[j].code

@@ -692,6 +692,8 @@ export const useVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+
+
 /**
  * This controller is confirmUseVoucher that allow supplier to confirm used voucher
  *
@@ -735,6 +737,90 @@ export const confirmUseVoucher = catchAsync(async (req, res, next) => {
 
     })
     res.resDocument = new RESDocument(StatusCodes.OK, 'Khuyến mãi đã được sử dụng thành công', null)
+    next()
+})
+
+
+
+
+/**
+ * This controller is getTransactions that allow user to view transaction
+ *
+ */
+export const getTransactions = catchAsync(async (req, res, next) => {
+    const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
+
+    const isAdmin = res.locals.user.roleID == Roles.Admin ? true : false
+    const transactions = await Transaction.findAll({
+        where: isAdmin ? {} : { travelerID: res.locals.user.id },
+        attributes: ['id', 'orderID', 'orderInfo', 'amount', 'transactionType', 'status', 'createdAt'],
+        include: [
+            {
+                model: User, as: 'user', attributes: ['email', 'name', 'avatar']
+            },
+            {
+                model: VoucherDetail, as: 'detail', attributes: ['code'], include: [
+                    { model: Voucher, as: 'voucherInfo', attributes: ['name', 'image'] }
+                ]
+            }
+        ],
+        order: [['createdAt', 'DESC']]
+    })
+
+    const count = await Transaction.findAll({
+        where: isAdmin ? {} : { travelerID: res.locals.user.id },
+        attributes: ['id']
+    })
+
+    if (isAdmin) {
+        let revenue = 0
+        let expense = 0
+        for (let i = 0; i < transactions.length; i++) {
+            if (transactions[i].status == 'Success')
+                if (['Income', 'Refund'].includes(transactions[i].transactionType ?? ''))
+                    expense += transactions[i].amount
+                else
+                    revenue += transactions[i].amount
+        }
+        const profit = revenue - expense
+        // Create a response object
+        const resDocument = new RESDocument(
+            StatusCodes.OK,
+            'success',
+            {
+                count: count.length,
+                overview: {
+                    revenue: revenue,
+                    expense: expense,
+                    profit: profit
+                },
+                transactions: transactions
+            }
+        )
+        if (count.length != 0) {
+            const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+            resDocument.setCurrentPage(page)
+            resDocument.setMaxPage(maxPage)
+        }
+        res.resDocument = resDocument;
+    } else {
+
+        const resDocument = new RESDocument(
+            StatusCodes.OK,
+            'success',
+            {
+                count: count.length,
+                transactions: transactions
+            }
+        )
+        if (count.length != 0) {
+            const maxPage = Math.ceil(count.length / PAGE_LIMIT)
+            resDocument.setCurrentPage(page)
+            resDocument.setMaxPage(maxPage)
+        }
+        res.resDocument = resDocument;
+    }
+
     next()
 })
 
