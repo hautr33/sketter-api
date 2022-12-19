@@ -113,9 +113,9 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
             }
         });
 
-        console.log(sorted.length + ' / ' + des.length);
-        console.log(`Cost: ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date} + ${cost} = ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date + cost} / ${req.body.cost}`);
-        console.log(maxTime + ' / ' + time);
+        // console.log(sorted.length + ' / ' + des.length);
+        // console.log(`Cost: ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date} + ${cost} = ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date + cost} / ${req.body.cost}`);
+        // console.log(maxTime + ' / ' + time);
 
         let planName = name + ` (${i + 1})`
         sorted.sort((a, b) => (a.openingTime < b.openingTime) ? -1 : 1)

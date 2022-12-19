@@ -59,7 +59,6 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: defaultInclude(true),
     })
-    console.log(count)
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,

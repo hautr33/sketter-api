@@ -27,8 +27,6 @@ export const checkVoucherOrder = async (
         const voucher = await Voucher.findAll({ where: { toDate: { [Op.lte]: (now - 1000 * 3600 * 24) }, status: { [Op.and]: [{ [Op.ne]: Status.draft }, { [Op.ne]: Status.expired }] } } });
         await sequelizeConnection.transaction(async (refundExpired) => {
             for (let i = 0; i < voucher.length; i++) {
-                console.log('---------------------');
-
                 const detail = await VoucherDetail.findAll({ where: { voucherID: voucher[i].id, status: 'Sold' } })
                 for (let j = 0; j < detail.length; j++) {
                     detail[j].finalPrice = Math.ceil(detail[j].price * (100 - detail[j].refundRate) * (100 - detail[j].commissionRate) / 10) / 1000
@@ -64,8 +62,6 @@ export const checkVoucherOrder = async (
                     income.vnpTransactionStatus = '00'
                     income.transactionType = 'Income'
                     income.status = 'Success'
-
-                    console.log(detail[j].code + ' - ' + refund.amount + ' - ' + income.amount)
 
                     await refund.save({ transaction: refundExpired })
                     await income.save({ transaction: refundExpired })

@@ -776,12 +776,38 @@ export const getTransactions = catchAsync(async (req, res, next) => {
     if (isAdmin) {
         let revenue = 0
         let expense = 0
+        // for (let i = 0; i < transactions.length; i++) {
+        //     if (transactions[i].status == 'Success')
+        //         if (['Income', 'Refund'].includes(transactions[i].transactionType ?? ''))
+        //             expense += transactions[i].amount
+        //         else
+        //             revenue += transactions[i].amount
+        // }
+        const list1 = []
+        let list2: any[] = []
         for (let i = 0; i < transactions.length; i++) {
             if (transactions[i].status == 'Success')
                 if (['Income', 'Refund'].includes(transactions[i].transactionType ?? ''))
-                    expense += transactions[i].amount
+                    list1.push(transactions[i])
                 else
-                    revenue += transactions[i].amount
+                    list2.push(transactions[i])
+        }
+        for (let i = 0; i < list1.length; i++) {
+            expense += list1[i].amount
+            let isCheck = false
+            let j = 0
+            while (!isCheck && j < list2.length) {
+                if (list1[i].orderInfo.includes(list2[j].orderInfo.split(' ')[1])) {
+                    revenue += list2[j].amount
+                    const id = list2[j].id
+                    list2 = list2.filter(function (value) {
+                        return value.id != id
+                    });
+
+                    isCheck = true
+                } else
+                    j++
+            }
         }
         const profit = revenue - expense
         // Create a response object

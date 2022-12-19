@@ -240,9 +240,9 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                         planDestination.duration = 0
                         planDestination.distanceText = '0m'
                         planDestination.durationText = '0s'
-                        console.log(planDestination.fromTime.toLocaleString());
-                        console.log(planDestination.toTime.toLocaleString());
-                        console.log('----------------------');
+                        // console.log(planDestination.fromTime.toLocaleString());
+                        // console.log(planDestination.toTime.toLocaleString());
+                        // console.log('----------------------');
                     }
                     hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
                     mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
