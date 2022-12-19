@@ -780,7 +780,9 @@ export const getTransactions = catchAsync(async (req, res, next) => {
                 ]
             }
         ],
-        order: [['createdAt', 'DESC']]
+        order: [['createdAt', 'DESC']],
+        offset: (page - 1) * PAGE_LIMIT,
+        limit: PAGE_LIMIT
     })
 
     const count = await Transaction.findAll({
@@ -791,21 +793,17 @@ export const getTransactions = catchAsync(async (req, res, next) => {
     if (isAdmin) {
         let revenue = 0
         let expense = 0
-        // for (let i = 0; i < transactions.length; i++) {
-        //     if (transactions[i].status == 'Success')
-        //         if (['Income', 'Refund'].includes(transactions[i].transactionType ?? ''))
-        //             expense += transactions[i].amount
-        //         else
-        //             revenue += transactions[i].amount
-        // }
+        const tmp = await Transaction.findAll({
+            where: { status: 'Success' },
+            attributes: ['id', 'orderInfo', 'amount', 'transactionType']
+        })
         const list1 = []
         let list2: any[] = []
-        for (let i = 0; i < transactions.length; i++) {
-            if (transactions[i].status == 'Success')
-                if (['Income', 'Refund'].includes(transactions[i].transactionType ?? ''))
-                    list1.push(transactions[i])
-                else
-                    list2.push(transactions[i])
+        for (let i = 0; i < tmp.length; i++) {
+            if (['Income', 'Refund'].includes(tmp[i].transactionType ?? ''))
+                list1.push(tmp[i])
+            else
+                list2.push(tmp[i])
         }
         for (let i = 0; i < list1.length; i++) {
             expense += list1[i].amount
