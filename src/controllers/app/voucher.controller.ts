@@ -444,6 +444,7 @@ export const buyVoucher = catchAsync(async (req, res, next) => {
 
         const transaction = new Transaction();
         transaction.voucherDetailID = voucher.id
+        transaction.travelerID = res.locals.user.id
         // const ipAddr = req.socket.remoteAddress; | '127.0.0.1'
         var ipAddr = req.socket.remoteAddress
         while (ipAddr?.includes(':'))
