@@ -521,7 +521,6 @@ export const buyVoucher = catchAsync(async (req, res, next) => {
             }, {});
         vnp_Params = sorted
 
-
         var querystring = require('qs');
         var signData = querystring.stringify(vnp_Params, { encode: false });
         var hmac = crypto.createHmac("sha512", secretKey);

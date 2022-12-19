@@ -76,11 +76,9 @@ Transaction.init({
     },
     createdAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
     updatedAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
 }, {
     // Other model options go here
