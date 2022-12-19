@@ -13,7 +13,6 @@ import RESDocument from "./res_document";
  */
 export function deleteOne(Model: any): RequestHandler {
     return catchAsync(async (req, res, next) => {
-        console.log(req.params.id)
         const document = await Model.destroy({ where: { id: req.params.id } });
 
         if (!document) {

@@ -344,6 +344,25 @@ export const activeVoucher = catchAsync(async (req, res, next) => {
     next()
 })
 
+
+/**
+ * This controller is activeVoucher that active a draft voucher
+ *
+ */
+export const stopVoucher = catchAsync(async (req, res, next) => {
+    const voucher = await Voucher.findOne({
+        where: { id: req.params.id, status: 'Activated' },
+    })
+
+    if (!voucher || voucher === null)
+        return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
+
+    await Voucher.update({ status: 'Stop' }, { where: { id: req.params.id } })
+
+    res.resDocument = new RESDocument(StatusCodes.OK, `Đã ngưng chương trình khuyến mãi ${voucher.name} thành công`, null)
+    next()
+})
+
 /**
  * This controller is updateVoucher that update a draft voucher
  *
@@ -502,16 +521,13 @@ export const buyVoucher = catchAsync(async (req, res, next) => {
             }, {});
         vnp_Params = sorted
 
-        console.log(vnp_Params);
 
         var querystring = require('qs');
         var signData = querystring.stringify(vnp_Params, { encode: false });
         var hmac = crypto.createHmac("sha512", secretKey);
         var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
-        console.log(signed);
 
         vnp_Params['vnp_SecureHash'] = signed;
-        console.log(vnp_Params);
 
         vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
         await transaction.save({ transaction: payment })
@@ -549,7 +565,6 @@ export const getVnpReturn = catchAsync(async (req, res, next) => {
 
     var secretKey = VNP_HASH_SECRET;
 
-    console.log(vnp_Params);
 
     var querystring = require('qs');
     var signData = querystring.stringify(vnp_Params, { encode: false });

@@ -4,7 +4,7 @@ import { requireUser } from "../middlewares/require_user";
 import { standardPipeline } from "../pipes";
 import { requireStatus, restrictTo } from "../controllers/app/auth.controller";
 import { Roles, Status } from "../utils/constant";
-import { activeVoucher, buyVoucher, confirmUseVoucher, createVoucher, deleteVoucher, duplicateVoucher, getActiveVoucher, getAllVoucher, getAllVoucherDetail, getDestinationVoucher, getListDestnation, getOneVoucher, getOwnVoucher, getTransactions, getVnpReturn, updateVoucher, useVoucher } from "../controllers/app/voucher.controller";
+import { activeVoucher, buyVoucher, confirmUseVoucher, createVoucher, deleteVoucher, duplicateVoucher, getActiveVoucher, getAllVoucher, getAllVoucherDetail, getDestinationVoucher, getListDestnation, getOneVoucher, getOwnVoucher, getTransactions, getVnpReturn, stopVoucher, updateVoucher, useVoucher } from "../controllers/app/voucher.controller";
 import { checkVoucherOrder } from "../middlewares/voucher.middleware";
 
 const router = Router();
@@ -41,7 +41,10 @@ router.route('/:id/duplicate')
     .post(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), duplicateVoucher))
 
 router.route('/active/:id')
-    .post(standardPipeline(restrictTo(Roles.Supplier), activeVoucher))
+    .post(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), activeVoucher))
+
+router.route('/stop/:id')
+    .post(standardPipeline(restrictTo(Roles.Supplier), requireStatus(Status.verified), stopVoucher))
 
 router.route('/payment/:id')
     .post(standardPipeline(restrictTo(Roles.Traveler), buyVoucher))
