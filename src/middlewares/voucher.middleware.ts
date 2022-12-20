@@ -18,7 +18,6 @@ export const checkVoucherOrder = async (
         const now = Date.now()
         const transactions = await Transaction.findAll({ where: { createdAt: { [Op.lte]: now - 1000 * 60 * 15 }, status: Status.processing } });
         await sequelizeConnection.transaction(async (order) => {
-
             await VoucherDetail.update({ status: 'Sold', usedAt: null }, { where: { status: 'Pending', usedAt: { [Op.lte]: now - 1000 * 60 * 15 } } })
             for (let i = 0; i < transactions.length; i++)
                 await VoucherDetail.update({ status: Status.inStock, travelerID: null }, { where: { id: transactions[i].voucherDetailID }, transaction: order })
@@ -67,6 +66,8 @@ export const checkVoucherOrder = async (
                     await income.save({ transaction: refundExpired })
                     await detail[j].save({ transaction: refundExpired })
                 }
+                voucher[i].status = Status.expired
+                await voucher[i].save({ transaction: refundExpired })
             }
         })
         next();
