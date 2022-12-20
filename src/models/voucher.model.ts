@@ -47,7 +47,7 @@ Voucher.init({
         validate: {
             notNull: { msg: 'Vui lòng nhập tên khuyến mãi' },
             notEmpty: { msg: 'Vui lòng nhập tên khuyến mãi' },
-            len: { msg: 'Tên khuyến mãi phải có từ 2 đến 50 ký tự', args: [2, 50] }
+            len: { msg: 'Tên khuyến mãi phải có từ 2 đến 100 ký tự', args: [2, 100] }
         }
     },
     image: {
