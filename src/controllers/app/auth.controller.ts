@@ -12,7 +12,6 @@ import { createSendToken } from '../../utils/jwt';
 import { loginViaGoogle, signUpFirebase } from '../../services/firebase/firebase_admin.service';
 import { Op } from 'sequelize';
 import { checkPassword } from '../../services/user.service';
-
 /**
  * This controller is signup that user can sign up with traveler or supplier role
  *
@@ -65,6 +64,12 @@ export const login = catchAsync(async (req, res, next) => {
         // Check password
         const user = await User.findOne({ where: { email: email, status: { [Op.ne]: Status.deactivated } } });
         if (!user || !(await user.comparePassword(password as string)))
+            return next(new AppError('Email hoặc mật khẩu không đúng', StatusCodes.BAD_REQUEST));
+
+        if (user.roleID === Roles.Traveler && req.header('Origin') !== 'sketter-mobile')
+            return next(new AppError('Email hoặc mật khẩu không đúng', StatusCodes.BAD_REQUEST));
+
+        if (user.roleID !== Roles.Traveler && req.header('Origin') === 'sketter-mobile')
             return next(new AppError('Email hoặc mật khẩu không đúng', StatusCodes.BAD_REQUEST));
 
         createSendToken(user.id, StatusCodes.OK, res, next);
