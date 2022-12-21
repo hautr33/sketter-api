@@ -373,7 +373,7 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
             include: getOnePlanInclude(check.status ?? 'Draft'),
-            order: [['details', 'fromTime', 'ASC']]
+            order: check.status !== 'Completed' ? [['details', 'fromTime', 'ASC']] : [['details', 'fromTime', 'ASC'],['travelDetails', 'fromTime', 'ASC']]
         });
 
     if (!result)
