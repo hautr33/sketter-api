@@ -693,7 +693,7 @@ export const useVoucher = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy khuyến mãi này', StatusCodes.NOT_FOUND))
 
 
-    if (Math.floor((new Date(check.fromDate).getTime() - Date.now()) / (1000 * 3600 * 24)) > 0)
+    if (Math.floor((new Date(check.fromDate).getTime() - Date.now()) / (1000 * 3600 * 24)) >= 0)
         return next(new AppError('Chương trình khuyến mãi chưa bắt đầu, vui lòng thử lại sau', StatusCodes.BAD_REQUEST))
 
     await VoucherDetail.update(

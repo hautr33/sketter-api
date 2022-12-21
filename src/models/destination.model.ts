@@ -61,6 +61,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     personalityCount?: number = 0;
     dateCount?: number = 0;
     point?: number = 0;
+    timePoint?: number = 0;
     value?: number = 0;
     cost?: number = 0;
 }

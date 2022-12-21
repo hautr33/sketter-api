@@ -28,6 +28,11 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
     if (date > 7)
         return next(new AppError('Lịch trình tối đa 7 ngày', StatusCodes.BAD_REQUEST))
 
+    const checkTime = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]) - (parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]))
+
+    if (checkTime < 4 * 60)
+        return next(new AppError('Thời gian du lịch trong ngày ít nhất phải 4 tiếng', StatusCodes.BAD_REQUEST))
+
     const maxTime = date * 10 * 60
     if (dailyStayCost * date / req.body.cost > 0.5)
         return next(new AppError(`Chi phí lưu trú của 1 ngày không được quá ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.floor(req.body.cost * 0.5 / date) * 1000)}`, StatusCodes.BAD_REQUEST))
@@ -104,20 +109,14 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
         let sorted: Destination[] = [];
         let cost = 0;
         let time = 0;
-        let testdes: Destination[] = [];
 
         des.forEach(des => {
             if (des.point && des.cost && cost + des.cost <= maxCost && time + des.estimatedTimeStay <= maxTime) {
                 cost += des.cost
                 time += des.estimatedTimeStay
                 sorted.push(des)
-                testdes.push(des)
             }
         });
-
-        // console.log(sorted.length + ' / ' + des.length);
-        // console.log(`Cost: ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date} + ${cost} = ${Math.ceil((stayDestination.highestPrice + stayDestination.lowestPrice) / 2) * date + cost} / ${req.body.cost}`);
-        // console.log(maxTime + ' / ' + time);
 
         let planName = name + ` (${i + 1})`
         sorted.sort((a, b) => (a.openingTime < b.openingTime) ? -1 : 1)
@@ -149,30 +148,38 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                 planDes.planID = plan.id
                 const time = (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
                 let max = 1
-                sorted.forEach(des => {
-                    des.point = 0
-                    if (des.openingTime <= time && time <= des.closingTime)
-                        des.point = 1
-                    des.recommendedTimes?.forEach(recommendedTime => {
-                        if (recommendedTime.from <= time && time <= recommendedTime.to) {
-                            des.point = 2
-                            des.point += recommendedTime.count.planCount + recommendedTime.count.visitCount * 2
-                            if (max < des.point)
-                                max = des.point
-                        }
-                    });
+                for (let j = 0; j < sorted.length; j++) {
+
+                    const tmpHH = hh + Math.floor((sorted[j].estimatedTimeStay + 30 + mm) / 60)
+                    const tmpMM = (mm + sorted[j].estimatedTimeStay + 30) - Math.floor((sorted[j].estimatedTimeStay + 30 + mm) / 60) * 60
+                    const time2 = (tmpHH < 10 ? '0' + tmpHH : tmpHH) + ':' + (tmpMM < 10 ? '0' + tmpMM : tmpMM)
+                    let point = 0
+                    let tmpPoint = 0
+
+                    if (sorted[j].openingTime <= time && time2 <= sorted[j].closingTime) {
+                        tmpPoint = 1
+                        sorted[j].recommendedTimes?.forEach(recommendedTime => {
+                            if (recommendedTime.from <= time && time2 <= recommendedTime.to) {
+                                tmpPoint = 2
+                                tmpPoint += (recommendedTime.count.planCount + 1) + (recommendedTime.count.visitCount + 1) * 2
+                            }
+                            if (point < tmpPoint)
+                                point = tmpPoint
+                        });
+                    }
+
+                    if (max < point)
+                        max = point
+                    sorted[j].timePoint = point
+                }
+                const dess = sorted.filter(function (value) {
+                    return (value.timePoint ?? 0) == max
                 });
-                const des = sorted.find(function (value) {
-                    return value.point = max;
-                })
+                const des = dess[Math.ceil(dess.length * Math.random()) - 1]
                 if (des) {
 
-                    const check = testdes.find(function (value) {
-                        return value.id == des.id;
-                    })
-                    console.log(check?.value);
+                    console.log(hh + ':' + mm + ' - ' + des.name + ' - ' + des.timePoint);
 
-                    point += check?.value ?? 0
                     planDes.destinationID = des.id
                     planDes.profile = 'driving'
                     if (!isFirst && preDes) {
@@ -206,13 +213,16 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                         hh += Math.floor((des.estimatedTimeStay + mm) / 60)
                         mm = des.estimatedTimeStay + mm - Math.floor((des.estimatedTimeStay + mm) / 60) * 60
                         const toTime = planDes.date + ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm)
-                        if (hh == 23 && mm > 1 || hh > 23 || toTime > end || (timeCount + des.estimatedTimeStay > maxTime / date)) {
+                        console.log(fromTime.split(' ')[1] + ' - ' + toTime.split(' ')[1]);
+
+                        if (hh == 23 && mm > 1 || hh > 23 || toTime.split(' ')[1] > end || (timeCount + des.estimatedTimeStay > maxTime / date)) {
                             timeCount = 0
                             isFirst = true
                             hh = parseInt(start.split(':')[0])
                             mm = parseInt(start.split(':')[1])
                             i++
                         } else {
+                            point += des?.value ?? 0
                             cost += Math.ceil((des.highestPrice + des.lowestPrice) / 2)
                             timeCount += des.estimatedTimeStay
                             planDes.fromTime = new Date(fromTime)
@@ -231,11 +241,23 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                         hh += 1
                         mm = 0
                     }
+                    const check = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]) - (hh * 60 + mm)
+                    if (hh == 23 && mm > 1 || hh > 23 || check < 0) {
+                        timeCount = 0
+                        isFirst = true
+                        hh = parseInt(start.split(':')[0])
+                        mm = parseInt(start.split(':')[1])
+                        i++
+                    }
                 }
             }
+            if (preDes)
+                plan.toDate = preDes.date
             plan.estimatedCost = cost
             plan.point = Math.round(point * 10) / 10
             await plan.save({ transaction: create })
+            console.log('----------------');
+
         })
     }
 
