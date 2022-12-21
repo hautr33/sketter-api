@@ -216,7 +216,7 @@ User.beforeSave(async (user) => {
             if (!user.owner || user.owner === null)
                 throw new AppError('Vui lòng nhập tên chủ sở hũu', StatusCodes.BAD_REQUEST)
 
-            if (!user.phone || user.phone === null)
+            if (user.phone !== null && user.phone === '')
                 throw new AppError('Vui lòng nhập số điện thoại', StatusCodes.BAD_REQUEST)
 
             if (!user.address || user.address === null)
