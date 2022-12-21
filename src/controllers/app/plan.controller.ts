@@ -317,7 +317,7 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
 
 export const getAllPublicPlan = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
-    const orderBy = ['view', 'createdAt'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'createdAt';
+    const orderBy = ['view', 'createdAt', 'fromDate'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'fromDate';
     const plans = await Plan.findAll(
         {
             where: { isPublic: true },
@@ -382,6 +382,59 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (check.status !== 'Completed')
         plan.travelDetails = null
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
+    next();
+})
+
+export const duplicatePlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id } });
+
+    if (!plan)
+        return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
+
+    const today = Math.floor((Date.now() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24))
+    if (today >= 0)
+        return next(new AppError('Bạn chỉ có thể sao chép lịch trình bắt đầu kể từ ngày mai', StatusCodes.BAD_REQUEST))
+    const newPlan = new Plan()
+    newPlan.name = plan.name + ' (Bản sao)'
+    newPlan.fromDate = plan.fromDate
+    newPlan.toDate = plan.toDate
+    newPlan.stayDestinationID = plan.stayDestinationID
+    newPlan.estimatedCost = plan.estimatedCost
+    newPlan.isPublic = false
+    newPlan.travelerID = res.locals.user.id
+
+    const details = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: true } })
+    const id = await sequelizeConnection.transaction(async (duplicate) => {
+        await newPlan.save({ transaction: duplicate })
+        for (let i = 0; i < details.length; i++) {
+            const newDetail = new PlanDestination()
+            newDetail.planID = newPlan.id
+            newDetail.destinationID = details[i].destinationID
+            newDetail.date = details[i].date
+            newDetail.fromTime = details[i].fromTime
+            newDetail.toTime = details[i].toTime
+            newDetail.distance = details[i].distance
+            newDetail.duration = details[i].duration
+            newDetail.profile = details[i].profile
+            newDetail.distanceText = details[i].distanceText
+            newDetail.durationText = details[i].durationText
+            newDetail.destinationName = details[i].destinationName
+            newDetail.destinationImage = details[i].destinationImage
+            await newDetail.save({ transaction: duplicate })
+        }
+        return newPlan.id
+    })
+
+    const result = await Plan.findOne(
+        {
+            where: { id: id },
+            attributes: { exclude: PlanPrivateFields.default },
+            include: getOnePlanInclude('Draft'),
+            order: [['details', 'fromTime', 'ASC']]
+        });
+    const onePlan = _.omit(result?.toJSON(), []);
+    onePlan.travelDetails = null
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Sao chép lịch trình thành công', { plan: onePlan });
     next();
 })
 
