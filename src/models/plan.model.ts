@@ -17,6 +17,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     actualCost?: number;
     isPublic!: boolean;
     view?: number;
+    point?: number;
     status?: string;
     travelerID!: ForeignKey<User['id']>;
 
@@ -87,6 +88,10 @@ Plan.init({
     view: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        defaultValue: 0
+    },
+    point: {
+        type: DataTypes.FLOAT,
         defaultValue: 0
     },
     isPublic: {

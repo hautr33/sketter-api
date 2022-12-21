@@ -288,7 +288,7 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
     const plans = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id, status: status == 'Completed' ? { [Op.or]: ['Completed', 'Skipped'] } : status },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'point', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['createdAt', 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -321,7 +321,7 @@ export const getAllPublicPlan = catchAsync(async (req, res, next) => {
     const plans = await Plan.findAll(
         {
             where: { isPublic: true },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'point', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [[orderBy, 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,

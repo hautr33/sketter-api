@@ -104,12 +104,14 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
         let sorted: Destination[] = [];
         let cost = 0;
         let time = 0;
+        let testdes: Destination[] = [];
 
         des.forEach(des => {
             if (des.point && des.cost && cost + des.cost <= maxCost && time + des.estimatedTimeStay <= maxTime) {
                 cost += des.cost
                 time += des.estimatedTimeStay
                 sorted.push(des)
+                testdes.push(des)
             }
         });
 
@@ -134,6 +136,7 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                 {
                     transaction: create
                 })
+            let point = 0
             let i = 0
             let timeCount = 0
             let isFirst = true
@@ -163,6 +166,13 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                     return value.point = max;
                 })
                 if (des) {
+
+                    const check = testdes.find(function (value) {
+                        return value.id == des.id;
+                    })
+                    console.log(check?.value);
+
+                    point += check?.value ?? 0
                     planDes.destinationID = des.id
                     planDes.profile = 'driving'
                     if (!isFirst && preDes) {
@@ -224,14 +234,16 @@ export const createSmartPlan = catchAsync(async (req, res, next) => {
                 }
             }
             plan.estimatedCost = cost
+            plan.point = Math.round(point * 10) / 10
             await plan.save({ transaction: create })
         })
     }
 
+
     const plans = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id, status: 'Smart' },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'point', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['name', 'ASC']],
         });
@@ -259,35 +271,69 @@ const calcPoint = (des: Destination[], now: number): Destination[] => {
     let maxCost = 0
     let maxTime = 0
     let maxDate = 0
-    des.forEach(des => {
-        if (des.view && maxView < des.view)
-            maxView = des.view
-        des.personalityCount = 0
+    for (let i = 0; i < des.length; i++) {
+        if (des[i].view && maxView < (des[i].view ?? 0))
+            maxView = des[i].view ?? 0
+        des[i].personalityCount = 0
 
-        des.destinationPersonalities?.forEach(personal => {
-            des.personalityCount += personal.count.planCount + personal.count.visitCount * 2
+        des[i].destinationPersonalities?.forEach(personal => {
+            des[i].personalityCount += personal.count.planCount + personal.count.visitCount * 2
         });
+        if (maxPersonality < (des[i].personalityCount ?? 0))
+            maxPersonality = des[i].personalityCount ?? 0
+        if (maxTime < des[i].estimatedTimeStay)
+            maxTime = des[i].estimatedTimeStay
+        if (maxCost < (des[i].highestPrice + des[i].lowestPrice) / 2)
+            maxCost = (des[i].highestPrice + des[i].lowestPrice) / 2
+        des[i].dateCount = des[i].createdAt?.getTime() ? (now - (des[i].createdAt?.getTime() ?? 0)) / (1000 * 3600 * 24) : -1
+        if (maxDate < (des[i].dateCount ?? 0))
+            maxDate = des[i].dateCount ?? 0
+        des[i].cost = Math.ceil((des[i].highestPrice + des[i].lowestPrice) / 2)
+    }
+    // des.forEach(des => {
+    //     if (des.view && maxView < des.view)
+    //         maxView = des.view
+    //     des.personalityCount = 0
 
-        if (maxPersonality < des.personalityCount)
-            maxPersonality = des.personalityCount
-        if (maxTime < des.estimatedTimeStay)
-            maxTime = des.estimatedTimeStay
-        if (maxCost < (des.highestPrice + des.lowestPrice) / 2)
-            maxCost = (des.highestPrice + des.lowestPrice) / 2
-        des.dateCount = des.createdAt?.getTime() ? (now - des.createdAt?.getTime()) / (1000 * 3600 * 24) : -1
-        if (maxDate < des.dateCount)
-            maxDate = des.dateCount
-        des.cost = Math.ceil((des.highestPrice + des.lowestPrice) / 2)
-    });
+    //     des.destinationPersonalities?.forEach(personal => {
+    //         des.personalityCount += personal.count.planCount + personal.count.visitCount * 2
+    //     });
 
-    des.forEach(des => {
-        des.point = (
-            ((des.view ?? 0) / maxView) +
-            ((des.dateCount ? maxDate - des.dateCount : 0) / maxDate) * 2 +
-            (((des.personalityCount && des.personalityCount > 0 ? des.personalityCount / maxPersonality : Math.random() * 0.5 + 0.25) +
-                (des.avgRating && des.avgRating > 0 ? des.avgRating / 5 : Math.random() * 0.5 + 0.25)) / 2) * 3
-        ) / ((des.estimatedTimeStay / maxTime) * 3 + ((des.highestPrice + des.lowestPrice) / (2 * maxCost)) * 3)
-    });
+    //     if (maxPersonality < des.personalityCount)
+    //         maxPersonality = des.personalityCount
+    //     if (maxTime < des.estimatedTimeStay)
+    //         maxTime = des.estimatedTimeStay
+    //     if (maxCost < (des.highestPrice + des.lowestPrice) / 2)
+    //         maxCost = (des.highestPrice + des.lowestPrice) / 2
+    //     des.dateCount = des.createdAt?.getTime() ? (now - des.createdAt?.getTime()) / (1000 * 3600 * 24) : -1
+    //     if (maxDate < des.dateCount)
+    //         maxDate = des.dateCount
+    //     des.cost = Math.ceil((des.highestPrice + des.lowestPrice) / 2)
+    // });
+
+    for (let i = 0; i < des.length; i++) {
+        des[i].value = (
+            ((des[i].view ?? 0) / maxView) +
+            ((des[i].dateCount ? maxDate - (des[i].dateCount ?? 0) : 0) / maxDate) * 2 +
+            (des[i].avgRating && (des[i].avgRating ?? 0) > 0 ? (des[i].avgRating ?? 0) / 5 : Math.random() * 0.5 + 0.25) * 3 +
+            (des[i].personalityCount && (des[i].personalityCount ?? 0) > 0 ? (des[i].personalityCount ?? 0) / maxPersonality : Math.random() * 0.5 + 0.25) * 4
+        )
+        des[i].point = (des[i].value ?? 1) / ((des[i].estimatedTimeStay / maxTime) * 5 + ((des[i].highestPrice + des[i].lowestPrice) / (2 * maxCost)) * 5)
+    }
+    // des.forEach(des => {
+    //     des.value = (
+    //         ((des.view ?? 0) / maxView) +
+    //         ((des.dateCount ? maxDate - des.dateCount : 0) / maxDate) * 2 +
+    //         (des.avgRating && des.avgRating > 0 ? des.avgRating / 5 : Math.random() * 0.5 + 0.25) * 3 +
+    //         (des.personalityCount && des.personalityCount > 0 ? des.personalityCount / maxPersonality : Math.random() * 0.5 + 0.25) * 4
+    //     )
+    //     des.point = (
+    //         ((des.view ?? 0) / maxView) +
+    //         ((des.dateCount ? maxDate - des.dateCount : 0) / maxDate) * 2 +
+    //         (des.avgRating && des.avgRating > 0 ? des.avgRating / 5 : Math.random() * 0.5 + 0.25) * 3 +
+    //         (des.personalityCount && des.personalityCount > 0 ? des.personalityCount / maxPersonality : Math.random() * 0.5 + 0.25) * 4
+    //     ) / ((des.estimatedTimeStay / maxTime) * 5 + ((des.highestPrice + des.lowestPrice) / (2 * maxCost)) * 5)
+    // });
 
     return des
 }
