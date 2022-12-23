@@ -40,7 +40,7 @@ export function respondJSON(
 	next: NextFunction
 ): void {
 	if (res.resDocument === undefined) {
-		return next(new AppError('có lỗi xảy ra', 500));
+		return next(new AppError('Có lỗi xảy ra', 500));
 	}
 	res.status(res.resDocument?.statusCode).json({
 		message: res.resDocument?.message,

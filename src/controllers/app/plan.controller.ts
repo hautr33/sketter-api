@@ -16,6 +16,7 @@ import { DestinationPersonalites } from "../../models/destination_personalities.
 import { PAGE_LIMIT } from "../../config/default";
 import { getDestinationDistanceService } from "../../services/destination.service";
 import { Catalog } from "../../models/catalog.model";
+import { Voucher } from "../../models/voucher.model";
 
 export const createPlan = catchAsync(async (req, res, next) => {
     const user = await User.findByPk(res.locals.user.id, {
@@ -239,9 +240,9 @@ export const updatePlan = catchAsync(async (req, res, next) => {
                         planDestination.duration = 0
                         planDestination.distanceText = '0m'
                         planDestination.durationText = '0s'
-                        console.log(planDestination.fromTime.toLocaleString());
-                        console.log(planDestination.toTime.toLocaleString());
-                        console.log('----------------------');
+                        // console.log(planDestination.fromTime.toLocaleString());
+                        // console.log(planDestination.toTime.toLocaleString());
+                        // console.log('----------------------');
                     }
                     hh = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[0])
                     mm = parseInt(planDestination.toTime.toLocaleTimeString().split(':')[1])
@@ -282,15 +283,12 @@ export const updatePlan = catchAsync(async (req, res, next) => {
 });
 
 export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
-    const date = Date.now()
-    await Plan.update({ status: 'Activated' }, { where: { fromDate: { [Op.lte]: date }, status: 'Planned' } })
-    await Plan.update({ status: 'Skipped' }, { where: { toDate: { [Op.lte]: (date - 1000 * 3600 * 24 * 2) }, status: 'Activated' } })
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
     const status = ['Draft', 'Planned', 'Activated', 'Completed'].includes(req.query.status as string) ? req.query.status as string : 'Draft'
     const plans = await Plan.findAll(
         {
             where: { travelerID: res.locals.user.id, status: status == 'Completed' ? { [Op.or]: ['Completed', 'Skipped'] } : status },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'point', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [['createdAt', 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -319,11 +317,11 @@ export const getAllCreatedPlan = catchAsync(async (req, res, next) => {
 
 export const getAllPublicPlan = catchAsync(async (req, res, next) => {
     const page = isNaN(Number(req.query.page)) || Number(req.query.page) < 1 ? 1 : Number(req.query.page)
-    const orderBy = ['view', 'createdAt'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'createdAt';
+    const orderBy = ['view', 'createdAt', 'fromDate'].includes(req.query.orderBy as string) ? req.query.orderBy as string : 'fromDate';
     const plans = await Plan.findAll(
         {
             where: { isPublic: true },
-            attributes: ['id', 'name', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
+            attributes: ['id', 'name', 'point', 'fromDate', 'toDate', 'estimatedCost', 'view', 'isPublic', 'createdAt'],
             include: [{ model: Destination, as: 'destinations', through: { attributes: [] }, attributes: ['name', 'image'] }],
             order: [[orderBy, 'DESC']],
             offset: (page - 1) * PAGE_LIMIT,
@@ -351,9 +349,16 @@ export const getAllPublicPlan = catchAsync(async (req, res, next) => {
 });
 
 export const getOnePlan = catchAsync(async (req, res, next) => {
-    const date = Date.now()
-    await Plan.update({ status: 'Activated' }, { where: { fromDate: { [Op.lte]: date }, status: 'Planned' } })
-    await Plan.update({ status: 'Skipped' }, { where: { toDate: { [Op.lte]: (date - 1000 * 3600 * 24 * 2) }, status: 'Activated' } })
+    const des = await Destination.findAll({
+        where: { status: 'Open' }, attributes: ['id'],
+        include: [
+            { model: Voucher, as: 'vouchers', where: { status: 'Activated' }, attributes: [] }
+        ]
+    })
+    await Destination.update({ isHaveVoucher: false }, { where: { isHaveVoucher: true } })
+    for (let i = 0; i < des.length; i++) {
+        await Destination.update({ isHaveVoucher: true }, { where: { id: des[i].id } })
+    }
     if (res.locals.user.roleID === Roles.Traveler) {
         await Plan.increment({ view: 1 }, { where: { id: req.params.id } })
     }
@@ -368,7 +373,7 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
             where: { id: req.params.id, [Op.or]: [{ travelerID: res.locals.user.id }, { isPublic: true }] },
             attributes: { exclude: PlanPrivateFields.default },
             include: getOnePlanInclude(check.status ?? 'Draft'),
-            order: [['details', 'fromTime', 'ASC']]
+            order: check.status !== 'Completed' ? [['details', 'fromTime', 'ASC']] : [['details', 'fromTime', 'ASC'],['travelDetails', 'fromTime', 'ASC']]
         });
 
     if (!result)
@@ -377,6 +382,59 @@ export const getOnePlan = catchAsync(async (req, res, next) => {
     if (check.status !== 'Completed')
         plan.travelDetails = null
     res.resDocument = new RESDocument(StatusCodes.OK, 'success', { plan });
+    next();
+})
+
+export const duplicatePlan = catchAsync(async (req, res, next) => {
+    const plan = await Plan.findOne({ where: { id: req.params.id } });
+
+    if (!plan)
+        return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
+
+    const today = Math.floor((Date.now() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24))
+    if (today >= 0)
+        return next(new AppError('Bạn chỉ có thể sao chép lịch trình bắt đầu kể từ ngày mai', StatusCodes.BAD_REQUEST))
+    const newPlan = new Plan()
+    newPlan.name = plan.name + ' (Bản sao)'
+    newPlan.fromDate = plan.fromDate
+    newPlan.toDate = plan.toDate
+    newPlan.stayDestinationID = plan.stayDestinationID
+    newPlan.estimatedCost = plan.estimatedCost
+    newPlan.isPublic = false
+    newPlan.travelerID = res.locals.user.id
+
+    const details = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: true } })
+    const id = await sequelizeConnection.transaction(async (duplicate) => {
+        await newPlan.save({ transaction: duplicate })
+        for (let i = 0; i < details.length; i++) {
+            const newDetail = new PlanDestination()
+            newDetail.planID = newPlan.id
+            newDetail.destinationID = details[i].destinationID
+            newDetail.date = details[i].date
+            newDetail.fromTime = details[i].fromTime
+            newDetail.toTime = details[i].toTime
+            newDetail.distance = details[i].distance
+            newDetail.duration = details[i].duration
+            newDetail.profile = details[i].profile
+            newDetail.distanceText = details[i].distanceText
+            newDetail.durationText = details[i].durationText
+            newDetail.destinationName = details[i].destinationName
+            newDetail.destinationImage = details[i].destinationImage
+            await newDetail.save({ transaction: duplicate })
+        }
+        return newPlan.id
+    })
+
+    const result = await Plan.findOne(
+        {
+            where: { id: id },
+            attributes: { exclude: PlanPrivateFields.default },
+            include: getOnePlanInclude('Draft'),
+            order: [['details', 'fromTime', 'ASC']]
+        });
+    const onePlan = _.omit(result?.toJSON(), []);
+    onePlan.travelDetails = null
+    res.resDocument = new RESDocument(StatusCodes.OK, 'Sao chép lịch trình thành công', { plan: onePlan });
     next();
 })
 
@@ -410,7 +468,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -426,7 +484,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: true },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },
@@ -435,7 +493,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     }
@@ -448,7 +506,7 @@ export const getOnePlanInclude = (status: string) => status == 'Draft' || status
         where: { isPlan: false },
         include: [
             {
-                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'estimatedTimeStay', 'status']
+                model: Destination, as: 'destination', attributes: ['id', 'name', 'address', 'image', 'openingTime', 'closingTime', 'lowestPrice', 'highestPrice', 'longitude', 'latitude', 'isHaveVoucher', 'estimatedTimeStay', 'status']
             }
         ]
     },

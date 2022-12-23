@@ -7,13 +7,15 @@ import { Voucher } from './voucher.model';
 export class VoucherDetail extends Model<InferAttributes<VoucherDetail>, InferCreationAttributes<VoucherDetail>> {
     declare id?: string;
     voucherID!: ForeignKey<Voucher['id']>;
-    travelerID!: ForeignKey<User['id']>;
+    travelerID?: ForeignKey<User['id']> | null;
+    code!: string;
     price!: number;
-    quantity!: number;
-    totalPrice!: number;
+    refundRate!: number;
+    commissionRate!: number;
+    finalPrice?: number;
     status?: string;
-    readonly createdAt?: Date;
-    readonly updatedAt?: Date;
+    readonly soldAt?: Date;
+    readonly usedAt?: Date| null;
 }
 
 VoucherDetail.init({
@@ -28,51 +30,54 @@ VoucherDetail.init({
     },
     voucherID: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: false,
     },
     travelerID: {
         type: DataTypes.UUID,
-        allowNull: false
+        allowNull: true,
+    },
+    code: {
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     price: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    quantity: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            notNull: { msg: 'Vui lòng nhập số lượng khuyến mãi' },
-            isInt: { msg: 'Số lượng khuyến mãi không hợp lệ' },
-            min: { msg: 'Số lượng khuyến mãi phải từ 1 đến 99999', args: [1] },
-            max: { msg: 'Số lượng khuyến mãi phải từ 1 đến 99999', args: [99999] }
-        }
-    },
-    totalPrice: {
+    refundRate: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    commissionRate: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    finalPrice: {
+        type: DataTypes.FLOAT,
+    },
     status: {
         type: DataTypes.STRING,
-        defaultValue: Status.draft,
+        defaultValue: Status.inStock,
         validate: {
             isIn: {
-                args: [[Status.draft, Status.activated]],
+                args: [[Status.inStock, Status.paying, Status.sold, 'Pending', 'Used', 'Refunded']],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
     },
-    createdAt: {
+    soldAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
-    updatedAt: {
+    usedAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
 }, {
     // Other model options go here
-    timestamps: true,
+    timestamps: false,
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'VoucherDetail' // We need to choose the model name
 });
+
+
+User.hasMany(VoucherDetail, { foreignKey: "travelerID", as: 'travelerInfo' });
+VoucherDetail.belongsTo(User, { foreignKey: 'travelerID', as: 'travelerInfo' })

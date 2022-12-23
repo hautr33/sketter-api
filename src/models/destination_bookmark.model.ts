@@ -31,6 +31,8 @@ DestinationBookmark.init({
     modelName: 'DestinationBookmark' // We need to choose the model name
 });
 
+User.hasMany(DestinationBookmark, { foreignKey: "travelerID"});
 DestinationBookmark.belongsTo(User, { foreignKey: 'travelerID'})
 
+Destination.hasMany(DestinationBookmark, { foreignKey: "destinationID"});
 DestinationBookmark.belongsTo(Destination, { foreignKey: 'destinationID'})

@@ -33,6 +33,7 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     avgRating?: number;
     view?: number;
     totalRating?: number;
+    isHaveVoucher?: boolean;
     cityID!: ForeignKey<City['id']>;
     supplierID?: ForeignKey<User['id']> | null;
     createdBy!: ForeignKey<User['id']>;
@@ -56,11 +57,12 @@ export class Destination extends Model<InferAttributes<Destination>, InferCreati
     recommendedTimes?: any[];
     catalogs?: any[];
     isBookmarked?: boolean;
-    isHavePromotion?: boolean;
     vouchers?: any[];
     personalityCount?: number = 0;
     dateCount?: number = 0;
     point?: number = 0;
+    timePoint?: number = 0;
+    value?: number = 0;
     cost?: number = 0;
 }
 
@@ -235,6 +237,10 @@ Destination.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    isHaveVoucher: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
     supplierID: {
         type: DataTypes.UUID,
     },
@@ -261,12 +267,13 @@ Personalities.belongsToMany(Destination, { through: DestinationPersonalites, for
 Destination.belongsToMany(TimeFrame, { through: DestinationRecommendedTime, foreignKey: "destinationID", as: 'recommendedTimes' });
 TimeFrame.belongsToMany(Destination, { through: DestinationRecommendedTime, foreignKey: "timeFrameID", as: 'recommendedTimes' });
 
+Destination.hasMany(DestinationImage, { foreignKey: "destinationID", as: 'gallery' });
 DestinationImage.belongsTo(Destination, { foreignKey: "destinationID", as: 'gallery' });
 
+User.hasMany(Destination, { foreignKey: "supplierID", as: "supplier" });
 Destination.belongsTo(User, { foreignKey: 'supplierID', as: "supplier" });
 
-Destination.belongsTo(User, { foreignKey: 'createdBy', as: "creater" })
-
+City.hasMany(Destination, { foreignKey: "cityID", as: "city" });
 Destination.belongsTo(City, { foreignKey: 'cityID', as: "city" })
 
 Destination.beforeSave(async (destination) => {

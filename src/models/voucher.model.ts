@@ -47,7 +47,7 @@ Voucher.init({
         validate: {
             notNull: { msg: 'Vui lòng nhập tên khuyến mãi' },
             notEmpty: { msg: 'Vui lòng nhập tên khuyến mãi' },
-            len: { msg: 'Tên khuyến mãi phải có từ 2 đến 50 ký tự', args: [2, 50] }
+            len: { msg: 'Tên khuyến mãi phải có từ 2 đến 100 ký tự', args: [2, 100] }
         }
     },
     image: {
@@ -139,7 +139,7 @@ Voucher.init({
         defaultValue: Status.draft,
         validate: {
             isIn: {
-                args: [[Status.draft, Status.activated]],
+                args: [[Status.draft, Status.activated, Status.stop, Status.soldOut, Status.expired]],
                 msg: 'Trạng thái không hợp lệ'
             }
         }
@@ -150,7 +150,6 @@ Voucher.init({
     },
     updatedAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now()
     },
 }, {
     // Other model options go here
@@ -159,11 +158,17 @@ Voucher.init({
     modelName: 'Voucher' // We need to choose the model name
 });
 
+Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'destinationApply' });
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destinationApply' })
 
+Destination.hasMany(Voucher, { foreignKey: "destinationID", as: 'vouchers' });
 Voucher.belongsTo(Destination, { foreignKey: 'destinationID', as: 'vouchers' })
 
+Voucher.hasMany(VoucherDetail, { foreignKey: "voucherID", as: 'details' });
 VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'details' });
+
+Voucher.hasMany(VoucherDetail, { foreignKey: "voucherID", as: 'voucherInfo' });
+VoucherDetail.belongsTo(Voucher, { foreignKey: 'voucherID', as: 'voucherInfo' });
 
 Voucher.beforeSave(async (voucher) => {
     const { value, salePrice, fromDate, toDate

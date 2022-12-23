@@ -50,8 +50,11 @@ if (ENVIRONMENT === 'production') {
 	];
 	// Only same origin and localhost
 	const corsOptions: CorsOptions = {
+
 		origin(origin, callback) {
-			if (whitelistOrg.indexOf(origin as string) !== -1)
+			console.log(origin);
+
+			if (whitelistOrg.indexOf(origin as string) !== -1 || origin == undefined)
 				callback(null, true);
 			else
 				callback(

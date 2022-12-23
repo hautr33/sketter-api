@@ -75,7 +75,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
     const { totalCost, details } = req.body;
     details.sort((a: { date: number; }, b: { date: number; }) => (a.date < b.date) ? -1 : 1)
 
-    const date = Math.floor((Date.now() - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) + 1
+    const now = Date.now() < new Date(plan.toDate).getTime() ? Date.now() : new Date(plan.toDate).getTime();
+    const date = Math.floor((now - new Date(plan.fromDate).getTime()) / (1000 * 3600 * 24)) + 1
     const stayDestinationID = req.body.stayDestinationID === '' ? null : req.body.stayDestinationID
     const stay = await Destination.findOne({
         where: { id: stayDestinationID, status: Status.open },
@@ -123,8 +124,8 @@ export const checkinPlan = catchAsync(async (req, res, next) => {
                     planDestination.profile = 'driving'
                     planDestination.date = details[i].date;
                     planDestination.isPlan = false
-                    planDestination.rating = details[i].destinations[j].rating;
-                    planDestination.description = details[i].destinations[j].description;
+                    planDestination.rating = details[i].destinations[j].rating == 0 ? null : details[i].destinations[j].rating;
+                    planDestination.description = details[i].destinations[j].description == '' ? null : details[i].destinations[j].description;
                     const from = details[i].destinations[j].fromTime.split(' ');
                     const to = details[i].destinations[j].toTime.split(' ');
                     planDestination.fromTime = new Date(tmpDate.toLocaleDateString() + ' ' + from[from.length - 1])
@@ -176,8 +177,8 @@ export const completePlan = catchAsync(async (req, res, next) => {
     if (!plan)
         return next(new AppError('Không tìm thấy lịch trình này', StatusCodes.NOT_FOUND));
 
-    // if (Math.floor((Date.now() - new Date(plan.toDate).getTime()) / (1000 * 3600 * 24)) < 0)
-    //     throw new AppError(`Bạn không thể hoàn tất khi chưa hết lịch trình`, StatusCodes.BAD_REQUEST)
+    if (Math.floor((Date.now() - new Date(plan.toDate).getTime()) / (1000 * 3600 * 24)) < 0)
+        throw new AppError(`Bạn chỉ có thể hoàn tất lịch trình kể từ ngày cuối`, StatusCodes.BAD_REQUEST)
     const index: number[] = []
 
     const planned = await PlanDestination.findAll({ where: { planID: plan.id, isPlan: true } })
@@ -199,7 +200,7 @@ export const completePlan = catchAsync(async (req, res, next) => {
             planned[i].status = 'Skipped'
 
     await sequelizeConnection.transaction(async (complete) => {
-        // await Plan.update({ status: 'Completed' }, { where: { id: req.params.id }, transaction: complete })
+        await Plan.update({ status: 'Completed' }, { where: { id: req.params.id }, transaction: complete })
         for (let i = 0; i < planned.length; i++)
             await planned[i].save({ transaction: complete })
 
@@ -213,6 +214,6 @@ export const completePlan = catchAsync(async (req, res, next) => {
 
     })
 
-    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, { planned: planned, activated: activated });
+    res.resDocument = new RESDocument(StatusCodes.OK, `Bạn đã hoàn tất lịch trình "${plan.name}"`, null);
     next();
 })

@@ -132,7 +132,8 @@ export class DestinationPrivateFields {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "deletedAt"
+        "deletedAt",
+        'isHaveVoucher'
     ]
     static getAllSupplier = [
         'cityID',
@@ -151,7 +152,8 @@ export class DestinationPrivateFields {
         "createdBy",
         "createdAt",
         "updatedAt",
-        "deletedAt"
+        "deletedAt",
+        'isHaveVoucher'
     ]
 }
 

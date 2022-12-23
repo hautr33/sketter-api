@@ -132,4 +132,6 @@ PlanDestination.init({
     modelName: 'PlanDestination' // We need to choose the model name
 });
 
+
+Destination.hasMany(PlanDestination, { foreignKey: 'destinationID', as: 'destination' })
 PlanDestination.belongsTo(Destination, { foreignKey: 'destinationID', as: 'destination' })

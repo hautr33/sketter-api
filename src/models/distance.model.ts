@@ -74,3 +74,8 @@ Distance.init({
     sequelize: sequelize, // We need to pass the connection instance
     modelName: 'Distance' // We need to choose the model name
 });
+
+Destination.hasMany(Distance, { foreignKey: 'fromDestination' });
+Destination.hasMany(Distance, { foreignKey: 'toDestination' });
+Distance.belongsTo(Destination, { foreignKey: 'fromDestination' });
+Distance.belongsTo(Destination, { foreignKey: 'toDestination' });

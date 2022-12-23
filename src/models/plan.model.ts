@@ -17,6 +17,7 @@ export class Plan extends Model<InferAttributes<Plan>, InferCreationAttributes<P
     actualCost?: number;
     isPublic!: boolean;
     view?: number;
+    point?: number;
     status?: string;
     travelerID!: ForeignKey<User['id']>;
 
@@ -89,6 +90,10 @@ Plan.init({
         allowNull: false,
         defaultValue: 0
     },
+    point: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0
+    },
     isPublic: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -119,14 +124,19 @@ Plan.init({
     modelName: 'Plan' // We need to choose the model name
 });
 
+Plan.hasMany(PlanDestination, { foreignKey: 'planID', as: "details" })
 PlanDestination.belongsTo(Plan, { foreignKey: 'planID', as: "details" })
 
+Plan.hasMany(PlanDestination, { foreignKey: 'planID', as: "travelDetails" })
 PlanDestination.belongsTo(Plan, { foreignKey: 'planID', as: "travelDetails" })
 
+User.hasMany(Plan, { foreignKey: "travelerID", as: "traveler" });
 Plan.belongsTo(User, { foreignKey: 'travelerID', as: "traveler" })
 
+Destination.hasMany(Plan, { foreignKey: "stayDestinationID", as: "stayDestination" });
 Plan.belongsTo(Destination, { foreignKey: 'stayDestinationID', as: "stayDestination" })
 
+Destination.hasMany(Plan, { foreignKey: "actualStayDestinationID", as: "actualStayDestination" });
 Plan.belongsTo(Destination, { foreignKey: 'actualStayDestinationID', as: "actualStayDestination" })
 
 Destination.belongsToMany(Plan, { through: PlanDestination, foreignKey: "destinationID", as: 'destinations' });

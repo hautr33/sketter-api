@@ -48,7 +48,7 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
 
     const destinations = await Destination.findAll({
         where: query,
-        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view', 'status', 'createdAt'],
+        attributes: ['id', 'name', 'address', 'image', 'lowestPrice', 'highestPrice', 'avgRating', 'view','isHaveVoucher', 'status', 'createdAt'],
         include: defaultInclude(false),
         order: [['name', 'ASC']],
         offset: (page - 1) * PAGE_LIMIT,
@@ -59,7 +59,6 @@ export const getBookmarkDestination = catchAsync(async (req, res, next) => {
         attributes: ['id'],
         include: defaultInclude(true),
     })
-    console.log(count)
     // Create a response object
     const resDocument = new RESDocument(
         StatusCodes.OK,
